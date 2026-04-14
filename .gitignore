@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/.env
+*.egg-info/
+
+# Node
+frontend/node_modules/
+frontend/.env
+frontend/dist/
+node_modules/
+dist/
+.env.local
+
+# Supabase
+*.env 
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+
+
