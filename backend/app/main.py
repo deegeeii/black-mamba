@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.profile import router as profile_router
+from app.api.routes.league import router as league_router
 
 app = FastAPI(title="Black Mamba API")
 
@@ -14,6 +15,8 @@ app.add_middleware(
 )
 
 app.include_router(profile_router)
+app.include_router(league_router)
+
 
 @app.get("/")
 def health_check():
