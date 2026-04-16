@@ -7,6 +7,7 @@ import SignUp from './pages/SignUp'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import Leagues from './pages/Leagues'
+import DraftRoom from './pages/DraftRoom'
 
 export default function App() {
   return (
@@ -39,9 +40,18 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/leagues/:leagueId/draft"
+            element={
+              <ProtectedRoute>
+                <DraftRoom />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
   )
 }
+
