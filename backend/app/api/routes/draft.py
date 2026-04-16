@@ -9,16 +9,15 @@ from typing import List
 router = APIRouter(prefix="/draft", tags=["draft"])
 
 @router.post("/players/sync", response_model=List[PlayerResponse])
-def sync_players(user_id: str = Depends(get_current_user_id)):
-    players = fetch_and_cache_players()
-    return players
+def sync_players():
+     return fetch_and_cache_players()
 
 @router.get("/players", response_model=List[PlayerResponse])
-def list_players(position: str = None, user_id: str = Depends(get_current_user_id)):
+def list_players(position: str = None):
     return get_cached_players(position)
 
 @router.get("/{league_id}/session", response_model=DraftSessionResponse)
-def fetch_session(league_id: str, user_id: str = Depends(get_current_user_id)):
+def fetch_session(league_id: str):
     session = get_draft_session(league_id)
     if not session:
         raise HTTPException(status_code=404, detail="No draft session found")
@@ -39,5 +38,5 @@ def submit_pick(league_id: str, data: MakePickRequest, user_id: str = Depends(ge
     return pick
 
 @router.get("/{league_id}/picks", response_model=List[DraftPickResponse])
-def fetch_picks(league_id: str, user_id: str = Depends(get_current_user_id)):
+def fetch_picks(league_id: str):
     return get_draft_picks(league_id)

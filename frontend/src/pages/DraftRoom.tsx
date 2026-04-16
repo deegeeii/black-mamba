@@ -1,5 +1,6 @@
 
-import { useState, useEffect } from 'react'
+
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
@@ -42,26 +43,33 @@ export default function DraftRoom() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const headers = { Authorization: `Bearer ${session?.access_token}` }
+  const headers = useMemo(
+    () => ({ Authorization: `Bearer ${session?.access_token}` }),
+    [session?.access_token]
+  )
 
   const fetchAll = async () => {
     try {
-      const [playersRes, picksRes] = await Promise.all([
+      const [playersRes, picksRes, sessionRes] = await Promise.allSettled([
         axios.get(`${API_URL}/draft/players`, { headers }),
         axios.get(`${API_URL}/draft/${leagueId}/picks`, { headers }),
+        axios.get(`${API_URL}/draft/${leagueId}/session`, { headers }),
       ])
-      setPlayers(playersRes.data)
-      setPicks(picksRes.data)
-
-      try {
-        const sessionRes = await axios.get(`${API_URL}/draft/${leagueId}/session`, { headers })
-        setSession_(sessionRes.data)
-      } catch {
-        setSession_(null)
-      }
+      if (playersRes.status === 'fulfilled') setPlayers(playersRes.value.data)
+      if (picksRes.status === 'fulfilled') setPicks(picksRes.value.data)
+      setSession_(sessionRes.status === 'fulfilled' ? sessionRes.value.data : null)
     } finally {
       setLoading(false)
     }
+  }
+
+  const refreshPicksAndSession = async () => {
+    const [picksRes, sessionRes] = await Promise.allSettled([
+      axios.get(`${API_URL}/draft/${leagueId}/picks`, { headers }),
+      axios.get(`${API_URL}/draft/${leagueId}/session`, { headers }),
+    ])
+    if (picksRes.status === 'fulfilled') setPicks(picksRes.value.data)
+    setSession_(sessionRes.status === 'fulfilled' ? sessionRes.value.data : null)
   }
 
   useEffect(() => {
@@ -84,13 +92,16 @@ export default function DraftRoom() {
         { player_id: playerId },
         { headers }
       )
-      fetchAll()
+      refreshPicksAndSession()
     } catch (e: any) {
       setError(e.response?.data?.detail || 'Failed to make pick')
     }
   }
 
-  const pickedPlayerIds = new Set(picks.map((p) => p.player_id))
+  const pickedPlayerIds = useMemo(
+    () => new Set(picks.map((p) => p.player_id)),
+    [picks]
+  )
 
   const isMyTurn = () => {
     if (!session_ || session_.status !== 'active') return false
