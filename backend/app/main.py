@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.profile import router as profile_router
 from app.api.routes.league import router as league_router
 from app.api.routes.draft import router as draft_router
+from app.api.routes.roster import router as roster_router
 
 
 app = FastAPI(title="Black Mamba API")
@@ -19,6 +20,7 @@ app.add_middleware(
 app.include_router(profile_router)
 app.include_router(league_router)
 app.include_router(draft_router)
+app.include_router(roster_router)
 
 
 @app.get("/")
