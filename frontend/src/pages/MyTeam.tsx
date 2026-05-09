@@ -25,12 +25,13 @@ const CURRENT_WEEK = 1
 
 export default function MyTeam() {
   const { leagueId } = useParams<{ leagueId: string }>()
-  const { session } = useAuth()
+  const { session, user } = useAuth()
   const [roster, setRoster] = useState<RosterPlayer[]>([])
   const [lineup, setLineup] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [scores, setScores] = useState<{ user_id: string; total_points: number }[]>([])
 
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${session?.access_token}` }),
@@ -40,11 +41,13 @@ export default function MyTeam() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [rosterRes, lineupRes] = await Promise.all([
+        const [rosterRes, lineupRes, scoreRes] = await Promise.all([
           axios.get(`${API_URL}/leagues/${leagueId}/roster`, { headers }),
           axios.get(`${API_URL}/leagues/${leagueId}/lineup?week=${CURRENT_WEEK}`, { headers }),
+          axios.get(`${API_URL}/leagues/${leagueId}/scores?week=${CURRENT_WEEK}`, { headers }),
         ])
         setRoster(rosterRes.data)
+        setScores(scoreRes.data)
         const slots: Record<string, string> = {}
         lineupRes.data.forEach((s: LineupSlot) => {
           slots[s.slot] = s.player_id
@@ -114,6 +117,32 @@ export default function MyTeam() {
           ))}
         </tbody>
       </table>
+
+        {scores.length > 0 && (
+          <>
+            <h2>Week {CURRENT_WEEK} Scores</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scores
+                  .sort((a, b) => b.total_points - a.total_points)
+                  .map((s) => (
+                    <tr key={s.user_id}>
+                      <td>{s.user_id === user?.id ? 'You' : s.user_id.slice(0, 8)}</td>
+                      <td><strong>{s.total_points}</strong></td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+
 
       <button onClick={handleSave}>Save Lineup</button>
 
