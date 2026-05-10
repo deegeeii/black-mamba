@@ -9,6 +9,8 @@ import Profile from './pages/Profile'
 import Leagues from './pages/Leagues'
 import DraftRoom from './pages/DraftRoom'
 import MyTeam from './pages/MyTeam'
+import Matchups from './pages/Matchups'
+
 
 
 export default function App() {
@@ -55,6 +57,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                   <MyTeam />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leagues/:leagueId/matchups"
+            element={
+              <ProtectedRoute>
+                <Matchups />
               </ProtectedRoute>
             }
           />

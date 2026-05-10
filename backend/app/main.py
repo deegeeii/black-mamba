@@ -6,6 +6,7 @@ from app.api.routes.league import router as league_router
 from app.api.routes.draft import router as draft_router
 from app.api.routes.roster import router as roster_router
 from app.api.routes.scoring import router as scoring_router, stats_router
+from app.api.routes.matchup import router as matchup_router
 
 
 
@@ -25,6 +26,7 @@ app.include_router(draft_router)
 app.include_router(roster_router)
 app.include_router(scoring_router)
 app.include_router(stats_router)
+app.include_router(matchup_router)
 
 
 
