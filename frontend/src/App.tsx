@@ -10,6 +10,7 @@ import Leagues from './pages/Leagues'
 import DraftRoom from './pages/DraftRoom'
 import MyTeam from './pages/MyTeam'
 import Matchups from './pages/Matchups'
+import Bets from './pages/Bets'
 
 
 
@@ -65,6 +66,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Matchups />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leagues/:leagueId/bets"
+            element={
+              <ProtectedRoute>
+                <Bets />
               </ProtectedRoute>
             }
           />
