@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     supabase_anon_key: str
     supabase_service_key: str
     stripe_secret_key: str
+    anthropic_api_key: str
 
     class Config:
         env_file = ".env"

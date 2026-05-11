@@ -11,6 +11,7 @@ import DraftRoom from './pages/DraftRoom'
 import MyTeam from './pages/MyTeam'
 import Matchups from './pages/Matchups'
 import Bets from './pages/Bets'
+import Tournament from './pages/Tournament'
 
 
 
@@ -75,6 +76,14 @@ export default function App() {
               <ProtectedRoute>
                 <Bets />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leagues/:leagueId/tournaments"
+            element={
+                <ProtectedRoute>
+                    <Tournament />
+                </ProtectedRoute>
             }
           />
           <Route path="*" element={<Navigate to="/login" replace />} />

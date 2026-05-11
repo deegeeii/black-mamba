@@ -8,15 +8,13 @@ from app.api.routes.roster import router as roster_router
 from app.api.routes.scoring import router as scoring_router, stats_router
 from app.api.routes.matchup import router as matchup_router
 from app.api.routes.bet import router as bet_router
-
-
-
+from app.api.routes.tournament import router as tournament_router
 
 app = FastAPI(title="Black Mamba API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vites' default port
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,8 +28,7 @@ app.include_router(scoring_router)
 app.include_router(stats_router)
 app.include_router(matchup_router)
 app.include_router(bet_router)
-
-
+app.include_router(tournament_router)
 
 @app.get("/")
 def health_check():
