@@ -1,7 +1,9 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { LeagueProvider } from './contexts/LeagueContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import Sidebar from './components/Sidebar'
 import Login from './pages/Login'
 import SignUp from './pages/SignUp'
 import Dashboard from './pages/Dashboard'
@@ -12,84 +14,104 @@ import MyTeam from './pages/MyTeam'
 import Matchups from './pages/Matchups'
 import Bets from './pages/Bets'
 import Tournament from './pages/Tournament'
+import Ledger from './pages/Ledger'
 
 
+function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex' }}>
+      <Sidebar />
+      <div style={{ marginLeft: '220px', flex: 1, padding: '24px', backgroundColor: '#111', minHeight: '100vh', color: '#fff' }}>
+        {children}
+      </div>
+    </div>
+  )
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/leagues"
-            element={
-              <ProtectedRoute>
-                <Leagues />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/leagues/:leagueId/draft"
-            element={
-              <ProtectedRoute>
-                <DraftRoom />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/leagues/:leagueId/team"
-            element={
-              <ProtectedRoute>
-                  <MyTeam />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/leagues/:leagueId/matchups"
-            element={
-              <ProtectedRoute>
-                <Matchups />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/leagues/:leagueId/bets"
-            element={
-              <ProtectedRoute>
-                <Bets />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/leagues/:leagueId/tournaments"
-            element={
+        <LeagueProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route
+              path="/dashboard"
+              element={
                 <ProtectedRoute>
-                    <Tournament />
+                  <AppLayout><Dashboard /></AppLayout>
                 </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <AppLayout><Profile /></AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leagues"
+              element={
+                <ProtectedRoute>
+                  <AppLayout><Leagues /></AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leagues/:leagueId/draft"
+              element={
+                <ProtectedRoute>
+                  <AppLayout><DraftRoom /></AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leagues/:leagueId/team"
+              element={
+                <ProtectedRoute>
+                  <AppLayout><MyTeam /></AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leagues/:leagueId/matchups"
+              element={
+                <ProtectedRoute>
+                  <AppLayout><Matchups /></AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leagues/:leagueId/bets"
+              element={
+                <ProtectedRoute>
+                  <AppLayout><Bets /></AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leagues/:leagueId/tournaments"
+              element={
+                <ProtectedRoute>
+                  <AppLayout><Tournament /></AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ledger"
+              element={
+                  <ProtectedRoute>
+                      <AppLayout><Ledger /></AppLayout>
+                  </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </LeagueProvider>
       </AuthProvider>
     </BrowserRouter>
   )
 }
-
