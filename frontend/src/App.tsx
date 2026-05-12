@@ -17,6 +17,7 @@ import Tournament from './pages/Tournament'
 import Ledger from './pages/Ledger'
 import Chat from './pages/Chat'
 import { ThemeProvider } from './contexts/ThemeContext'
+import FreeAgents from './pages/FreeAgents'
 
 
 
@@ -124,6 +125,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <AppLayout><Chat /></AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/leagues/:leagueId/free-agents"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout><FreeAgents /></AppLayout>
                   </ProtectedRoute>
                 }
               />

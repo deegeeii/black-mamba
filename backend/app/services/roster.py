@@ -2,38 +2,41 @@
 from app.core.supabase import supabase
 
 def get_my_roster(league_id: str, user_id: str):
+    from app.services.waiver import _rostered_player_ids
+    roster_map = _rostered_player_ids(league_id)
+    my_ids = roster_map.get(user_id, set())
+    if not my_ids:
+        return []
+
     picks = (
         supabase.table("draft_picks")
         .select("player_id, round, pick_number")
         .eq("league_id", league_id)
         .eq("user_id", user_id)
-        .order("pick_number")
         .execute()
     )
-    if not picks.data:
-        return []
+    pick_meta = {p["player_id"]: p for p in (picks.data or [])}
 
-    player_ids = [p["player_id"] for p in picks.data]
     players = (
         supabase.table("players")
         .select("id, name, position, nfl_team")
-        .in_("id", player_ids)
+        .in_("id", list(my_ids))
         .execute()
     )
-    player_map = {p["id"]: p for p in players.data}
 
     result = []
-    for pick in picks.data:
-        player = player_map.get(pick["player_id"], {})
+    for p in (players.data or []):
+        meta = pick_meta.get(p["id"], {})
         result.append({
-            "player_id": pick["player_id"],
-            "name": player.get("name", ""),
-            "position": player.get("position", ""),
-            "nfl_team": player.get("nfl_team"),
-            "round": pick["round"],
-            "pick_number": pick["pick_number"],
+            "player_id": p["id"],
+            "name": p["name"],
+            "position": p["position"],
+            "nfl_team": p.get("nfl_team"),
+            "round": meta.get("round", 0),
+            "pick_number": meta.get("pick_number", 0),
         })
     return result
+
 
 
 def get_lineup(league_id: str, user_id: str, week: int):

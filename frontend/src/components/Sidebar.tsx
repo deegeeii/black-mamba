@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 const NAV_ITEMS = [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'My Team', path: '/team' },
+    { label: 'Free Agents', path: '/free-agents' },
     { label: 'Matchups', path: '/matchups' },
     { label: 'Bets', path: '/bets' },
     { label: 'Tournaments', path: '/tournaments' },

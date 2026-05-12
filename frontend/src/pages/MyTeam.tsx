@@ -32,6 +32,8 @@ export default function MyTeam() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [scores, setScores] = useState<{ user_id: string; total_points: number }[]>([])
+  const [dropping, setDropping] = useState<string | null>(null)
+
 
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${session?.access_token}` }),
@@ -79,6 +81,21 @@ export default function MyTeam() {
     }
   }
 
+  const handleDrop = async (playerId: string) => {
+    setError('')
+    try {
+      await axios.post(
+        `${API_URL}/leagues/${leagueId}/roster/drop`,
+        { player_id: playerId, week: CURRENT_WEEK },
+        { headers }
+      )
+      setRoster(prev => prev.filter(p => p.player_id !== playerId))
+      setDropping(null)
+    } catch {
+      setError('Failed to drop player')
+    }
+  }
+  
   if (loading) return <p>Loading your team...</p>
 
   return (
@@ -156,12 +173,25 @@ export default function MyTeam() {
         {/* Full Roster */}
         <h2 style={{ marginBottom: '12px' }}>Full Roster</h2>
         <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '4px 0' }}>
-            {roster.map((p, i) => (
-                <div key={p.player_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 16px', borderBottom: i < roster.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
-                    <span style={{ color: 'var(--text)' }}>{p.name}</span>
-                    <span style={{ color: 'var(--text-dim)', fontSize: '13px' }}>{p.position} · {p.nfl_team} · Rd {p.round} Pk {p.pick_number}</span>
+        {roster.map((p, i) => (
+            <div key={p.player_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: i < roster.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+              <div>
+                <span style={{ color: 'var(--text)' }}>{p.name}</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '13px', marginLeft: '10px' }}>{p.position} · {p.nfl_team}{p.round > 0 ? ` · Rd ${p.round} Pk ${p.pick_number}` : ' · FA'}</span>
+              </div>
+              {dropping === p.player_id ? (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ color: 'var(--text-dim)', fontSize: '13px', alignSelf: 'center' }}>Confirm?</span>
+                  <button onClick={() => handleDrop(p.player_id)} style={{ backgroundColor: 'var(--danger)', color: '#fff', border: 'none', borderRadius: 'var(--radius)', padding: '4px 12px', fontSize: '12px', cursor: 'pointer' }}>Yes</button>
+                  <button onClick={() => setDropping(null)} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '4px 12px', fontSize: '12px', cursor: 'pointer' }}>No</button>
                 </div>
-            ))}
+              ) : (
+                <button onClick={() => setDropping(p.player_id)} style={{ backgroundColor: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', padding: '4px 12px', fontSize: '12px', cursor: 'pointer' }}>
+                  Drop
+                </button>
+              )}
+            </div>
+          ))}
         </div>
     </div>
   )
