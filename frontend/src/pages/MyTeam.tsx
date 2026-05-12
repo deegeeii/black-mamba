@@ -108,7 +108,7 @@ export default function MyTeam() {
       axios.get(`${API_URL}/leagues/${leagueId}/free-agents`, { headers }),
       axios.get(`${API_URL}/leagues/${leagueId}/trades`, { headers }),
       axios.get(`${API_URL}/leagues/${leagueId}/members`, { headers }),
-      axios.get(`${API_URL}/players`, { headers }),
+      axios.get(`${API_URL}/draft/players`, { headers }),
     ]).then(([r, l, sc, fa, t, m, p]) => {
       if (r.status === 'fulfilled') setRoster(r.value.data)
       if (l.status === 'fulfilled') {
