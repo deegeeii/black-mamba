@@ -1,5 +1,6 @@
 # backend/app/services/trade.py
 
+from app.services.notification import create_notification
 from typing import Optional
 from app.core.supabase import supabase
 from app.services.waiver import _rostered_player_ids
@@ -38,6 +39,8 @@ def propose_trade(league_id: str, proposer_id: str, opponent_id: str, offer_play
         "status": "pending",
         "week": week,
     }).execute()
+    create_notification(opponent_id, league_id, "trade_offer", f"You have a new trade offer in week {week}")
+    
     return res.data, None
 
 
@@ -65,12 +68,15 @@ def respond_trade(trade_id: str, user_id: str, action: str):
     if trade["opponent_id"] != user_id:
         return None, "Only the opponent can accept or reject"
 
+    league_id = trade["league_id"]
+
     if action == "reject":
         supabase.table("trades").update({"status": "rejected"}).eq("id", trade_id).execute()
+        create_notification(trade["proposer_id"], league_id, "trade_rejected", "Your trade offer was rejected")
         return {"ok": True}, None
 
+
     if action == "accept":
-        league_id = trade["league_id"]
         week = trade["week"]
         proposer_id = trade["proposer_id"]
         opponent_id = trade["opponent_id"]
@@ -82,6 +88,9 @@ def respond_trade(trade_id: str, user_id: str, action: str):
         for pid in trade["request_player_ids"]:
             moves.append({"league_id": league_id, "user_id": opponent_id, "player_id": pid, "move_type": "drop", "week": week})
             moves.append({"league_id": league_id, "user_id": proposer_id, "player_id": pid, "move_type": "add", "week": week})
+
+        create_notification(proposer_id, league_id, "trade_accepted", "Your trade offer was accepted")
+        create_notification(opponent_id, league_id, "trade_accepted", "You accepted a trade")
 
         supabase.table("roster_moves").insert(moves).execute()
         supabase.table("trades").update({"status": "accepted"}).eq("id", trade_id).execute()

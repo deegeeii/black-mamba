@@ -1,5 +1,6 @@
 # backend/app/services/waiver.py
 
+from app.services.notification import create_notification
 from typing import Optional
 from app.core.supabase import supabase
 
@@ -85,6 +86,9 @@ def add_player(league_id: str, user_id: str, player_id: str, drop_player_id: Opt
         rows.append({"league_id": league_id, "user_id": user_id, "player_id": drop_player_id, "move_type": "drop", "week": week})
 
     res = supabase.table("roster_moves").insert(rows).execute()
+    
+    create_notification(user_id, league_id, "waiver_add", f"You added a player to your roster (week {week})")
+
     return res.data, None
 
 
@@ -100,4 +104,7 @@ def drop_player(league_id: str, user_id: str, player_id: str, week: int):
         .insert({"league_id": league_id, "user_id": user_id, "player_id": player_id, "move_type": "drop", "week": week})
         .execute()
     )
+
+    create_notification(user_id, league_id, "waiver_drop", f"You dropped a player from your roster (week {week})")
+
     return res.data, None
