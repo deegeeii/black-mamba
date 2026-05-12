@@ -8,6 +8,9 @@ class ProfileResponse(BaseModel):
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
     favorite_team: Optional[str] = None
+    podcast_1: Optional[str] = None
+    podcast_2: Optional[str] = None
+    podcast_3: Optional[str] = None
     ai_brain: str = 'claude'
 
 class ProfileUpdate(BaseModel):
@@ -15,5 +18,9 @@ class ProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
     favorite_team: Optional[str] = None
+    team_name: Optional[str] = None
+    podcast_1: Optional[str] = None
+    podcast_2: Optional[str] = None
+    podcast_3: Optional[str] = None
     ai_brain: Optional[str] = None
 

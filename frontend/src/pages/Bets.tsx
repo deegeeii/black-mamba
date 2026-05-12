@@ -48,14 +48,34 @@ function ConfirmPayment({ clientSecret, onSuccess }: { clientSecret: string, onS
     }
 
     return (
-        <div style={{ border: '1px solid #ccc', padding: '12px', marginTop: '8px' }} >
-            <CardElement />
-            {error && <p style={{ color: 'red' }} >{error}</p>}
-            <button onClick={handleConfirm} disabled={loading} style={{ marginTop: '8px' }} >
-                {loading ? 'Processing...' : 'Confirm Payment'}
-            </button>
-        </div>
-    )
+      <div style={{ border: '1px solid #333', borderRadius: '8px', padding: '16px', marginTop: '8px', backgroundColor: '#1a1a1a' }}>
+          <CardElement options={{
+              style: {
+                  base: {
+                      color: '#ffffff',
+                      backgroundColor: '#1a1a1a',
+                      fontSize: '15px',
+                      '::placeholder': { color: '#666' },
+                  },
+                  invalid: { color: '#ff4444' }
+              }
+          }} />
+          {error && <p style={{ color: '#ff4444', marginTop: '8px' }}>{error}</p>}
+          <button onClick={handleConfirm} disabled={loading} style={{
+              marginTop: '12px',
+              backgroundColor: loading ? '#333' : '#00ff88',
+              color: loading ? '#666' : '#000',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '8px 20px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontWeight: 'bold'
+          }}>
+              {loading ? 'Processing...' : 'Confirm Payment'}
+          </button>
+      </div>
+  )
+  
 }
 
 function BetsInner() {

@@ -15,6 +15,7 @@ import Matchups from './pages/Matchups'
 import Bets from './pages/Bets'
 import Tournament from './pages/Tournament'
 import Ledger from './pages/Ledger'
+import Chat from './pages/Chat'
 
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -106,6 +107,14 @@ export default function App() {
                   <ProtectedRoute>
                       <AppLayout><Ledger /></AppLayout>
                   </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leagues/:leagueId/chat"
+              element={
+                <ProtectedRoute>
+                  <AppLayout><Chat /></AppLayout>
+                </ProtectedRoute>
               }
             />
             <Route path="*" element={<Navigate to="/login" replace />} />

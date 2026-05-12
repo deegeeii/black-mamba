@@ -9,6 +9,7 @@ const NAV_ITEMS = [
     { label: 'Matchups', path: '/matchups' },
     { label: 'Bets', path: '/bets' },
     { label: 'Tournaments', path: '/tournaments' },
+    { label: 'Chat', path: '/chat' },
     { label: 'Ledger', path: '/ledger' },
     { label: 'Profile', path: '/profile' },
 ]
@@ -17,7 +18,7 @@ const NAV_ITEMS = [
 const styles: Record<string, React.CSSProperties> = {
     sidebar: {
         width: '220px',
-        minHeight: '100vh',
+        height: '100vh',
         backgroundColor: '#0a0a0a',
         display: 'flex',
         flexDirection: 'column',
@@ -25,6 +26,7 @@ const styles: Record<string, React.CSSProperties> = {
         position: 'fixed',
         top: 0,
         left: 0,
+        overflow: 'hidden',
     },
     wordmark: {
         color: '#00ff88',
