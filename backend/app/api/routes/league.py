@@ -26,3 +26,10 @@ def join_existing_league(data: JoinLeague, user_id: str = Depends(get_current_us
     if not league:
         raise HTTPException(status_code=404, detail="Invalid invite code")
     return league
+
+
+@router.get("/{league_id}/members")
+def fetch_members(league_id: str, user_id: str = Depends(get_current_user_id)):
+    from app.core.supabase import supabase
+    res = supabase.table("league_members").select("user_id").eq("league_id", league_id).execute()
+    return res.data or []

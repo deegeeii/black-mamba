@@ -11,6 +11,7 @@ from app.api.routes.bet import router as bet_router
 from app.api.routes.tournament import router as tournament_router
 from app.api.routes.chat import router as chat_router
 from app.api.routes.waiver import router as waiver_router
+from app.api.routes.trade import router as trade_router
 
 
 app = FastAPI(title="Black Mamba API")
@@ -34,6 +35,7 @@ app.include_router(bet_router)
 app.include_router(tournament_router)
 app.include_router(chat_router)
 app.include_router(waiver_router)
+app.include_router(trade_router)
 
 
 @app.get("/")

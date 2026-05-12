@@ -18,6 +18,8 @@ import Ledger from './pages/Ledger'
 import Chat from './pages/Chat'
 import { ThemeProvider } from './contexts/ThemeContext'
 import FreeAgents from './pages/FreeAgents'
+import Trades from './pages/Trades'
+
 
 
 
@@ -133,6 +135,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <AppLayout><FreeAgents /></AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/leagues/:leagueId/trades"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout><Trades /></AppLayout>
                   </ProtectedRoute>
                 }
               />

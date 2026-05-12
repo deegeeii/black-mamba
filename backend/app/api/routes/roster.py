@@ -1,14 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from app.models.roster import RosterPlayer, LineupSlot, SetLineupRequest
 from app.services.roster import get_my_roster, get_lineup, set_lineup
 from app.core.security import get_current_user_id
-from typing import List
+from typing import List, Optional
 
 router = APIRouter(prefix="/leagues", tags=["roster"])
 
 @router.get("/{league_id}/roster", response_model=List[RosterPlayer])
-def fetch_roster(league_id: str, user_id: str = Depends(get_current_user_id)):
-    return get_my_roster(league_id, user_id)
+def fetch_roster(league_id: str, user_id: str = Depends(get_current_user_id), target_user_id: Optional[str] = Query(None)):
+    return get_my_roster(league_id, target_user_id or user_id)
 
 @router.get("/{league_id}/lineup", response_model=List[LineupSlot])
 def fetch_lineup(league_id: str, week: int, user_id: str = Depends(get_current_user_id)):
