@@ -19,6 +19,7 @@ import Chat from './pages/Chat'
 import { ThemeProvider } from './contexts/ThemeContext'
 import FreeAgents from './pages/FreeAgents'
 import Trades from './pages/Trades'
+import Playoffs from './pages/Playoffs'
 
 
 
@@ -143,6 +144,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <AppLayout><Trades /></AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/leagues/:leagueId/playoffs"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout><Playoffs /></AppLayout>
                   </ProtectedRoute>
                 }
               />

@@ -6,9 +6,8 @@ import { useAuth } from '../contexts/AuthContext'
 const NAV_ITEMS = [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'My Team', path: '/team' },
-    { label: 'Free Agents', path: '/free-agents' },
-    { label: 'Trades', path: '/trades' },
     { label: 'Matchups', path: '/matchups' },
+    { label: 'Playoffs', path: '/playoffs' },
     { label: 'Bets', path: '/bets' },
     { label: 'Tournaments', path: '/tournaments' },
     { label: 'Chat', path: '/chat' },
@@ -61,7 +60,8 @@ const styles: Record<string, React.CSSProperties> = {
     nav: {
       flex: 1,
       padding: '16px 0',
-    },
+      overflowY: 'auto' as const,
+    },    
     navItem: {
       display: 'block',
       padding: '12px 24px',
