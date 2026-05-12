@@ -82,76 +82,88 @@ export default function MyTeam() {
   if (loading) return <p>Loading your team...</p>
 
   return (
-    <div>
-      <h1>My Team</h1>
+    <div style={{ maxWidth: '800px' }}>
+        <h1 style={{ marginBottom: '4px' }}>My Team</h1>
+        <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>Week {CURRENT_WEEK} Lineup</p>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {saved && <p style={{ color: 'green' }}>Lineup saved!</p>}
+        {error && <p style={{ color: 'var(--danger)', marginBottom: '12px' }}>{error}</p>}
+        {saved && <p style={{ color: 'var(--accent)', marginBottom: '12px' }}>Lineup saved!</p>}
 
-      <h2>Week {CURRENT_WEEK} Lineup</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Slot</th>
-            <th>Player</th>
-          </tr>
-        </thead>
-        <tbody>
-          {SLOTS.map((slot) => (
-            <tr key={slot}>
-              <td><strong>{slot}</strong></td>
-              <td>
-                <select
-                  value={lineup[slot] || ''}
-                  onChange={(e) => handleSlotChange(slot, e.target.value)}
-                >
-                  <option value="">-- Empty --</option>
-                  {roster.map((p) => (
-                    <option key={p.player_id} value={p.player_id}>
-                      {p.name} ({p.position} - {p.nfl_team})
-                    </option>
-                  ))}
-                </select>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-        {scores.length > 0 && (
-          <>
-            <h2>Week {CURRENT_WEEK} Scores</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Team</th>
-                  <th>Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scores
-                  .sort((a, b) => b.total_points - a.total_points)
-                  .map((s) => (
-                    <tr key={s.user_id}>
-                      <td>{s.user_id === user?.id ? 'You' : s.user_id.slice(0, 8)}</td>
-                      <td><strong>{s.total_points}</strong></td>
+        {/* Lineup */}
+        <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: '16px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                        <th style={{ padding: '12px 16px', color: 'var(--text-dim)', textAlign: 'left', fontWeight: 'normal', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' as const, width: '80px' }}>Slot</th>
+                        <th style={{ padding: '12px 16px', color: 'var(--text-dim)', textAlign: 'left', fontWeight: 'normal', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' as const }}>Player</th>
                     </tr>
-                  ))}
-              </tbody>
+                </thead>
+                <tbody>
+                    {SLOTS.map(slot => (
+                        <tr key={slot} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                            <td style={{ padding: '12px 16px', color: 'var(--accent)', fontWeight: 'bold', fontSize: '12px', letterSpacing: '1px' }}>{slot}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                                <select
+                                    value={lineup[slot] || ''}
+                                    onChange={e => handleSlotChange(slot, e.target.value)}
+                                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 10px', color: 'var(--text)', fontSize: '13px', width: '100%' }}
+                                >
+                                    <option value="">— Empty —</option>
+                                    {roster.map(p => (
+                                        <option key={p.player_id} value={p.player_id}>
+                                            {p.name} ({p.position} - {p.nfl_team})
+                                        </option>
+                                    ))}
+                                </select>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
             </table>
-          </>
+        </div>
+
+        <button onClick={handleSave} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '32px' }}>
+            Save Lineup
+        </button>
+
+        {/* Scores */}
+        {scores.length > 0 && (
+            <>
+                <h2 style={{ marginBottom: '12px' }}>Week {CURRENT_WEEK} Scores</h2>
+                <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: '32px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                <th style={{ padding: '12px 16px', color: 'var(--text-dim)', textAlign: 'left', fontWeight: 'normal', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' as const }}>Team</th>
+                                <th style={{ padding: '12px 16px', color: 'var(--text-dim)', textAlign: 'right', fontWeight: 'normal', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' as const }}>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {scores.sort((a, b) => b.total_points - a.total_points).map((s, i) => (
+                                <tr key={s.user_id} style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: s.user_id === user?.id ? 'var(--accent-dark)' : 'transparent' }}>
+                                    <td style={{ padding: '12px 16px', color: s.user_id === user?.id ? 'var(--accent)' : 'var(--text)' }}>
+                                        {i + 1}. {s.user_id === user?.id ? 'You' : s.user_id.slice(0, 8)}
+                                    </td>
+                                    <td style={{ padding: '12px 16px', color: 'var(--text)', fontWeight: 'bold', textAlign: 'right' }}>{s.total_points}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </>
         )}
 
-
-
-      <button onClick={handleSave}>Save Lineup</button>
-
-      <h2>Full Roster</h2>
-      {roster.map((p) => (
-        <div key={p.player_id}>
-          <span>Rd {p.round}, Pick {p.pick_number} — {p.name} ({p.position} - {p.nfl_team})</span>
+        {/* Full Roster */}
+        <h2 style={{ marginBottom: '12px' }}>Full Roster</h2>
+        <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '4px 0' }}>
+            {roster.map((p, i) => (
+                <div key={p.player_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 16px', borderBottom: i < roster.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+                    <span style={{ color: 'var(--text)' }}>{p.name}</span>
+                    <span style={{ color: 'var(--text-dim)', fontSize: '13px' }}>{p.position} · {p.nfl_team} · Rd {p.round} Pk {p.pick_number}</span>
+                </div>
+            ))}
         </div>
-      ))}
     </div>
   )
+
 }

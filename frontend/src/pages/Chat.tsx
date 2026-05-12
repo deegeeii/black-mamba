@@ -76,20 +76,20 @@ export default function Chat() {
     const formatTime = (iso: string) =>
         new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-    if (!activeLeague) return <p style={{ color: '#666' }}>Select a league from the sidebar.</p>
+    if (!activeLeague) return <p style={{ color: 'var(--text-dim)' }}>Select a league from the sidebar.</p>
 
     return (
         <div style={{ maxWidth: '700px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 48px)' }}>
             <h1 style={{ marginBottom: '4px' }}>League Chat</h1>
-            <p style={{ color: '#666', marginBottom: '16px' }}>{activeLeague.name}</p>
-
+            <p style={{ color: 'var(--text-dim)', marginBottom: '16px' }}>{activeLeague.name}</p>
+    
             {/* Message List */}
             <div style={{
                 flex: 1,
                 overflowY: 'auto',
-                backgroundColor: '#1a1a1a',
-                border: '1px solid #333',
-                borderRadius: '8px',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
                 padding: '16px',
                 marginBottom: '12px',
                 display: 'flex',
@@ -97,12 +97,12 @@ export default function Chat() {
                 gap: '12px'
             }}>
                 {messages.length === 0 && (
-                    <p style={{ color: '#444', textAlign: 'center', marginTop: '40px' }}>
+                    <p style={{ color: 'var(--text-dim)', textAlign: 'center', marginTop: '40px' }}>
                         No messages yet. Say something.
                     </p>
                 )}
                 {messages.map(msg => (
-                    <div 
+                    <div
                         key={msg.id}
                         style={{
                             display: 'flex',
@@ -110,16 +110,16 @@ export default function Chat() {
                             alignItems: msg.user_id === user?.id && !msg.is_bot ? 'flex-end' : 'flex-start'
                         }}
                     >
-                        <span style={{ fontSize: '11px', color: msg.is_bot ? '#ffaa00' : '#666', marginBottom:'4px' }}>
-                        {label(msg)} · {formatTime(msg.created_at)}
+                        <span style={{ fontSize: '11px', color: msg.is_bot ? 'var(--warning)' : 'var(--text-dim)', marginBottom: '4px' }}>
+                            {label(msg)} · {formatTime(msg.created_at)}
                         </span>
                         <div style={{
-                            backgroundColor: msg.is_bot ? '#1f1800' : msg.user_id === user?.id ? '#003322' : '#222',
-                            border: `1px solid ${msg.is_bot ? '#ffaa00' : msg.user_id === user?.id ? '#00ff88' : '#333'}`,
-                            borderRadius: '8px',
+                            backgroundColor: msg.is_bot ? '#1f1800' : msg.user_id === user?.id ? 'var(--accent-dark)' : 'var(--bg-deep)',
+                            border: `1px solid ${msg.is_bot ? 'var(--warning)' : msg.user_id === user?.id ? 'var(--accent)' : 'var(--border)'}`,
+                            borderRadius: 'var(--radius)',
                             padding: '10px 14px',
                             maxWidth: '80%',
-                            color: msg.is_bot ? '#ffcc44' : '#fff',
+                            color: msg.is_bot ? '#ffcc44' : 'var(--text)',
                             fontSize: '14px',
                             lineHeight: '1.5'
                         }}>
@@ -129,42 +129,43 @@ export default function Chat() {
                 ))}
                 <div ref={bottomRef} />
             </div>
+    
             {/* Input */}
             <div style={{ display: 'flex', gap: '8px' }}>
                 <input
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Say something... (Enter to send)"
-                style={{
-                    flex: 1,
-                    backgroundColor: '#1a1a1a',
-                    border: '1px solid #333',
-                    borderRadius: '6px',
-                    padding: '10px 14px',
-                    color: '#fff',
-                    fontSize: '14px',
-                    outline: 'none'
-                }}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Say something... (Enter to send)"
+                    style={{
+                        flex: 1,
+                        backgroundColor: 'var(--bg-input)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        padding: '10px 14px',
+                        color: 'var(--text)',
+                        fontSize: '14px',
+                        outline: 'none'
+                    }}
                 />
                 <button
-                onClick={sendMessage}
-                disabled={sending || !input.trim()}
-                style={{
-                    backgroundColor: sending || !input.trim() ? '#333' : '#00ff88',
-                    color: sending || !input.trim() ? '#666' : '#000',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '10px 20px',
-                    cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
-                    fontWeight: 'bold',
-                    fontSize: '14px'
-                }}
+                    onClick={sendMessage}
+                    disabled={sending || !input.trim()}
+                    style={{
+                        backgroundColor: sending || !input.trim() ? 'var(--border)' : 'var(--accent)',
+                        color: sending || !input.trim() ? 'var(--text-dim)' : '#000',
+                        border: 'none',
+                        borderRadius: 'var(--radius)',
+                        padding: '10px 20px',
+                        cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        fontSize: '14px'
+                    }}
                 >
-                Send
+                    Send
                 </button>
             </div>
-            </div>
+        </div>
     )
-
+    
 }

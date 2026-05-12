@@ -11,6 +11,7 @@ class ProfileResponse(BaseModel):
     podcast_1: Optional[str] = None
     podcast_2: Optional[str] = None
     podcast_3: Optional[str] = None
+    theme_preference: Optional[str] = 'dark'
     ai_brain: str = 'claude'
 
 class ProfileUpdate(BaseModel):
@@ -22,5 +23,6 @@ class ProfileUpdate(BaseModel):
     podcast_1: Optional[str] = None
     podcast_2: Optional[str] = None
     podcast_3: Optional[str] = None
+    theme_preference: Optional[str] = None
     ai_brain: Optional[str] = None
 

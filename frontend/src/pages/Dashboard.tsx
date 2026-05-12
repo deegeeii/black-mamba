@@ -46,15 +46,15 @@ interface MyScore {
 }
 
 const card: React.CSSProperties = {
-  backgroundColor: '#1a1a1a',
-  border: '1px solid #333',
-  borderRadius: '8px',
+  backgroundColor: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius)',
   padding: '20px',
   marginBottom: '16px',
 }
 
 const cardTitle: React.CSSProperties = {
-  color: '#00ff88',
+  color: 'var(--accent)',
   fontSize: '11px',
   letterSpacing: '1px',
   textTransform: 'uppercase',
@@ -107,13 +107,13 @@ export default function Dashboard() {
   const recentBets = bets.slice(0, 3)
   const topStandings = standings.slice(0, 3)
   
-  if (!activeLeague) return <p style={{ color: '#666' }}>Select a league from the sidebar.</p>
+  if (!activeLeague) return <p style={{ color: 'var(--text-dim)' }}>Select a league from the sidebar.</p>
   if (loading) return <p>Loading dashboard...</p>
 
   return (
-    <div style={{ maxWidth: '900px' }}>
+    <div style={{ maxWidth: '900px', color: 'var(--text)' }}>
       <h1 style={{ marginBottom: '4px' }}>Dashboard</h1>
-      <p style={{ color: '#666', marginBottom: '24px' }}>{activeLeague.name}</p>
+      <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>{activeLeague.name}</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 
@@ -121,14 +121,14 @@ export default function Dashboard() {
         <div style={card}>
             <div style={ cardTitle }>Week {CURRENT_WEEK} Score</div>
             {myScore ? (
-              <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#fff'}}>
-                {myScore.total_points.toFixed((1))} <span style={{ fontSize: '16px', color: '#666' }}>pts</span>
+              <div style={{ fontSize: '36px', fontWeight: 'bold', color: 'var(--text)'}}>
+                {myScore.total_points.toFixed((1))} <span style={{ fontSize: '16px', color: 'var(--text-dim)' }}>pts</span>
               </div>
             ) : (
-              <p style={{ color: '#666' }}>No score yet</p>
+              <p style={{ color: 'var(--text-dim)' }}>No score yet</p>
             )}
             {myStanding && (
-              <p style={{ color: '#aaa', marginTop: '8px', fontSize: '14px' }}>
+              <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '14px' }}>
                 Record: {myStanding.wins}W - {myStanding.losses}L
               </p>
             )}
@@ -140,21 +140,21 @@ export default function Dashboard() {
             {myMatchup ? (
               <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: myMatchup.home_user_id === user?.id ? '#00ff88' : '#fff' }}>
+                    <span style={{ color: myMatchup.home_user_id === user?.id ? 'var(--accent)' : 'var(--text)' }}>
                       {label(myMatchup.home_user_id)}
                     </span>
-                    <span style={{ color: '#666', fontSize: '12px' }}>vs</span>
-                    <span style={{ color: myMatchup.away_user_id === user?.id ? '#00ff88' : '#fff' }}>
+                    <span style={{ color: 'var(--text-dim)', fontSize: '12px' }}>vs</span>
+                    <span style={{ color: myMatchup.away_user_id === user?.id ? 'var(--accent)' : 'var(--text)' }}>
                       {label(myMatchup.away_user_id)}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}> 
-                      <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff' }}>{myMatchup.home_points.toFixed(1)}</span>
-                      <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff' }}>{myMatchup.away_points.toFixed(1)}</span>
+                      <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>{myMatchup.home_points.toFixed(1)}</span>
+                      <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>{myMatchup.away_points.toFixed(1)}</span>
                   </div>
               </div>
             ) : (
-                <p style={{ color: '#666' }}>No matchup this week</p>
+                <p style={{ color: 'var(--text-dim)' }}>No matchup this week</p>
             )}
           </div>
           
@@ -163,25 +163,25 @@ export default function Dashboard() {
                           <div style={card}>
                     <div style={cardTitle}>Standings</div>
                     {topStandings.map((s, i) => (
-                        <div key={s.user_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #222' }}>
-                            <span style={{ color: s.user_id === user?.id ? '#00ff88' : '#aaa' }}>
+                        <div key={s.user_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                            <span style={{ color: s.user_id === user?.id ? 'var(--accent)' : 'var(--text-muted)' }}>
                                 {i + 1}. {label(s.user_id)}
                             </span>
-                            <span style={{ color: '#666', fontSize: '13px' }}>{s.wins}W {s.losses}L</span>
+                            <span style={{ color: 'var(--text-dim)', fontSize: '13px' }}>{s.wins}W {s.losses}L</span>
                         </div>
                     ))}
-                    {standings.length === 0 && <p style={{ color: '#666' }}>No standings yet</p>}
+                    {standings.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No standings yet</p>}
                 </div>
 
                 {/* Recent Bets */}
                 <div style={card}>
                     <div style={cardTitle}>Recent Bets</div>
                     {recentBets.length === 0 ? (
-                        <p style={{ color: '#666' }}>No bets yet</p>
+                        <p style={{ color: 'var(--text-dim)' }}>No bets yet</p>
                     ) : recentBets.map(bet => (
-                        <div key={bet.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #222' }}>
-                            <span style={{ color: '#aaa', fontSize: '13px' }}>{bet.bet_type}</span>
-                            <span style={{ color: bet.status === 'settled' ? '#00ff88' : '#ffaa00', fontSize: '13px' }}>
+                        <div key={bet.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{bet.bet_type}</span>
+                            <span style={{ color: bet.status === 'settled' ? 'var(--accent)' : 'var(--warning)', fontSize: '13px' }}>
                                 ${(bet.amount / 100).toFixed(2)} · {bet.status}
                             </span>
                         </div>
@@ -192,11 +192,11 @@ export default function Dashboard() {
                 <div style={{ ...card, gridColumn: '1 / -1' }}>
                     <div style={cardTitle}>Tournaments</div>
                     {tournaments.length === 0 ? (
-                        <p style={{ color: '#666' }}>No tournaments yet</p>
+                        <p style={{ color: 'var(--text-dim)' }}>No tournaments yet</p>
                     ) : tournaments.map(t => (
-                        <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #222' }}>
-                            <span style={{ color: '#fff' }}>{t.name}</span>
-                            <span style={{ color: t.status === 'active' ? '#00ff88' : '#666', fontSize: '13px' }}>
+                        <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                            <span style={{ color: 'var(--text)' }}>{t.name}</span>
+                            <span style={{ color: t.status === 'active' ? 'var(--accent)' : 'var(--text-dim)', fontSize: '13px' }}>
                                 {t.status} · {t.ai_brain}
                             </span>
                         </div>

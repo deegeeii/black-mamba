@@ -48,7 +48,7 @@ function ConfirmPayment({ clientSecret, onSuccess }: { clientSecret: string, onS
     }
 
     return (
-      <div style={{ border: '1px solid #333', borderRadius: '8px', padding: '16px', marginTop: '8px', backgroundColor: '#1a1a1a' }}>
+      <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px', marginTop: '8px', backgroundColor: 'var(--bg-card)' }}>
           <CardElement options={{
               style: {
                   base: {
@@ -60,13 +60,13 @@ function ConfirmPayment({ clientSecret, onSuccess }: { clientSecret: string, onS
                   invalid: { color: '#ff4444' }
               }
           }} />
-          {error && <p style={{ color: '#ff4444', marginTop: '8px' }}>{error}</p>}
+          {error && <p style={{ color: 'var(--danger)', marginTop: '8px' }}>{error}</p>}
           <button onClick={handleConfirm} disabled={loading} style={{
               marginTop: '12px',
-              backgroundColor: loading ? '#333' : '#00ff88',
-              color: loading ? '#666' : '#000',
+              backgroundColor: loading ? 'var(--border)' : 'var(--accent)',
+              color: loading ? 'var(--text-dim)' : '#000',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius)',
               padding: '8px 20px',
               cursor: loading ? 'not-allowed' : 'pointer',
               fontWeight: 'bold'
@@ -75,6 +75,7 @@ function ConfirmPayment({ clientSecret, onSuccess }: { clientSecret: string, onS
           </button>
       </div>
   )
+  
   
 }
 
@@ -137,65 +138,66 @@ function BetsInner() {
       if (loading) return <p>Loading bets...</p>
 
       return (
-        <div>
-          <h1>Side Bets</h1>
+        <div style={{ maxWidth: '700px' }}>
+            <h1 style={{ marginBottom: '16px' }}>Side Bets</h1>
     
-          <button onClick={() => setShowCreate(!showCreate)}>+ New Bet</button>
+            <button onClick={() => setShowCreate(!showCreate)} style={{
+                backgroundColor: 'var(--accent)', color: '#000', border: 'none',
+                borderRadius: 'var(--radius)', padding: '10px 20px',
+                cursor: 'pointer', fontWeight: 'bold', marginBottom: '16px'
+            }}>+ New Bet</button>
     
-          {showCreate && (
-            <div style={{ border: '1px solid #ccc', padding: '12px', margin: '8px 0' }}>
-              <h3>Create a Bet</h3>
-              <div>
-                <label>Type </label>
-                <select value={betType} onChange={(e) => setBetType(e.target.value)}>
-                  <option value="weekly_matchup">Weekly Matchup</option>
-                  <option value="season_long">Season Long</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </div>
-              <div>
-                <label>Amount (cents) </label>
-                <input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} min={100} />
-                <small> e.g. 1000 = $10.00</small>
-              </div>
-              {betType === 'weekly_matchup' && (
-                <div>
-                  <label>Week </label>
-                  <input type="number" value={week} onChange={(e) => setWeek(Number(e.target.value))} min={1} max={18} />
+            {showCreate && (
+                <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px', marginBottom: '16px' }}>
+                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Create a Bet</h3>
+                    {[
+                        { lbl: 'Type', el: <select value={betType} onChange={e => setBetType(e.target.value)} style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px', color: 'var(--text)', fontSize: '14px', marginTop: '6px' }}><option value="weekly_matchup">Weekly Matchup</option><option value="season_long">Season Long</option><option value="custom">Custom</option></select> },
+                        { lbl: 'Amount (cents)', el: <><input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} min={100} style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px', color: 'var(--text)', fontSize: '14px', marginTop: '6px' }} /><small style={{ color: 'var(--text-dim)' }}>e.g. 1000 = $10.00</small></> },
+                        { lbl: 'Description', el: <input value={description} onChange={e => setDescription(e.target.value)} style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px', color: 'var(--text)', fontSize: '14px', marginTop: '6px' }} /> },
+                    ].map(({ lbl, el }) => (
+                        <div key={lbl} style={{ marginBottom: '12px' }}>
+                            <label style={{ color: 'var(--text-dim)', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' as const }}>{lbl}</label>
+                            {el}
+                        </div>
+                    ))}
+                    {betType === 'weekly_matchup' && (
+                        <div style={{ marginBottom: '12px' }}>
+                            <label style={{ color: 'var(--text-dim)', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' as const }}>Week</label>
+                            <input type="number" value={week} onChange={e => setWeek(Number(e.target.value))} min={1} max={18} style={{ width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px', color: 'var(--text)', fontSize: '14px', marginTop: '6px' }} />
+                        </div>
+                    )}
+                    <button onClick={handleCreate} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', cursor: 'pointer', fontWeight: 'bold' }}>Create & Pay</button>
                 </div>
-              )}
-              <div>
-                <label>Description </label>
-                <input value={description} onChange={(e) => setDescription(e.target.value)} />
-              </div>
-              <button onClick={handleCreate}>Create & Pay</button>
-            </div>
-          )}
+            )}
     
-          {clientSecret && (
-            <ConfirmPayment
-              clientSecret={clientSecret}
-              onSuccess={() => { setClientSecret(''); fetchBets() }}
-            />
-          )}
+            {clientSecret && (
+                <ConfirmPayment clientSecret={clientSecret} onSuccess={() => { setClientSecret(''); fetchBets() }} />
+            )}
     
-          <h2>Active Bets</h2>
-          {bets.length === 0 ? <p>No bets yet.</p> : bets.map((bet) => (
-            <div key={bet.id} style={{ border: '1px solid #ccc', padding: '8px', margin: '8px 0' }}>
-              <p><strong>{bet.bet_type}</strong> — ${(bet.amount / 100).toFixed(2)} each | Status: {bet.status}</p>
-              <p>Proposer: {label(bet.proposer_id)} | Opponent: {label(bet.opponent_id)}</p>
-              {bet.description && <p>{bet.description}</p>}
-              {bet.week && <p>Week {bet.week}</p>}
-              <p>Rake: {bet.rake_percent}% | Pot: ${(bet.amount * 2 / 100).toFixed(2)} | Winner gets: ${(bet.amount * 2 * (1 - bet.rake_percent / 100) / 100).toFixed(2)}</p>
-              {bet.status === 'pending' && bet.proposer_id !== user?.id && (
-                <button onClick={() => handleAccept(bet.id)}>Accept Bet</button>
-              )}
-              {bet.winner_id && <p>Winner: {label(bet.winner_id)}</p>}
-            </div>
-          ))}
+            <h2 style={{ marginBottom: '12px', marginTop: '8px' }}>Active Bets</h2>
+            {bets.length === 0 ? (
+                <p style={{ color: 'var(--text-dim)' }}>No bets yet.</p>
+            ) : bets.map(bet => (
+                <div key={bet.id} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase' as const, fontSize: '12px', letterSpacing: '1px' }}>{bet.bet_type}</span>
+                        <span style={{ color: bet.status === 'settled' ? 'var(--accent)' : 'var(--warning)', fontSize: '12px' }}>{bet.status}</span>
+                    </div>
+                    <p style={{ color: 'var(--text)', marginBottom: '4px' }}>${(bet.amount / 100).toFixed(2)} each</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '4px' }}>Proposer: {label(bet.proposer_id)} | Opponent: {label(bet.opponent_id)}</p>
+                    {bet.description && <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '4px' }}>{bet.description}</p>}
+                    {bet.week && <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '4px' }}>Week {bet.week}</p>}
+                    <p style={{ color: 'var(--text-dim)', fontSize: '12px', marginBottom: '8px' }}>Rake: {bet.rake_percent}% | Pot: ${(bet.amount * 2 / 100).toFixed(2)} | Winner gets: ${(bet.amount * 2 * (1 - bet.rake_percent / 100) / 100).toFixed(2)}</p>
+                    {bet.status === 'pending' && bet.proposer_id !== user?.id && (
+                        <button onClick={() => handleAccept(bet.id)} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Accept Bet</button>
+                    )}
+                    {bet.winner_id && <p style={{ color: 'var(--accent)', marginTop: '8px', fontSize: '13px' }}>Winner: {label(bet.winner_id)}</p>}
+                </div>
+            ))}
         </div>
-      )
-    }
+    )
+    
+  }
     
     export default function Bets() {
       return (

@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -26,32 +27,33 @@ interface Profile {
 
 const inputStyle: React.CSSProperties = {
     width: '100%',
-    backgroundColor: '#1a1a1a',
-    border: '1px solid #333',
-    borderRadius: '6px',
+    backgroundColor: 'var(--bg-input)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)',
     padding: '10px',
-    color: '#fff',
+    color: 'var(--text)',
     fontSize: '14px',
     marginTop: '6px',
 }
 
 const labelStyle: React.CSSProperties = {
-    color: '#666',
+    color: 'var(--text-dim)',
     fontSize: '12px',
     letterSpacing: '1px',
     textTransform: 'uppercase',
 }
 
 const sectionStyle: React.CSSProperties = {
-    backgroundColor: '#1a1a1a',
-    border: '1px solid #333',
-    borderRadius: '8px',
+    backgroundColor: 'var(--bg-card)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)',
     padding: '20px',
     marginBottom: '16px',
 }
 
 export default function Profile() {
     const { session } = useAuth()
+    const { theme, toggleTheme } = useTheme()
     const [username, setUsername] = useState('')
     const [fullName, setFullName] = useState('')
     const [teamName, setTeamName] = useState('')
@@ -112,12 +114,40 @@ export default function Profile() {
     return (
         <div style={{ maxWidth: '600px' }}>
             <h1 style={{ marginBottom: '4px' }}>Profile Settings</h1>
-            <p style={{ color: '#666', marginBottom: '24px' }}>Manage your account and preferences</p>
+            <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>Manage your account and preferences</p>
+
+            {/* Appearance — outside form so toggle is instant */}
+            <div style={sectionStyle}>
+                <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Appearance</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div style={{ color: 'var(--text)', fontSize: '14px' }}>Theme</div>
+                        <div style={{ color: 'var(--text-dim)', fontSize: '12px', marginTop: '2px' }}>
+                            Currently: {theme === 'dark' ? 'Dark' : 'Light'}
+                        </div>
+                    </div>
+                    <button
+                        onClick={toggleTheme}
+                        style={{
+                            backgroundColor: 'var(--bg-input)',
+                            border: '1px solid var(--border)',
+                            borderRadius: '20px',
+                            padding: '8px 20px',
+                            color: 'var(--accent)',
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            letterSpacing: '1px',
+                        }}
+                    >
+                        {theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
+                    </button>
+                </div>
+            </div>
 
             <form onSubmit={handleSave}>
-
                 <div style={sectionStyle}>
-                    <h3 style={{ color: '#00ff88', marginBottom: '16px' }}>Identity</h3>
+                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Identity</h3>
                     <div style={{ marginBottom: '12px' }}>
                         <label style={labelStyle}>Username</label>
                         <input style={inputStyle} value={username} onChange={e => setUsername(e.target.value)} required />
@@ -133,7 +163,7 @@ export default function Profile() {
                 </div>
 
                 <div style={sectionStyle}>
-                    <h3 style={{ color: '#00ff88', marginBottom: '16px' }}>NFL Allegiance</h3>
+                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>NFL Allegiance</h3>
                     <div>
                         <label style={labelStyle}>Favorite NFL Team</label>
                         <select style={inputStyle} value={favoriteTeam} onChange={e => setFavoriteTeam(e.target.value)}>
@@ -144,7 +174,7 @@ export default function Profile() {
                 </div>
 
                 <div style={sectionStyle}>
-                    <h3 style={{ color: '#00ff88', marginBottom: '16px' }}>Top 3 Podcasts</h3>
+                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Top 3 Podcasts</h3>
                     {[
                         { label: 'Podcast #1', value: podcast1, set: setPodcast1 },
                         { label: 'Podcast #2', value: podcast2, set: setPodcast2 },
@@ -158,7 +188,7 @@ export default function Profile() {
                 </div>
 
                 <div style={sectionStyle}>
-                    <h3 style={{ color: '#00ff88', marginBottom: '16px' }}>AI Preference</h3>
+                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>AI Preference</h3>
                     <div>
                         <label style={labelStyle}>Personal AI Assistant</label>
                         <select style={inputStyle} value={aiBrain} onChange={e => setAiBrain(e.target.value)}>
@@ -170,14 +200,14 @@ export default function Profile() {
                 </div>
 
                 {message && (
-                    <p style={{ color: message.includes('saved') ? '#00ff88' : '#ff4444', marginBottom: '12px' }}>
+                    <p style={{ color: message.includes('saved') ? 'var(--accent)' : 'var(--danger)', marginBottom: '12px' }}>
                         {message}
                     </p>
                 )}
                 <button
                     type="submit"
                     disabled={saving}
-                    style={{ backgroundColor: '#00ff88', color: '#000', border: 'none', borderRadius: '6px', padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}
+                    style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}
                 >
                     {saving ? 'Saving...' : 'Save Profile'}
                 </button>
