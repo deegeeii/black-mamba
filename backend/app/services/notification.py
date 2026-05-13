@@ -1,6 +1,8 @@
 # backend/app/services/notification.py
 
 from app.core.supabase import supabase
+from app.services.email import send_notification_email
+
 
 
 def create_notification(user_id: str, league_id: str, type: str, message: str):
@@ -10,6 +12,7 @@ def create_notification(user_id: str, league_id: str, type: str, message: str):
         "type": type,
         "message": message,
     }).execute()
+    send_notification_email(user_id, type, message)
 
 
 def get_notifications(user_id: str, league_id: str):
