@@ -13,6 +13,7 @@ import ProfileScreen from './src/screens/ProfileScreen'
 import { StripeProvider } from '@stripe/stripe-react-native'
 import BetsScreen from './src/screens/BetsScreen'
 import ChatScreen from './src/screens/ChatScreen'
+import MyTeamScreen from './src/screens/MyTeamScreen'
 
 
 
@@ -41,6 +42,7 @@ function RootNavigator() {
                             <Stack.Screen name="Profile" component={ProfileScreen} />
                             <Stack.Screen name="Bets" component={BetsScreen} />
                             <Stack.Screen name="Chat" component={ChatScreen} />
+                            <Stack.Screen name="MyTeam" component={MyTeamScreen} />
 
                         </>
                     ) : (
