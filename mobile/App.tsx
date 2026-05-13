@@ -6,6 +6,15 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext'
 import { ThemeProvider } from './src/contexts/ThemeContext'
 import LoginScreen from './src/screens/LoginScreen'
 import DashboardScreen from './src/screens/DashboardScreen'
+import StandingsScreen from './src/screens/StandingsScreen'
+import { LeagueProvider } from './src/contexts/LeagueContext'
+import MatchupsScreen from './src/screens/MatchupsScreen'
+import ProfileScreen from './src/screens/ProfileScreen'
+import { StripeProvider } from '@stripe/stripe-react-native'
+import BetsScreen from './src/screens/BetsScreen'
+import ChatScreen from './src/screens/ChatScreen'
+
+
 
 const Stack = createNativeStackNavigator()
 
@@ -21,24 +30,39 @@ function RootNavigator() {
     }
 
     return (
-        <ThemeProvider userId={user?.id ?? null}>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-                {session ? (
-                    <Stack.Screen name="Dashboard" component={DashboardScreen} />
-                ) : (
-                    <Stack.Screen name="Login" component={LoginScreen} />
-                )}
-            </Stack.Navigator>
-        </ThemeProvider>
+        <LeagueProvider userId={user?.id ?? null}>
+            <ThemeProvider userId={user?.id ?? null}>
+                <Stack.Navigator screenOptions={{ headerShown: false }}>
+                    {session ? (
+                        <>
+                            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+                            <Stack.Screen name="Standings" component={StandingsScreen} />
+                            <Stack.Screen name="Matchups" component={MatchupsScreen} />
+                            <Stack.Screen name="Profile" component={ProfileScreen} />
+                            <Stack.Screen name="Bets" component={BetsScreen} />
+                            <Stack.Screen name="Chat" component={ChatScreen} />
+
+                        </>
+                    ) : (
+                        <Stack.Screen name="Login" component={LoginScreen} />
+                    )}
+                </Stack.Navigator>
+            </ThemeProvider>
+        </LeagueProvider>
     )
 }
 
 export default function App() {
     return (
-        <AuthProvider>
-            <NavigationContainer>
-                <RootNavigator />
-            </NavigationContainer>
-        </AuthProvider>
+        <StripeProvider 
+            publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
+            merchantIdentifier="merchant.com.blackmambe"
+        >
+            <AuthProvider>
+                <NavigationContainer>
+                    <RootNavigator />
+                </NavigationContainer>
+            </AuthProvider>
+        </StripeProvider>
     )
 }

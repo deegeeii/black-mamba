@@ -1,51 +1,63 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { useNavigation } from '@react-navigation/native'
+import { Picker } from '@react-native-picker/picker'
+import { useLeague } from '../contexts/LeagueContext'
+
+
 
 export default function DashboardScreen() {
     const { user, signOut } = useAuth()
     const { theme, isDark, toggleTheme } = useTheme()
+    const navigation = useNavigation<any>()
+    const { leagues, activeLeague, setActiveLeague } = useLeague()
+
 
     return (
         <ScrollView style={{ flex: 1, backgroundColor: theme.bg }} contentContainerStyle={styles.content}>
-            <View style={styles.header}>
+                        <View style={styles.header}>
                 <Text style={[styles.wordmark, { color: theme.accent }]}>BLACK MAMBA</Text>
-                <View style={styles.headerRight}>
-                    <Switch
-                        value={isDark}
-                        onValueChange={toggleTheme}
-                        trackColor={{ false: theme.border, true: theme.accentDark }}
-                        thumbColor={isDark ? theme.accent : theme.textMuted}
-                    />
-                    <TouchableOpacity onPress={signOut} style={{ marginLeft: 16 }}>
-                        <Text style={{ color: theme.textDim, fontSize: 13 }}>Sign Out</Text>
-                    </TouchableOpacity>
-                </View>
+                <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+                    <Text style={{ color: theme.textDim, fontSize: 13 }}>Profile ›</Text>
+                </TouchableOpacity>
             </View>
+
 
             <Text style={[styles.welcome, { color: theme.textMuted }]}>Welcome back</Text>
             <Text style={[styles.email, { color: theme.text }]}>{user?.email}</Text>
 
             <View style={styles.cardRow}>
-                <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('MyTeam')}>
                     <Text style={[styles.cardLabel, { color: theme.text }]}>My Team</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>View roster & lineup</Text>
-                </View>
-                <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Matchups')}>
                     <Text style={[styles.cardLabel, { color: theme.text }]}>Matchups</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>This week's games</Text>
-                </View>
+                </TouchableOpacity>
             </View>
 
             <View style={styles.cardRow}>
-                <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
-                    <Text style={[styles.cardLabel, { color: theme.text }]}>Bets</Text>
-                    <Text style={[styles.cardSub, { color: theme.textDim }]}>H2H side bets</Text>
-                </View>
-                <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Standings')}>
                     <Text style={[styles.cardLabel, { color: theme.text }]}>Standings</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>League rankings</Text>
-                </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Bets')}>
+                    <Text style={[styles.cardLabel, { color: theme.text }]}>Bets</Text>
+                    <Text style={[styles.cardSub, { color: theme.textDim }]}>H2H side bets</Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.cardRow}>
+                <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Chat')}>
+                    <Text style={[styles.cardLabel, { color: theme.text }]}>Chat</Text>
+                    <Text style={[styles.cardSub, { color: theme.textDim }]}>League chat & AI bot</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Profile')}>
+                    <Text style={[styles.cardLabel, { color: theme.text }]}>Profile</Text>
+                    <Text style={[styles.cardSub, { color: theme.textDim }]}>Settings & appearance</Text>
+                </TouchableOpacity>
             </View>
         </ScrollView>
     )
@@ -71,6 +83,19 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         letterSpacing: 3,
     },
+    leagueRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 20,
+        flexWrap: 'wrap',
+    },
+    leagueBtn: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+
     welcome: {
         fontSize: 14,
         marginBottom: 4,
