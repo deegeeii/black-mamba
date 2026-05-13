@@ -126,7 +126,9 @@ export default function MyTeamScreen() {
     }
 
     const handleSaveLineup = async () => {
-        const slots = Object.entries(lineup).map(([slot, player_id]) => ({ slot, player_id }))
+        const slots = Object.fromEntries(
+            Object.entries(lineup).filter(([_, id]) => id)
+        )
         await fetch(`${API}/leagues/${activeLeague!.id}/lineup`, {
             method: 'POST', headers,
             body: JSON.stringify({ week: CURRENT_WEEK, slots }),
@@ -134,6 +136,7 @@ export default function MyTeamScreen() {
         setLineupSaved(true)
         setTimeout(() => setLineupSaved(false), 2000)
     }
+    
 
     const playerName = (id: string) => allPlayers[id]?.name || id.slice(0, 8)
     const eligibleForSlot = (slot: string) => {

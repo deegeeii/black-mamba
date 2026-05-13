@@ -29,7 +29,7 @@ export default function BetsScreen() {
     const [loading, setLoading] = useState(true)
     const [showCreate, setShowCreate] = useState(false)
     const [amount, setAmount] = useState('')
-    const [betType, setBetType] = useState('weekly')
+    const [betType, setBetType] = useState('weekly_matchup')
     const [opponentId, setOpponentId] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
@@ -50,17 +50,27 @@ export default function BetsScreen() {
         if (!amount) { setError('Enter an amount'); return }
         setSubmitting(true)
         setError('')
+        console.log('posting to:', `${API}/leagues/${activeLeague!.id}/bets`)
+        console.log('body:', JSON.stringify({
+            opponent_id: opponentId.trim() || null,
+            amount: Math.round(parseFloat(amount) * 100),
+            bet_type: betType,
+            week: 1,
+        }))
+
         try {
             const res = await fetch(`${API}/leagues/${activeLeague!.id}/bets`, {
                 method: 'POST', headers,
                 body: JSON.stringify({
-                    opponent_id: opponentId,
+                    opponent_id: opponentId.trim() || null,
                     amount: Math.round(parseFloat(amount) * 100),
                     bet_type: betType,
                     week: 1,
                 }),
             })
-            const { client_secret } = await res.json()
+            const data = await res.json()
+            if (!res.ok) { setError(data.detail || 'Failed to create bet'); setSubmitting(false); return }
+            const { client_secret } = data
             const { error: initError } = await initPaymentSheet({ paymentIntentClientSecret: client_secret, merchantDisplayName: 'Black Mamba' })
             if (initError) { setError(initError.message); setSubmitting(false); return }
             const { error: payError } = await presentPaymentSheet()
@@ -68,9 +78,10 @@ export default function BetsScreen() {
             setShowCreate(false)
             setAmount(''); setOpponentId(''); setBetType('weekly')
             fetchBets()
-        } catch { setError('Failed to create bet') }
+        } catch (e) { console.log('bet error:', e); setError('Failed to create bet') }
         setSubmitting(false)
     }
+    
 
     const handleAccept = async (bet: Bet) => {
         try {
@@ -173,13 +184,13 @@ export default function BetsScreen() {
 
                     <Text style={[styles.label, { color: theme.textMuted }]}>BET TYPE</Text>
                     <View style={styles.typeRow}>
-                        {['weekly', 'season', 'playoff'].map(t => (
+                        {['weekly_matchup', 'season_long', 'custom'].map(t => (
                             <TouchableOpacity
                                 key={t}
                                 style={[styles.typeBtn, { backgroundColor: betType === t ? theme.accent : theme.bgCard, borderColor: betType === t ? theme.accent : theme.border }]}
                                 onPress={() => setBetType(t)}
                             >
-                                <Text style={{ color: betType === t ? '#000' : theme.textMuted, fontSize: 13 }}>{t}</Text>
+                                <Text style={{ color: betType === t ? '#000' : theme.textMuted, fontSize: 13 }}>{t.replace('_', ' ')}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>

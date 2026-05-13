@@ -33,11 +33,17 @@ export default function ProfileScreen() {
     const handleSave = async () => {
         if (!user) return
         setSaving(true)
-        await supabase.from('profiles').update({ username, team_name: teamName }).eq('id', user.id)
+        const { error } = await supabase.from('profiles').update({ username, team_name: teamName }).eq('id', user.id)
+        if (error) console.log('save error:', error.message)
         setSaving(false)
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
+        const { data: { session: sbSession } } = await supabase.auth.getSession()
+        console.log('supabase session uid:', sbSession?.user?.id)
+        console.log('auth user id:', user?.id)
+
     }
+    
 
     return (
         <ScrollView style={{ flex: 1, backgroundColor: theme.bg }} contentContainerStyle={styles.content}>

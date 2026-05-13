@@ -72,6 +72,8 @@ export default function Dashboard() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [myScore, setMyScore] = useState<MyScore | null>(null)
   const [loading, setLoading] = useState(true)
+  const [username, setUsername] = useState<string | null>(null)
+
 
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${session?.access_token}` }),
@@ -88,12 +90,17 @@ export default function Dashboard() {
         axios.get(`${API_URL}/leagues/${id}/bets`, { headers }),
         axios.get(`${API_URL}/leagues/${id}/tournaments`, { headers }),
         axios.get(`${API_URL}/leagues/${id}/scores/me`, { headers }),
-    ]).then(([s, m, b, t, sc]) => {
+        axios.get(`${API_URL}/profile/`, { headers }),
+
+    ]).then(([s, m, b, t, sc, p]) => {
         if (s.status === 'fulfilled') setStandings(s.value.data)
         if (m.status === 'fulfilled') setMatchups(m.value.data)
         if (b.status === 'fulfilled') setBets(b.value.data)
         if (t.status === 'fulfilled') setTournaments(t.value.data)
         if (sc.status === 'fulfilled') setMyScore(sc.value.data)
+          // add this line:
+        if (p.status === 'fulfilled') setUsername(p.value.data.username || null)
+            
         setLoading(false)
     })
   }, [activeLeague, session])
@@ -112,8 +119,10 @@ export default function Dashboard() {
 
   return (
     <div style={{ maxWidth: '900px', color: 'var(--text)' }}>
-      <h1 style={{ marginBottom: '4px' }}>Dashboard</h1>
+      <p style={{ color: 'var(--text-dim)', marginBottom: '4px', fontSize: '14px' }}>Hey there</p>
+      <h1 style={{ marginBottom: '4px' }}>{username || user?.email}</h1>
       <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>{activeLeague.name}</p>
+
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 
