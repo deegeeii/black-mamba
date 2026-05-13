@@ -29,7 +29,7 @@ export default function TournamentListScreen() {
     const [tournaments, setTournaments] = useState<Tournament[]>([])
     const [loading, setLoading] = useState(true)
 
-    const headers = { Authorization: `Bearer ${session?.access_token} `}
+    const headers = { Authorization: `Bearer ${session?.access_token}`}
 
     useEffect(() => {
         if (!activeLeague || !session) return
@@ -39,7 +39,7 @@ export default function TournamentListScreen() {
             .catch(() => setLoading(false))
     }, [activeLeague?.id, session])
 
-    const statusColor = (statu: string) => {
+    const statusColor = (status: string) => {
         if (status === 'open') return theme.accent
         if (status === 'active') return theme.warning
         return theme.textDim
@@ -65,7 +65,11 @@ export default function TournamentListScreen() {
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}
                     renderItem={({ item }) => (
-                        <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                        <TouchableOpacity 
+                            key={item.id} 
+                            style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+                            onPress={() => (navigation as any).navigate('TournamentDetail', { tournament: item })}
+                            >
                             <View style={styles.cardTop}>
                                 <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
                                 <Text style={[styles.status, { color: statusColor(item.status) }]}>
@@ -88,7 +92,7 @@ export default function TournamentListScreen() {
                                     </Text>
                                 )}
                             </View>
-                        </View>
+                        </TouchableOpacity>
                     )}
                 />
             )}

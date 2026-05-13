@@ -15,42 +15,62 @@ export default function DashboardScreen() {
     const { leagues, activeLeague, setActiveLeague } = useLeague()
     const { theme } = useTheme()
     const [ledger, setLedger] = useState<{ won: number; lost: number; balance: number } | null>(null)
+    const [pendingTrades, setPendingTrades] = useState(0)
+    const [openBets, setOpenBets] = useState(0)
+    
 
     useEffect(() => {
         if (!activeLeague || !session) return
-        fetch(`${API}/leagues/${activeLeague.id}/bets`, {
-            headers: { Authorization: `Bearer ${session.access_token}` }
-        })
-            .then(r => r.json())
-            .then(data => {
-                if (!Array.isArray(data)) return
-                const myBets = data.filter((b: any) => b.status === 'settled')
-                const won = myBets.filter((b: any) => b.winner_user_id === user?.id).reduce((s: number, b: any) => s + (b.amount || 0), 0)
-                const lost = myBets.filter((b: any) => b.winner_user_id && b.winner_user_id !== user?.id).reduce((s: number, b: any) => s + (b.amount || 0), 0)
+        const h = { Authorization: `Bearer ${session.access_token}` }
+        Promise.allSettled([
+            fetch(`${API}/leagues/${activeLeague.id}/bets`, { headers: h }).then(r => r.json()),
+            fetch(`${API}/leagues/${activeLeague.id}/trades`, { headers: h }).then(r => r.json()),
+        ]).then(([betsRes, tradesRes]) => {
+            if (betsRes.status === 'fulfilled' && Array.isArray(betsRes.value)) {
+                const data = betsRes.value
+                const settled = data.filter((b: any) => b.status === 'settled')
+                const won = settled.filter((b: any) => b.winner_id === user?.id).reduce((s: number, b: any) => s + (b.amount || 0), 0)
+                const lost = settled.filter((b: any) => b.winner_id && b.winner_id !== user?.id).reduce((s: number, b: any) => s + (b.amount || 0), 0)
                 setLedger({ won, lost, balance: won - lost })
-            })
-            .catch(() => {})
+                const actionable = data.filter((b: any) =>
+                    b.status === 'pending' &&
+                    b.proposer_id !== user?.id &&
+                    (!b.opponent_id || b.opponent_id === user?.id)
+                )
+                setOpenBets(actionable.length)
+            }
+            if (tradesRes.status === 'fulfilled' && Array.isArray(tradesRes.value)) {
+                const incoming = tradesRes.value.filter((t: any) => t.opponent_id === user?.id && t.status === 'pending')
+                setPendingTrades(incoming.length)
+            }
+        }).catch(() => {})
     }, [activeLeague?.id, session])
-
 
 
     return (
         <ScrollView style={{ flex: 1, backgroundColor: theme.bg }} contentContainerStyle={styles.content}>
-                        <View style={styles.header}>
-                <Text style={[styles.wordmark, { color: theme.accent }]}>BLACK MAMBA</Text>
+            <View style={styles.header}>
+                <View>
+                    <Text style={[styles.wordmark, { color: theme.accent }]}>BLACK MAMBA</Text>
+                    {activeLeague && (
+                        <Text style={[styles.leagueName, { color: theme.textDim }]}>{activeLeague.name}</Text>
+                    )}
+                </View>
                 <TouchableOpacity onPress={() => navigation.navigate('Arena')}>
                     <Text style={{ color: theme.accent, fontSize: 13, fontWeight: 'bold' }}>Arena ›</Text>
                 </TouchableOpacity>
-
             </View>
 
 
-            <Text style={[styles.welcome, { color: theme.textMuted }]}>Welcome back</Text>
+            <Text style={[styles.welcome, { color: theme.textMuted }]}>Hey there</Text>
             <Text style={[styles.email, { color: theme.text }]}>{user?.email}</Text>
 
             <View style={styles.cardRow}>
                 <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('MyTeam')}>
+                <View style={styles.dotRow}>
                     <Text style={[styles.cardLabel, { color: theme.text }]}>My Team</Text>
+                    {pendingTrades > 0 && <View style={[styles.dot, { backgroundColor: '#ffcc44' }]} />}
+                </View>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>View roster & lineup</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Matchups')}>
@@ -65,16 +85,22 @@ export default function DashboardScreen() {
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>League rankings</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Bets')}>
-                    <Text style={[styles.cardLabel, { color: theme.text }]}>Bets</Text>
+                    <View style={styles.dotRow}>
+                        <Text style={[styles.cardLabel, { color: theme.text }]}>Bets</Text>
+                        {openBets > 0 && <View style={[styles.dot, { backgroundColor: '#ffcc44' }]} />}
+                    </View>
+
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>H2H side bets</Text>
                 </TouchableOpacity>
             </View>
 
             <View style={styles.cardRow}>
-                <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Chat')}>
-                    <Text style={[styles.cardLabel, { color: theme.text }]}>Chat</Text>
-                    <Text style={[styles.cardSub, { color: theme.textDim }]}>League chat & AI bot</Text>
-                </TouchableOpacity>
+            <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Chat')}>
+                <Text style={[styles.cardLabel, { color: theme.text }]}>Chat</Text>
+                <Text style={[styles.cardSub, { color: theme.textDim }]}>League chat & AI bot</Text>
+            </TouchableOpacity>
+
+
                 <TouchableOpacity style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]} onPress={() => navigation.navigate('Profile')}>
                     <Text style={[styles.cardLabel, { color: theme.text }]}>Profile</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>Settings & appearance</Text>
@@ -125,6 +151,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         letterSpacing: 3,
     },
+    leagueName: {
+        fontSize: 12,
+        letterSpacing: 1,
+        marginTop: 3,
+    },    
     leagueRow: {
         flexDirection: 'row',
         gap: 8,
@@ -139,11 +170,11 @@ const styles = StyleSheet.create({
     },
 
     welcome: {
-        fontSize: 14,
+        fontSize: 15,
         marginBottom: 4,
     },
     email: {
-        fontSize: 20,
+        fontSize: 19,
         fontWeight: 'bold',
         marginBottom: 32,
     },
@@ -161,11 +192,22 @@ const styles = StyleSheet.create({
     cardLabel: {
         fontSize: 15,
         fontWeight: 'bold',
-        marginBottom: 4,
     },
     cardSub: {
         fontSize: 12,
     },
+    dotRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 4,
+    },
+    dot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
+    
     ledger: {
         borderRadius: 10,
         borderWidth: 1,

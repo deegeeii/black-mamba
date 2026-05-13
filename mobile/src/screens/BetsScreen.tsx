@@ -47,7 +47,7 @@ export default function BetsScreen() {
     useEffect(() => { fetchBets() }, [activeLeague?.id, session])
 
     const handleCreate = async () => {
-        if (!amount || !opponentId) { setError('Fill in all fields'); return }
+        if (!amount) { setError('Enter an amount'); return }
         setSubmitting(true)
         setError('')
         try {
@@ -112,7 +112,7 @@ export default function BetsScreen() {
                     contentContainerStyle={styles.list}
                     renderItem={({ item }) => {
                         const isMine = item.proposer_id === user?.id
-                        const canAccept = item.status === 'pending' && item.opponent_id === user?.id
+                        const canAccept = item.status === 'pending' && !isMine && (!item.opponent_id || item.opponent_id === user?.id)
                         return (
                             <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                                 <View style={styles.cardHeader}>
@@ -151,12 +151,12 @@ export default function BetsScreen() {
 
                     {error ? <Text style={{ color: theme.danger, marginBottom: 12 }}>{error}</Text> : null}
 
-                    <Text style={[styles.label, { color: theme.textMuted }]}>OPPONENT USER ID</Text>
+                    <Text style={[styles.label, { color: theme.textMuted }]}>OPPONENT USER ID (optional — leave blank for open bet)</Text>
                     <TextInput
                         style={[styles.input, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border }]}
                         value={opponentId}
                         onChangeText={setOpponentId}
-                        placeholder="Opponent user ID"
+                        placeholder="Leave blank to post openly"
                         placeholderTextColor={theme.textDim}
                         autoCapitalize="none"
                     />

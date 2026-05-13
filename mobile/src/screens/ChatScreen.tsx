@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { supabase } from '../lib/supabase'
 
+
 const API = process.env.EXPO_PUBLIC_API_URL
 
 type Message = {
@@ -44,6 +45,7 @@ export default function ChatScreen() {
 
     useEffect(() => {
         if (!activeLeague) return
+        const { supabase } = require('../lib/supabase')
         const channel = supabase
             .channel(`chat:${activeLeague.id}`)
             .on('postgres_changes', {
@@ -51,13 +53,14 @@ export default function ChatScreen() {
                 schema: 'public',
                 table: 'league_messages',
                 filter: `league_id=eq.${activeLeague.id}`,
-            }, (payload) => {
+            }, (payload: any) => {
                 setMessages(prev => [payload.new as Message, ...prev])
             })
             .subscribe()
         return () => { supabase.removeChannel(channel) }
     }, [activeLeague?.id])
-
+    
+    
     const handleSend = async () => {
         if (!text.trim() || !activeLeague) return
         setSending(true)

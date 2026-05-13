@@ -15,6 +15,8 @@ import BetsScreen from './src/screens/BetsScreen'
 import ChatScreen from './src/screens/ChatScreen'
 import MyTeamScreen from './src/screens/MyTeamScreen'
 import TournamentListScreen from './src/screens/TournamentListScreen'
+import TournamentDetailScreen from './src/screens/TournamentDetailScreen'
+import DraftScreen from './src/screens/DraftScreen'
 
 
 
@@ -45,6 +47,8 @@ function RootNavigator() {
                             <Stack.Screen name="Chat" component={ChatScreen} />
                             <Stack.Screen name="MyTeam" component={MyTeamScreen} />
                             <Stack.Screen name="Arena" component={TournamentListScreen} />
+                            <Stack.Screen name="TournamentDetail" component={TournamentDetailScreen} />
+                            <Stack.Screen name="Draft" component={DraftScreen} />
 
                         </>
                     ) : (

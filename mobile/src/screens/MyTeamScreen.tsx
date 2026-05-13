@@ -21,7 +21,7 @@ type Trade = {
     week: number
 }
 
-type Tab = 'roster' | 'free-agents' | 'trades'
+type Tab = 'roster' | 'free-agents' | 'trades' | 'draft'
 
 export default function MyTeamScreen() {
     const navigation = useNavigation()
@@ -167,8 +167,11 @@ export default function MyTeamScreen() {
             </View>
 
             <View style={[styles.tabs, { borderBottomColor: theme.borderSubtle }]}>
-                {(['roster', 'free-agents', 'trades'] as Tab[]).map(t => (
-                    <TouchableOpacity key={t} style={tabStyle(t)} onPress={() => setTab(t)}>
+                {(['roster', 'free-agents', 'trades', 'draft'] as Tab[]).map(t => (
+                    <TouchableOpacity key={t} style={tabStyle(t)} onPress={() => {
+                        if (t === 'draft') { navigation.navigate('Draft' as never); return }
+                        setTab(t)
+                    }}>
                         <Text style={{ color: tab === t ? theme.accent : theme.textDim, fontSize: 13, fontWeight: tab === t ? 'bold' : 'normal' }}>
                             {t === 'free-agents' ? 'Free Agents' : t.charAt(0).toUpperCase() + t.slice(1)}
                             {t === 'trades' && incoming.length > 0 ? ` (${incoming.length})` : ''}
