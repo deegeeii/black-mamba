@@ -2,25 +2,46 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useNavigation } from '@react-navigation/native'
-import { Picker } from '@react-native-picker/picker'
 import { useLeague } from '../contexts/LeagueContext'
+import { useState, useEffect } from 'react'
 
+
+const API = process.env.EXPO_PUBLIC_API_URL
 
 
 export default function DashboardScreen() {
-    const { user, signOut } = useAuth()
-    const { theme, isDark, toggleTheme } = useTheme()
+    const { user, signOut, session } = useAuth()
     const navigation = useNavigation<any>()
     const { leagues, activeLeague, setActiveLeague } = useLeague()
+    const { theme } = useTheme()
+    const [ledger, setLedger] = useState<{ won: number; lost: number; balance: number } | null>(null)
+
+    useEffect(() => {
+        if (!activeLeague || !session) return
+        fetch(`${API}/leagues/${activeLeague.id}/bets`, {
+            headers: { Authorization: `Bearer ${session.access_token}` }
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (!Array.isArray(data)) return
+                const myBets = data.filter((b: any) => b.status === 'settled')
+                const won = myBets.filter((b: any) => b.winner_user_id === user?.id).reduce((s: number, b: any) => s + (b.amount || 0), 0)
+                const lost = myBets.filter((b: any) => b.winner_user_id && b.winner_user_id !== user?.id).reduce((s: number, b: any) => s + (b.amount || 0), 0)
+                setLedger({ won, lost, balance: won - lost })
+            })
+            .catch(() => {})
+    }, [activeLeague?.id, session])
+
 
 
     return (
         <ScrollView style={{ flex: 1, backgroundColor: theme.bg }} contentContainerStyle={styles.content}>
                         <View style={styles.header}>
                 <Text style={[styles.wordmark, { color: theme.accent }]}>BLACK MAMBA</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                    <Text style={{ color: theme.textDim, fontSize: 13 }}>Profile ›</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Arena')}>
+                    <Text style={{ color: theme.accent, fontSize: 13, fontWeight: 'bold' }}>Arena ›</Text>
                 </TouchableOpacity>
+
             </View>
 
 
@@ -59,6 +80,27 @@ export default function DashboardScreen() {
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>Settings & appearance</Text>
                 </TouchableOpacity>
             </View>
+            {ledger !== null && (
+                <View style={[styles.ledger, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                    <Text style={[styles.ledgerTitle, { color: theme.textMuted }]}>LEDGER</Text>
+                    <View style={styles.ledgerRow}>
+                        <View style={styles.ledgerItem}>
+                            <Text style={[styles.ledgerAmt, { color: theme.accent }]}>${(ledger.won / 100).toFixed(2)}</Text>
+                            <Text style={[styles.ledgerLbl, { color: theme.textDim }]}>Won</Text>
+                        </View>
+                        <View style={styles.ledgerItem}>
+                            <Text style={[styles.ledgerAmt, { color: theme.danger }]}>${(ledger.lost / 100).toFixed(2)}</Text>
+                            <Text style={[styles.ledgerLbl, { color: theme.textDim }]}>Lost</Text>
+                        </View>
+                        <View style={styles.ledgerItem}>
+                            <Text style={[styles.ledgerAmt, { color: ledger.balance >= 0 ? theme.accent : theme.danger }]}>
+                                {ledger.balance >= 0 ? '+' : ''}${(ledger.balance / 100).toFixed(2)}
+                            </Text>
+                            <Text style={[styles.ledgerLbl, { color: theme.textDim }]}>Balance</Text>
+                        </View>
+                    </View>
+                </View>
+            )}
         </ScrollView>
     )
 }
@@ -124,4 +166,32 @@ const styles = StyleSheet.create({
     cardSub: {
         fontSize: 12,
     },
+    ledger: {
+        borderRadius: 10,
+        borderWidth: 1,
+        padding: 16,
+        marginTop: 8,
+    },
+    ledgerTitle: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        letterSpacing: 1.5,
+        marginBottom: 12,
+    },
+    ledgerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+    },
+    ledgerItem: {
+        alignItems: 'center',
+    },
+    ledgerAmt: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 2,
+    },
+    ledgerLbl: {
+        fontSize: 11,
+    },
+    
 })
