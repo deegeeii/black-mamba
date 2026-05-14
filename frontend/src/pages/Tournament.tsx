@@ -14,6 +14,7 @@ interface Tournament {
     status: string
     ai_brain: string
     scoring_rules: { description: string; bonuses: { name: string; points: number }[] } | null
+    draft_budget: number | null
 }
 
 interface TournamentMatchup {
@@ -27,6 +28,16 @@ interface TournamentMatchup {
     commentary: string | null
 }
 
+interface Entity {
+    id: string
+    name: string
+    entity_type: string
+    price: number
+    stats: Record<string, any>
+    picked_by: string | null
+}
+
+
 export default function Tournament() {
     const { leagueId } = useParams<{ leagueId: string }>()
     const { session, user } = useAuth()
@@ -36,6 +47,10 @@ export default function Tournament() {
     const [loading, setLoading] = useState(true)
     const [prediction, setPrediction] = useState<{ [matchupId: string]: string }>({})
     const [customPrompt, setCustomPrompt] = useState('')
+    const [entities, setEntities] = useState<Entity[]>([])
+    const [generatingDraft, setGeneratingDraft] = useState(false)
+    const [picking, setPicking] = useState<string | null>(null)
+
 
     //  Create Form
     const [showCreate, setShowCreate] = useState(false)
@@ -66,6 +81,8 @@ export default function Tournament() {
         setShowCreate(false)
         fetchTournaments()
         setSelectedTourney(res.data)
+        fetchEntities(res.data.id)
+
     }
 
     const handleJoin = async (tourneyId: string) => {
@@ -107,6 +124,31 @@ export default function Tournament() {
         if (!userId) return 'BYE'
         return userId === user?.id ? 'You' : userId.slice(0, 8)
     }
+
+    const fetchEntities = async (tourneyId: string) => {
+        const res = await axios.get(`${API_URL}/leagues/tournaments/${tourneyId}/draft/entities`, { headers })
+        setEntities(res.data)
+    }
+    
+    const handleGenerateDraft = async (tourneyId: string) => {
+        setGeneratingDraft(true)
+        await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/draft/generate`, {}, { headers })
+        setGeneratingDraft(false)
+        fetchEntities(tourneyId)
+        fetchTournaments()
+    }
+    
+    const handlePick = async (tourneyId: string, entityId: string) => {
+        setPicking(entityId)
+        try {
+            await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/draft/pick/${entityId}`, {}, { headers })
+            fetchEntities(tourneyId)
+        } catch (e: any) {
+            alert(e.response?.data?.detail || 'Pick failed')
+        }
+        setPicking(null)
+    }
+    
 
     if (loading) return <p>Loading tournaments...</p>
 
@@ -165,8 +207,9 @@ export default function Tournament() {
                                 {generating ? 'Generating...' : 'Generate Bracket'}
                             </button>
                         )}
-                        <button onClick={() => { setSelectedTourney(t); fetchMatchups(t.id) }} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 'var(--radius)', padding: '6px 14px', cursor: 'pointer', fontSize: '13px' }}>View Bracket</button>
+                        <button onClick={() => { setSelectedTourney(t); fetchMatchups(t.id); fetchEntities(t.id) }} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 'var(--radius)', padding: '6px 14px', cursor: 'pointer', fontSize: '13px' }}>View Bracket</button>
                     </div>
+                    
     
                     {t.scoring_rules && (
                         <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--bg-deep)', borderRadius: 'var(--radius)' }}>
@@ -212,6 +255,62 @@ export default function Tournament() {
                             </div>
                         </div>
                     ))}
+                    <div style={{ marginTop: '32px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h2 style={{ margin: 0 }}>Draft Room</h2>
+                            {entities.length === 0 && (
+                                <button onClick={() => handleGenerateDraft(selectedTourney.id)} disabled={generatingDraft} style={{
+                                    backgroundColor: generatingDraft ? 'var(--border)' : 'var(--accent)',
+                                    color: generatingDraft ? 'var(--text-dim)' : '#000',
+                                    border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px',
+                                    cursor: generatingDraft ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '13px'
+                                }}>
+                                    {generatingDraft ? 'Generating...' : 'Generate Draft Pool'}
+                                </button>
+                            )}
+                        </div>
+
+                        {entities.length > 0 && (() => {
+                            const myPicks = entities.filter(e => e.picked_by === user?.id)
+                            const spent = myPicks.reduce((s, e) => s + e.price, 0)
+                            const budget = selectedTourney.draft_budget || 50000
+                            const remaining = budget - spent
+                            return (
+                                <>
+                                    <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: '16px', display: 'flex', gap: '32px' }}>
+                                        <div><div style={{ color: 'var(--text-dim)', fontSize: '11px', letterSpacing: '1px' }}>BUDGET</div><div style={{ color: 'var(--text)', fontWeight: 'bold' }}>${budget.toLocaleString()}</div></div>
+                                        <div><div style={{ color: 'var(--text-dim)', fontSize: '11px', letterSpacing: '1px' }}>SPENT</div><div style={{ color: 'var(--text)', fontWeight: 'bold' }}>${spent.toLocaleString()}</div></div>
+                                        <div><div style={{ color: 'var(--text-dim)', fontSize: '11px', letterSpacing: '1px' }}>REMAINING</div><div style={{ color: remaining >= 0 ? 'var(--accent)' : 'var(--danger)', fontWeight: 'bold' }}>${remaining.toLocaleString()}</div></div>
+                                        <div><div style={{ color: 'var(--text-dim)', fontSize: '11px', letterSpacing: '1px' }}>MY PICKS</div><div style={{ color: 'var(--text)', fontWeight: 'bold' }}>{myPicks.length}</div></div>
+                                    </div>
+                                    {entities.map(e => (
+                                        <div key={e.id} style={{ backgroundColor: 'var(--bg-card)', border: `1px solid ${e.picked_by === user?.id ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 'var(--radius)', padding: '14px 16px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: e.picked_by && e.picked_by !== user?.id ? 0.5 : 1 }}>
+                                            <div>
+                                                <div style={{ color: 'var(--text)', fontWeight: 'bold' }}>{e.name}</div>
+                                                <div style={{ color: 'var(--text-dim)', fontSize: '12px', marginTop: '2px', textTransform: 'capitalize' }}>{e.entity_type}</div>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                                <div style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '15px' }}>${e.price.toLocaleString()}</div>
+                                                {e.picked_by ? (
+                                                    <span style={{ color: e.picked_by === user?.id ? 'var(--accent)' : 'var(--text-dim)', fontSize: '12px' }}>
+                                                        {e.picked_by === user?.id ? 'Your pick' : 'Taken'}
+                                                    </span>
+                                                ) : (
+                                                    <button onClick={() => handlePick(selectedTourney.id, e.id)} disabled={picking === e.id} style={{
+                                                        backgroundColor: 'var(--accent)', color: '#000', border: 'none',
+                                                        borderRadius: 'var(--radius)', padding: '6px 14px',
+                                                        cursor: picking === e.id ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '13px'
+                                                    }}>
+                                                        {picking === e.id ? '...' : 'Pick'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )
+                        })()}
+                    </div>
                 </div>
             )}
         </div>

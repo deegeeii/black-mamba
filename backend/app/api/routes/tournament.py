@@ -63,3 +63,27 @@ def predict(tournament_id: str, matchup_id: str, user_id: str = Depends(get_curr
     if err:
         raise HTTPException(400, err)
     return result
+
+
+@router.post("/tournaments/{tournament_id}/draft/generate")
+def generate_draft_entities(tournament_id: str, user_id: str = Depends(get_current_user)):
+    from app.services.tournament_draft import generate_entities
+    result, err = generate_entities(tournament_id)
+    if err:
+        raise HTTPException(400, err)
+    return result
+
+
+@router.get("/tournaments/{tournament_id}/draft/entities")
+def get_draft_entities(tournament_id: str, user_id: str = Depends(get_current_user)):
+    from app.services.tournament_draft import get_entities
+    return get_entities(tournament_id)
+
+
+@router.post("/tournaments/{tournament_id}/draft/pick/{entity_id}")
+def pick_entity(tournament_id: str, entity_id: str, user_id: str = Depends(get_current_user)):
+    from app.services.tournament_draft import make_pick
+    result, err = make_pick(tournament_id, entity_id, user_id)
+    if err:
+        raise HTTPException(400, err)
+    return result

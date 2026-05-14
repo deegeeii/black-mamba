@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+
 class CreateBetRequest(BaseModel):
     bet_type: str
     amount: int # in cents

@@ -16,25 +16,43 @@ type Matchup = {
     winner_team_name: string | null
 }
 
+type Entity = {
+    id: string
+    name: string
+    entity_type: string
+    price: number
+    picked_by: string | null
+}
+
+
 export default function TournamentDetailScreen() {
     const navigation = useNavigation()
     const route = useRoute<any>()
     const { tournament } = route.params
-    const { session } = useAuth()
+    const { session, user } = useAuth()
     const { theme } = useTheme()
 
     const [matchups, setMatchups] = useState<Matchup[]>([])
     const [loading, setLoading] = useState(true)
     const [joining, setJoining] = useState(false)
+    const [entities, setEntities] = useState<Entity[]>([])
+    const [generatingDraft, setGeneratingDraft] = useState(false)
+    const [picking, setPicking] = useState<string | null>(null)
+
 
     const headers = { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' }
 
     useEffect(() => {
-        fetch(`${API}/tournaments/${tournament.id}/matchups`, { headers })
-            .then(r => r.json())
-            .then(data => { setMatchups(Array.isArray(data) ? data : []); setLoading(false) })
-            .catch(() => setLoading(false))
+        Promise.allSettled([
+            fetch(`${API}/leagues/tournaments/${tournament.id}/matchups`, { headers }).then(r => r.json()),
+            fetch(`${API}/leagues/tournaments/${tournament.id}/draft/entities`, { headers }).then(r => r.json()),
+        ]).then(([matchupsRes, entitiesRes]) => {
+            if (matchupsRes.status === 'fulfilled') setMatchups(Array.isArray(matchupsRes.value) ? matchupsRes.value : [])
+            if (entitiesRes.status === 'fulfilled') setEntities(Array.isArray(entitiesRes.value) ? entitiesRes.value : [])
+            setLoading(false)
+        }).catch(() => setLoading(false))
     }, [tournament.id])
+    
 
     const handleJoin = async () => {
         setJoining(true)
@@ -51,6 +69,33 @@ export default function TournamentDetailScreen() {
         }
         setJoining(false)
     }
+
+    const fetchEntities = async () => {
+        try {
+            const res = await fetch(`${API}/leagues/tournaments/${tournament.id}/draft/entities`, { headers })
+            const data = await res.json()
+            setEntities(Array.isArray(data) ? data : [])
+        } catch {}
+    }
+    
+    const handleGenerateDraft = async () => {
+        setGeneratingDraft(true)
+        await fetch(`${API}/leagues/tournaments/${tournament.id}/draft/generate`, { method: 'POST', headers })
+        setGeneratingDraft(false)
+        fetchEntities()
+    }
+    
+    const handlePick = async (entityId: string) => {
+        setPicking(entityId)
+        const res = await fetch(`${API}/leagues/tournaments/${tournament.id}/draft/pick/${entityId}`, { method: 'POST', headers })
+        if (!res.ok) {
+            const data = await res.json()
+            Alert.alert('Error', data.detail || 'Pick failed')
+        }
+        setPicking(null)
+        fetchEntities()
+    }
+    
 
     const byRound = matchups.reduce<Record<number, Matchup[]>>((acc, m) => {
         if (!acc[m.round]) acc[m.round] = []
@@ -134,6 +179,66 @@ export default function TournamentDetailScreen() {
                             })}
                         </View>
                     )}
+                    ListFooterComponent={() => {
+                        const myPicks = entities.filter(e => e.picked_by === user?.id)
+                        const spent = myPicks.reduce((s, e) => s + e.price, 0)
+                        const budget = tournament.draft_budget || 50000
+                        const remaining = budget - spent
+                        return (
+                            <View style={{ marginTop: 24, paddingBottom: 40 }}>
+                                <View style={styles.draftHeader}>
+                                    <Text style={[styles.roundLabel, { color: theme.textMuted }]}>DRAFT ROOM</Text>
+                                    {entities.length === 0 && (
+                                        <TouchableOpacity onPress={handleGenerateDraft} disabled={generatingDraft}
+                                            style={[styles.genBtn, { backgroundColor: generatingDraft ? theme.border : theme.accent }]}>
+                                            <Text style={{ color: generatingDraft ? theme.textDim : '#000', fontWeight: 'bold', fontSize: 12 }}>
+                                                {generatingDraft ? 'Generating...' : 'Generate Pool'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+                                {entities.length > 0 && (
+                                    <>
+                                        <View style={[styles.budgetBar, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                                            {[
+                                                { label: 'BUDGET', value: `$${budget.toLocaleString()}`, color: theme.text },
+                                                { label: 'SPENT', value: `$${spent.toLocaleString()}`, color: theme.text },
+                                                { label: 'LEFT', value: `$${remaining.toLocaleString()}`, color: remaining >= 0 ? theme.accent : theme.danger },
+                                                { label: 'PICKS', value: String(myPicks.length), color: theme.text },
+                                            ].map(({ label, value, color }) => (
+                                                <View key={label} style={styles.budgetItem}>
+                                                    <Text style={{ color: theme.textDim, fontSize: 10, letterSpacing: 1 }}>{label}</Text>
+                                                    <Text style={{ color, fontWeight: 'bold', fontSize: 14 }}>{value}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+                                        {entities.map(e => (
+                                            <View key={e.id} style={[styles.entityCard, { backgroundColor: theme.bgCard, borderColor: e.picked_by === user?.id ? theme.accent : theme.border }]}>
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={[styles.entityName, { color: theme.text }]}>{e.name}</Text>
+                                                    <Text style={{ color: theme.textDim, fontSize: 11, textTransform: 'capitalize' }}>{e.entity_type}</Text>
+                                                </View>
+                                                <Text style={[styles.entityPrice, { color: theme.accent }]}>${e.price.toLocaleString()}</Text>
+                                                {e.picked_by ? (
+                                                    <Text style={{ color: e.picked_by === user?.id ? theme.accent : theme.textDim, fontSize: 12, marginLeft: 12 }}>
+                                                        {e.picked_by === user?.id ? 'Yours' : 'Taken'}
+                                                    </Text>
+                                                ) : (
+                                                    <TouchableOpacity onPress={() => handlePick(e.id)} disabled={picking === e.id}
+                                                        style={[styles.pickBtn, { backgroundColor: theme.accent, opacity: picking === e.id ? 0.5 : 1 }]}>
+                                                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 12 }}>
+                                                            {picking === e.id ? '...' : 'Pick'}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                )}
+                                            </View>
+                                        ))}
+                                    </>
+                                )}
+                            </View>
+                        )
+                    }}
+                    
                 />
             )}
         </View>
@@ -183,4 +288,13 @@ const styles = StyleSheet.create({
     vs: { fontSize: 12, paddingHorizontal: 12 },
     winner: { fontSize: 11, marginTop: 10, textAlign: 'center' },
     empty: { textAlign: 'center', marginTop: 60, fontSize: 14 },
+    draftHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    genBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
+    budgetBar: { flexDirection: 'row', justifyContent: 'space-around', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 12 },
+    budgetItem: { alignItems: 'center', gap: 4 },
+    entityCard: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, padding: 14, marginBottom: 8 },
+    entityName: { fontSize: 14, fontWeight: 'bold', marginBottom: 2 },
+    entityPrice: { fontWeight: 'bold', fontSize: 14, marginLeft: 12 },
+    pickBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16, marginLeft: 12 },
+
 })

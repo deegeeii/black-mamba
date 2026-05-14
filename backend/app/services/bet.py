@@ -1,6 +1,8 @@
 import stripe 
 from app.core.config import settings
 from app.core.supabase import supabase
+from app.services.notification import create_notification
+
 
 stripe.api_key = settings.stripe_secret_key
 RAKE_PERCENT = 10
@@ -30,7 +32,10 @@ def create_bet(league_id: str, proposer_id: str, data):
         "rake_percent": RAKE_PERCENT,
     }).execute()
 
-    return res.data[0], intent.client_secret
+    bet = res.data[0]
+    if data.opponent_id:
+        create_notification(data.opponent_id, league_id, "bet_offer", "You have a new bet offer")
+    return bet, intent.client_secret
 
 
 def accept_bet(bet_id: str, opponent_id: str):
@@ -55,6 +60,7 @@ def accept_bet(bet_id: str, opponent_id: str):
         "status": "active",
     }).eq("id", bet_id).execute()
 
+    create_notification(bet["proposer_id"], bet["league_id"], "bet_accepted", "Your bet offer was accepted")
     return res.data[0], intent.client_secret, None
 
 

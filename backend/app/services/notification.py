@@ -16,6 +16,7 @@ def create_notification(user_id: str, league_id: str, type: str, message: str):
 
 
 def get_notifications(user_id: str, league_id: str):
+    print(f"get_notifications called with user_id={user_id}, league_id={league_id}")
     res = (
         supabase.table("notifications")
         .select("*")
