@@ -18,6 +18,7 @@ import Ledger from './pages/Ledger'
 import Chat from './pages/Chat'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Playoffs from './pages/Playoffs'
+import ResetPassword from './pages/ResetPassword'
 
 
 
@@ -137,6 +138,7 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </LeagueProvider>
