@@ -22,8 +22,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://black-mamba-n7gu.onrender.com",
-        ],
+        "https://black-mamba-qtpbzxpu9-deegeetwo.vercel.app",
+    ],
+
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
