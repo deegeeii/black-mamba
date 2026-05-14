@@ -57,7 +57,7 @@ export default function MyTeam() {
   // Roster state
   const [roster, setRoster] = useState<RosterPlayer[]>([])
   const [lineup, setLineup] = useState<Record<string, string>>({})
-  const [scores, setScores] = useState<{ user_id: string; total_points: number }[]>([])
+  const [, setScores] = useState<{ user_id: string; total_points: number }[]>([])
   const [dropping, setDropping] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 

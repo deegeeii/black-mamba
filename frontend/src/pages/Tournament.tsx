@@ -98,7 +98,7 @@ export default function Tournament() {
 
     const handleGenerate = async (tourneyId: string) => {
         setGenerating(true)
-        const res = await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/generate`, {}, { headers })
+        await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/generate`, {}, { headers })
         setGenerating(false)
         fetchTournaments()
         if (selectedTourney) fetchMatchups(tourneyId)

@@ -85,7 +85,7 @@ function BetsInner() {
     const [bets, setBets] = useState<Bet[]>([])
     const [loading, setLoading] = useState(true)
     const [clientSecret, setClientSecret] = useState('')
-    const [activeBetId, setActiveBetId] = useState('')
+    const [, setActiveBetId] = useState('')
 
     // Create Form
     const [betType, setBetType] = useState('weekly_matchup')

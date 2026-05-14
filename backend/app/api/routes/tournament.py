@@ -87,3 +87,10 @@ def pick_entity(tournament_id: str, entity_id: str, user_id: str = Depends(get_c
     if err:
         raise HTTPException(400, err)
     return result
+
+
+@router.post("/tournaments/{tournament_id}/draft/close")
+def close_draft(tournament_id: str, user_id: str = Depends(get_current_user)):
+    from app.core.supabase import supabase
+    supabase.table("tournaments").update({"status": "active"}).eq("id", tournament_id).execute()
+    return {"status": "active"}
