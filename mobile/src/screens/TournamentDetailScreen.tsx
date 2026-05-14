@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -9,12 +9,13 @@ const API = process.env.EXPO_PUBLIC_API_URL
 type Matchup = {
     id: string
     round: number
-    home_team_name: string
-    away_team_name: string
-    home_score: number
-    away_score: number
-    winner_team_name: string | null
+    home_user_id: string
+    away_user_id: string | null
+    home_points: number
+    away_points: number
+    winner_user_id: string | null
 }
+
 
 type Entity = {
     id: string
@@ -38,6 +39,8 @@ export default function TournamentDetailScreen() {
     const [entities, setEntities] = useState<Entity[]>([])
     const [generatingDraft, setGeneratingDraft] = useState(false)
     const [picking, setPicking] = useState<string | null>(null)
+    const [tab, setTab] = useState<'h2h' | 'myteam' | 'standings' | 'draft'>('h2h')
+    const [tournamentStatus, setTournamentStatus] = useState(tournament.status)
 
 
     const headers = { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' }
@@ -96,15 +99,32 @@ export default function TournamentDetailScreen() {
         fetchEntities()
     }
     
+    const handleCloseDraft = async () => {
+        await fetch(`${API}/leagues/tournaments/${tournament.id}/draft/close`, { method: 'POST', headers })
+        setTournamentStatus('active')
+    }    
 
     const byRound = matchups.reduce<Record<number, Matchup[]>>((acc, m) => {
         if (!acc[m.round]) acc[m.round] = []
         acc[m.round].push(m)
         return acc
     }, {})
-
     const rounds = Object.keys(byRound).map(Number).sort((a, b) => a - b)
-
+    
+    const standings = (() => {
+        const map: Record<string, { wins: number; points: number }> = {}
+        matchups.forEach(m => {
+            if (!map[m.home_user_id]) map[m.home_user_id] = { wins: 0, points: 0 }
+            if (m.away_user_id && !map[m.away_user_id]) map[m.away_user_id] = { wins: 0, points: 0 }
+            map[m.home_user_id].points += m.home_points || 0
+            if (m.away_user_id) map[m.away_user_id].points += m.away_points || 0
+            if (m.winner_user_id && map[m.winner_user_id]) map[m.winner_user_id].wins += 1
+        })
+        return Object.entries(map)
+            .map(([userId, stats]) => ({ userId, ...stats }))
+            .sort((a, b) => b.wins - a.wins || b.points - a.points)
+    })()
+    
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>
             <View style={[styles.header, { borderBottomColor: theme.borderSubtle }]}>
@@ -114,86 +134,120 @@ export default function TournamentDetailScreen() {
                 <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>{tournament.name}</Text>
                 <View style={{ width: 60 }} />
             </View>
-
+    
             <View style={[styles.meta, { borderBottomColor: theme.borderSubtle }]}>
-                <Text style={[styles.sport, { color: theme.textDim }]}>{tournament.sport}</Text>
-                <Text style={[styles.teams, { color: theme.textMuted }]}>
-                    {tournament.participant_count ?? 0}/{tournament.max_participants} teams
-                </Text>
-                {tournament.status === 'open' && (
-                    <TouchableOpacity
-                        style={[styles.joinBtn, { backgroundColor: theme.accent }]}
-                        onPress={handleJoin}
-                        disabled={joining}
-                    >
-                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>
-                            {joining ? 'Joining...' : 'Join'}
-                        </Text>
+                <Text style={[styles.sport, { color: theme.textDim }]}>{tournament.theme || tournament.name}</Text>
+                {tournamentStatus === 'open' && (
+                    <TouchableOpacity style={[styles.joinBtn, { backgroundColor: theme.accent }]} onPress={handleJoin} disabled={joining}>
+                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>{joining ? 'Joining...' : 'Join'}</Text>
                     </TouchableOpacity>
                 )}
             </View>
-
+    
+            <View style={[styles.tabBar, { borderBottomColor: theme.borderSubtle }]}>
+                {(['h2h', 'myteam', 'standings', 'draft'] as const).map(t => (
+                    <TouchableOpacity key={t} onPress={() => setTab(t)}
+                        style={[styles.tabBarBtn, { borderBottomColor: tab === t ? theme.accent : 'transparent' }]}>
+                        <Text style={{ color: tab === t ? theme.accent : theme.textDim, fontSize: 12, fontWeight: tab === t ? 'bold' : 'normal' }}>
+                            {t === 'h2h' ? 'Head to Head' : t === 'myteam' ? 'My Team' : t === 'standings' ? 'Standings' : 'Draft Room'}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+    
             {loading ? (
                 <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
-            ) : matchups.length === 0 ? (
-                <Text style={[styles.empty, { color: theme.textDim }]}>Bracket not generated yet</Text>
             ) : (
-                <FlatList
-                    data={rounds}
-                    keyExtractor={r => String(r)}
-                    contentContainerStyle={styles.list}
-                    renderItem={({ item: round }) => (
-                        <View>
-                            <Text style={[styles.roundLabel, { color: theme.textMuted }]}>Round {round}</Text>
-                            {byRound[round].map(m => {
-                                const homeWon = !!m.winner_team_name && m.winner_team_name === m.home_team_name
-                                const awayWon = !!m.winner_team_name && m.winner_team_name === m.away_team_name
-                                return (
-                                    <View key={m.id} style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
-                                        <View style={styles.matchRow}>
-                                            <View style={styles.teamCol}>
-                                                <Text style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]} numberOfLines={1}>
-                                                    {m.home_team_name || 'TBD'}
-                                                </Text>
-                                                <Text style={[styles.score, { color: homeWon ? theme.accent : theme.textMuted }]}>
-                                                    {m.home_score?.toFixed(1) ?? '—'}
-                                                </Text>
+                <ScrollView contentContainerStyle={styles.list}>
+    
+                    {tab === 'h2h' && (
+                        matchups.length === 0
+                            ? <Text style={[styles.empty, { color: theme.textDim }]}>Bracket not generated yet</Text>
+                            : rounds.map(round => (
+                                <View key={round}>
+                                    <Text style={[styles.roundLabel, { color: theme.textMuted }]}>Round {round}</Text>
+                                    {byRound[round].map(m => {
+                                        const homeWon = m.winner_user_id === m.home_user_id
+                                        const awayWon = m.winner_user_id === m.away_user_id
+                                        return (
+                                            <View key={m.id} style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                                                <View style={styles.matchRow}>
+                                                    <View style={styles.teamCol}>
+                                                        <Text style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]}>
+                                                            {m.home_user_id === user?.id ? 'You' : m.home_user_id.slice(0, 8)}
+                                                        </Text>
+                                                        <Text style={[styles.score, { color: homeWon ? theme.accent : theme.textMuted }]}>
+                                                            {m.home_points?.toFixed(1) ?? '—'}
+                                                        </Text>
+                                                    </View>
+                                                    <Text style={[styles.vs, { color: theme.textDim }]}>vs</Text>
+                                                    <View style={[styles.teamCol, styles.teamColRight]}>
+                                                        <Text style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]}>
+                                                            {m.away_user_id ? (m.away_user_id === user?.id ? 'You' : m.away_user_id.slice(0, 8)) : 'BYE'}
+                                                        </Text>
+                                                        <Text style={[styles.score, { color: awayWon ? theme.accent : theme.textMuted }]}>
+                                                            {m.away_points?.toFixed(1) ?? '—'}
+                                                        </Text>
+                                                    </View>
+                                                </View>
                                             </View>
-                                            <Text style={[styles.vs, { color: theme.textDim }]}>vs</Text>
-                                            <View style={[styles.teamCol, styles.teamColRight]}>
-                                                <Text style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]} numberOfLines={1}>
-                                                    {m.away_team_name || 'TBD'}
-                                                </Text>
-                                                <Text style={[styles.score, { color: awayWon ? theme.accent : theme.textMuted }]}>
-                                                    {m.away_score?.toFixed(1) ?? '—'}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                        {m.winner_team_name && (
-                                            <Text style={[styles.winner, { color: theme.accent }]}>
-                                                Winner: {m.winner_team_name}
-                                            </Text>
-                                        )}
-                                    </View>
-                                )
-                            })}
-                        </View>
+                                        )
+                                    })}
+                                </View>
+                            ))
                     )}
-                    ListFooterComponent={() => {
+    
+                    {tab === 'myteam' && (() => {
+                        const myPicks = entities.filter(e => e.picked_by === user?.id)
+                        return myPicks.length === 0
+                            ? <Text style={[styles.empty, { color: theme.textDim }]}>You haven't picked anyone yet.</Text>
+                            : myPicks.map(e => (
+                                <View key={e.id} style={[styles.entityCard, { backgroundColor: theme.bgCard, borderColor: theme.accent }]}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.entityName, { color: theme.text }]}>{e.name}</Text>
+                                        <Text style={{ color: theme.textDim, fontSize: 11, textTransform: 'capitalize' }}>{e.entity_type}</Text>
+                                    </View>
+                                    <Text style={[styles.entityPrice, { color: theme.accent }]}>${e.price.toLocaleString()}</Text>
+                                </View>
+                            ))
+                    })()}
+    
+                    {tab === 'standings' && (
+                        standings.length === 0
+                            ? <Text style={[styles.empty, { color: theme.textDim }]}>No standings yet</Text>
+                            : standings.map((s, i) => (
+                                <View key={s.userId} style={[styles.card, { backgroundColor: theme.bgCard, borderColor: s.userId === user?.id ? theme.accent : theme.border, flexDirection: 'row', alignItems: 'center' }]}>
+                                    <Text style={{ color: theme.textDim, fontSize: 16, fontWeight: 'bold', width: 32 }}>{i + 1}</Text>
+                                    <Text style={{ color: s.userId === user?.id ? theme.accent : theme.text, flex: 1, fontWeight: 'bold' }}>
+                                        {s.userId === user?.id ? 'You' : s.userId.slice(0, 8)}
+                                    </Text>
+                                    <Text style={{ color: theme.text, marginRight: 16 }}>{s.wins}W</Text>
+                                    <Text style={{ color: theme.textDim, fontSize: 13 }}>{s.points.toFixed(1)} pts</Text>
+                                </View>
+                            ))
+                    )}
+    
+                    {tab === 'draft' && (() => {
                         const myPicks = entities.filter(e => e.picked_by === user?.id)
                         const spent = myPicks.reduce((s, e) => s + e.price, 0)
                         const budget = tournament.draft_budget || 50000
                         const remaining = budget - spent
+                        const isDrafting = tournamentStatus === 'drafting'
                         return (
-                            <View style={{ marginTop: 24, paddingBottom: 40 }}>
+                            <>
                                 <View style={styles.draftHeader}>
-                                    <Text style={[styles.roundLabel, { color: theme.textMuted }]}>DRAFT ROOM</Text>
-                                    {entities.length === 0 && (
+                                    <Text style={[styles.roundLabel, { color: theme.textMuted }]}>DRAFT POOL</Text>
+                                    {isDrafting && entities.length === 0 && (
                                         <TouchableOpacity onPress={handleGenerateDraft} disabled={generatingDraft}
                                             style={[styles.genBtn, { backgroundColor: generatingDraft ? theme.border : theme.accent }]}>
                                             <Text style={{ color: generatingDraft ? theme.textDim : '#000', fontWeight: 'bold', fontSize: 12 }}>
                                                 {generatingDraft ? 'Generating...' : 'Generate Pool'}
                                             </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                    {isDrafting && entities.length > 0 && (
+                                        <TouchableOpacity onPress={handleCloseDraft} style={[styles.genBtn, { backgroundColor: theme.danger }]}>
+                                            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Close Draft</Text>
                                         </TouchableOpacity>
                                     )}
                                 </View>
@@ -223,62 +277,40 @@ export default function TournamentDetailScreen() {
                                                     <Text style={{ color: e.picked_by === user?.id ? theme.accent : theme.textDim, fontSize: 12, marginLeft: 12 }}>
                                                         {e.picked_by === user?.id ? 'Yours' : 'Taken'}
                                                     </Text>
-                                                ) : (
+                                                ) : isDrafting ? (
                                                     <TouchableOpacity onPress={() => handlePick(e.id)} disabled={picking === e.id}
                                                         style={[styles.pickBtn, { backgroundColor: theme.accent, opacity: picking === e.id ? 0.5 : 1 }]}>
                                                         <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 12 }}>
                                                             {picking === e.id ? '...' : 'Pick'}
                                                         </Text>
                                                     </TouchableOpacity>
+                                                ) : (
+                                                    <Text style={{ color: theme.textDim, fontSize: 12, marginLeft: 12 }}>Available</Text>
                                                 )}
                                             </View>
                                         ))}
                                     </>
                                 )}
-                            </View>
+                            </>
                         )
-                    }}
-                    
-                />
+                    })()}
+    
+                </ScrollView>
             )}
         </View>
-    )
+    )    
 }
 
 const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-    },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16, borderBottomWidth: 1 },
     title: { fontSize: 17, fontWeight: 'bold', flex: 1, textAlign: 'center' },
-    meta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        gap: 12,
-        borderBottomWidth: 1,
-    },
+    meta: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 12, gap: 12, borderBottomWidth: 1 },
     sport: { fontSize: 13, flex: 1 },
-    teams: { fontSize: 12 },
-    joinBtn: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-    },
-    list: { padding: 16, gap: 12 },
-    roundLabel: {
-        fontSize: 11,
-        fontWeight: 'bold',
-        letterSpacing: 1.5,
-        textTransform: 'uppercase',
-        marginBottom: 8,
-    },
+    joinBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+    tabBar: { flexDirection: 'row', borderBottomWidth: 1 },
+    tabBarBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2 },
+    list: { padding: 16, gap: 12, paddingBottom: 40 },
+    roundLabel: { fontSize: 11, fontWeight: 'bold', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 },
     card: { borderRadius: 10, borderWidth: 1, padding: 16, marginBottom: 10 },
     matchRow: { flexDirection: 'row', alignItems: 'center' },
     teamCol: { flex: 1 },
@@ -286,7 +318,6 @@ const styles = StyleSheet.create({
     teamName: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
     score: { fontSize: 22, fontWeight: 'bold' },
     vs: { fontSize: 12, paddingHorizontal: 12 },
-    winner: { fontSize: 11, marginTop: 10, textAlign: 'center' },
     empty: { textAlign: 'center', marginTop: 60, fontSize: 14 },
     draftHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     genBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
@@ -296,5 +327,5 @@ const styles = StyleSheet.create({
     entityName: { fontSize: 14, fontWeight: 'bold', marginBottom: 2 },
     entityPrice: { fontWeight: 'bold', fontSize: 14, marginLeft: 12 },
     pickBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16, marginLeft: 12 },
-
 })
+
