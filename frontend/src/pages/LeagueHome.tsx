@@ -365,7 +365,8 @@ export default function LeagueHome() {
                     ].map(p => (
                         <div
                             key={p.key}
-                            onClick={() => isCommissioner && handleSavePersona(p.key)}
+                            onClick={() => isCommissioner && setBotPersona(p.key)}
+
                             style={{
                                 padding: '14px 16px',
                                 marginBottom: '8px',
@@ -387,6 +388,25 @@ export default function LeagueHome() {
                             </div>
                         </div>
                     ))}
+                    {isCommissioner && (
+                        <button
+                            onClick={() => handleSavePersona(botPersona)}
+                            style={{
+                                backgroundColor: 'var(--accent)',
+                                color: '#000',
+                                border: 'none',
+                                borderRadius: 'var(--radius)',
+                                padding: '12px 24px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                marginTop: '8px',
+                                width: '100%',
+                            }}
+                        >
+                            Save Persona
+                        </button>
+                    )}
+
                 </div>
             )}
         </div>
