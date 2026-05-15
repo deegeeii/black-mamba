@@ -20,10 +20,7 @@ app = FastAPI(title="Black Mamba API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-    "http://localhost:5173",
-    "https://black-mamba-oubow733q-deegeetwo.vercel.app",
-],
+    allow_origins=["*"],
 
     allow_credentials=True,
     allow_methods=["*"],
