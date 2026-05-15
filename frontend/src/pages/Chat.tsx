@@ -11,6 +11,7 @@ interface Message {
     user_id: string | null
     message: string
     is_bot: boolean
+    bot_name: string | null
     bot_trigger: string | null
     created_at: string
 }
@@ -23,6 +24,8 @@ export default function Chat() {
     const [input, setInput] = useState('')
     const [sending, setSending] = useState(false)
     const bottomRef = useRef<HTMLDivElement>(null)
+    const [botLoading, setBotLoading] = useState(false)
+
 
     const headers = useMemo(
         () => ({ Authorization: `Bearer ${session?.access_token}` }),
@@ -47,6 +50,18 @@ export default function Chat() {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
 
+    const triggerBot = async () => {
+        if (!activeLeague) return
+        setBotLoading(true)
+        await axios.post(
+            `${API_URL}/leagues/${activeLeague.id}/chat/bot`,
+            { trigger: 'manual', context: 'League members requested a bot update.' },
+            { headers }
+        )
+        fetchMessages()
+        setBotLoading(false)
+    }    
+
     const sendMessage = async () => {
         if (!input.trim() || !activeLeague) return
         setSending(true)
@@ -68,7 +83,7 @@ export default function Chat() {
     }
 
     const label = (msg: Message) => {
-        if (msg.is_bot) return 'Commissioner Bot'
+        if (msg.is_bot) return (msg as any).bot_name || 'Commissioner Bot'
         if (msg.user_id === user?.id) return 'You'
         return getTeamName(msg.user_id ?? null)
     }
@@ -163,6 +178,22 @@ export default function Chat() {
                     }}
                 >
                     Send
+                </button>
+                <button
+                    onClick={triggerBot}
+                    disabled={botLoading}
+                    style={{
+                        backgroundColor: 'transparent',
+                        color: botLoading ? 'var(--text-dim)' : 'var(--warning)',
+                        border: '1px solid var(--warning)',
+                        borderRadius: 'var(--radius)',
+                        padding: '10px 16px',
+                        cursor: botLoading ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                    }}
+                >
+                    {botLoading ? '...' : 'Ask Bot'}
                 </button>
             </div>
         </div>
