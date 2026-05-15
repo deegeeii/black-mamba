@@ -6,7 +6,7 @@ import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL
 
-type Tab = 'settings' | 'rosters' | 'history'
+type Tab = 'settings' | 'rosters' | 'history' | 'commissioner'
 
 interface Player { player_id: string; name: string; position: string; nfl_team: string | null }
 interface MemberRoster { user_id: string; team_name: string; avatar_url: string | null; roster: Player[] }
@@ -74,6 +74,8 @@ export default function LeagueHome() {
     const [awardSaving, setAwardSaving] = useState(false)
 
     const isCommissioner = activeLeague?.commissioner_id === user?.id
+    const [botPersona, setBotPersona] = useState<string>('commissioner')
+
 
     const headers = useMemo(() => ({
         Authorization: `Bearer ${session?.access_token}`,
@@ -85,14 +87,20 @@ export default function LeagueHome() {
         Promise.allSettled([
             axios.get(`${API_URL}/leagues/${leagueId}/members`, { headers }),
             axios.get(`${API_URL}/profile/`, { headers }),
-        ]).then(([membersRes, profileRes]) => {
+            axios.get(`${API_URL}/leagues/`, { headers }),
+        ]).then(([membersRes, profileRes, leaguesRes]) => {
             if (membersRes.status === 'fulfilled') {
                 const me = membersRes.value.data.find((m: any) => m.user_id === session.user.id)
                 if (me?.team_name) setTeamName(me.team_name)
             }
             if (profileRes.status === 'fulfilled') setAvatarUrl(profileRes.value.data.avatar_url || '')
+            if (leaguesRes.status === 'fulfilled') {
+                const league = leaguesRes.value.data.find((l: any) => l.id === leagueId)
+                if (league?.bot_persona) setBotPersona(league.bot_persona)
+            }
             setSettingsLoading(false)
         })
+        
     }, [session])
 
     useEffect(() => {
@@ -123,6 +131,16 @@ export default function LeagueHome() {
             setSaving(false)
         }
     }
+
+    const handleSavePersona = async (persona: string) => {
+        setBotPersona(persona)
+        await axios.patch(
+            `${API_URL}/leagues/${leagueId}/bot-persona`,
+            { bot_persona: persona },
+            { headers }
+        )
+    }
+    
 
     const handleAddAward = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -168,6 +186,7 @@ export default function LeagueHome() {
                 <button style={tabStyle('settings')} onClick={() => setTab('settings')}>Team Settings</button>
                 <button style={tabStyle('rosters')} onClick={() => setTab('rosters')}>Rosters</button>
                 <button style={tabStyle('history')} onClick={() => setTab('history')}>League History</button>
+                <button style={tabStyle('commissioner')} onClick={() => setTab('commissioner')}>Commissioner</button>
             </div>
 
             {/* ── TEAM SETTINGS TAB ── */}
@@ -282,35 +301,47 @@ export default function LeagueHome() {
                                 )}
                             </div>
                         ))}
-                        {isCommissioner && (
-                            <div style={card}>
-                                <div style={{ color: 'var(--accent)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>Add Award</div>
-                                <form onSubmit={handleAddAward}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                                        <div>
-                                            <label style={labelStyle}>Season</label>
-                                            <input type="number" value={newAwardSeason} onChange={e => setNewAwardSeason(Number(e.target.value))} style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', color: 'var(--text)', fontSize: '14px', marginTop: '4px', boxSizing: 'border-box' }} />
-                                        </div>
-                                        <div>
-                                            <label style={labelStyle}>Award Name</label>
-                                            <input value={newAwardName} onChange={e => setNewAwardName(e.target.value)} placeholder="e.g. MVP" style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', color: 'var(--text)', fontSize: '14px', marginTop: '4px', boxSizing: 'border-box' }} />
-                                        </div>
-                                    </div>
-                                    <div style={{ marginBottom: '12px' }}>
-                                        <label style={labelStyle}>Recipient</label>
-                                        <select value={newAwardUser} onChange={e => setNewAwardUser(e.target.value)} style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', color: 'var(--text)', fontSize: '14px', marginTop: '4px' }}>
-                                            <option value="">— Select member —</option>
-                                            {members.map(m => <option key={m.user_id} value={m.user_id}>{m.team_name}</option>)}
-                                        </select>
-                                    </div>
-                                    <button type="submit" disabled={awardSaving} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontWeight: 'bold', cursor: 'pointer' }}>
-                                        {awardSaving ? 'Adding...' : 'Add Award'}
-                                    </button>
-                                </form>
-                            </div>
-                        )}
+                        
                     </>
                 )
+            )}
+            {/* ── COMMISSIONER TAB ── */}
+            {tab === 'commissioner' && (
+                <div>
+                    <h3 style={{ color: 'var(--accent)', marginBottom: '8px' }}>AI Bot Persona</h3>
+                    <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '16px' }}>
+                        {isCommissioner ? "Choose the bot's personality for league chat." : 'Only the commissioner can change the bot persona.'}
+                    </p>
+                    {[
+                        { key: 'commissioner', label: 'Commissioner', desc: 'Stephen A. Smith energy. Confident, opinionated, trash-talky.' },
+                        { key: 'funny', label: 'Hype Bot', desc: 'Chaotic hype man. Roasts managers. Kevin Hart meets Bill Simmons.' },
+                        { key: 'anime', label: 'Sensei Bot', desc: 'DBZ / One Piece / MHA only. Plus Ultra. Straw Hat Pirates energy.' },
+                    ].map(p => (
+                        <div
+                            key={p.key}
+                            onClick={() => isCommissioner && handleSavePersona(p.key)}
+                            style={{
+                                padding: '14px 16px',
+                                marginBottom: '8px',
+                                borderRadius: 'var(--radius)',
+                                border: `1px solid ${botPersona === p.key ? 'var(--accent)' : 'var(--border)'}`,
+                                backgroundColor: botPersona === p.key ? 'var(--accent-dark)' : 'var(--bg-input)',
+                                cursor: isCommissioner ? 'pointer' : 'default',
+                            }}
+                        >
+                            <div style={{
+                                color: botPersona === p.key ? 'var(--accent)' : 'var(--text)',
+                                fontWeight: 'bold',
+                                marginBottom: '4px',
+                            }}>
+                                {p.label}
+                            </div>
+                            <div style={{ color: 'var(--text-dim)', fontSize: '12px' }}>
+                                {p.desc}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             )}
         </div>
     )
