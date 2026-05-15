@@ -17,8 +17,8 @@ import Tournament from './pages/Tournament'
 import Ledger from './pages/Ledger'
 import Chat from './pages/Chat'
 import { ThemeProvider } from './contexts/ThemeContext'
-import Playoffs from './pages/Playoffs'
 import ResetPassword from './pages/ResetPassword'
+import LeagueHome from './pages/LeagueHome'
 
 
 
@@ -130,15 +130,8 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/leagues/:leagueId/playoffs"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout><Playoffs /></AppLayout>
-                  </ProtectedRoute>
-                }
-              />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/leagues/:leagueId/league-home" element={<ProtectedRoute><AppLayout><LeagueHome /></AppLayout></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </LeagueProvider>

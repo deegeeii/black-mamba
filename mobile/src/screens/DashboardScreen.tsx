@@ -106,6 +106,16 @@ export default function DashboardScreen() {
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>Settings & appearance</Text>
                 </TouchableOpacity>
             </View>
+            <View style={styles.cardRow}>
+                <TouchableOpacity
+                    style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+                    onPress={() => navigation.navigate('LeagueHome')}
+                >
+                    <Text style={[styles.cardLabel, { color: theme.text }]}>League</Text>
+                    <Text style={[styles.cardSub, { color: theme.textDim }]}>Settings, rosters & history</Text>
+                </TouchableOpacity>
+            </View>
+
             {ledger !== null && (
                 <View style={[styles.ledger, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                     <Text style={[styles.ledgerTitle, { color: theme.textMuted }]}>LEDGER</Text>
