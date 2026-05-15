@@ -8,6 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL
 interface League {
     id: string
     name: string
+    commissioner_id?: string
 }
 
 interface Member {
@@ -22,6 +23,8 @@ interface LeagueContextType {
     members: Member[]
     getTeamName: (userId: string | null) => string
 }
+
+
 
 const LeagueContext = createContext<LeagueContextType>({
     leagues: [],
