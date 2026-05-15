@@ -17,6 +17,8 @@ class LeagueResponse(BaseModel):
     max_teams: int
     invite_code: str
     created_at: datetime
+    bot_persona: str = 'commissioner'
+
 
 class LeagueMemberResponse(BaseModel):
     league_id: str
