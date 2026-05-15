@@ -89,7 +89,7 @@ export default function Dashboard() {
         axios.get(`${API_URL}/leagues/${id}/matchups?week=${CURRENT_WEEK}`, { headers }),
         axios.get(`${API_URL}/leagues/${id}/bets`, { headers }),
         axios.get(`${API_URL}/leagues/${id}/tournaments`, { headers }),
-        axios.get(`${API_URL}/leagues/${id}/scores/me`, { headers }),
+        axios.get(`${API_URL}/leagues/${id}/scores/me?week=${CURRENT_WEEK}`, { headers }),
         axios.get(`${API_URL}/profile/`, { headers }),
 
     ]).then(([s, m, b, t, sc, p]) => {
