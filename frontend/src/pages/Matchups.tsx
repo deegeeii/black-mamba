@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useLeague } from '../contexts/LeagueContext'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL
@@ -25,6 +26,7 @@ interface Standing {
 export default function Matchups() {
     const { leagueId } = useParams<{ leagueId: string }>()
     const { session, user } = useAuth()
+    const { getTeamName } = useLeague()
     const [ matchups, setMatchups ] = useState<Matchup[]>([])
     const [ standings, setStandings ] = useState<Standing[]>([])
     const [ loading, setLoading ] = useState(true)
@@ -50,7 +52,6 @@ export default function Matchups() {
         fetchData()
     }, [])
     
-    const label = (userId: string) => userId === user?.id ? 'You' : userId.slice(0, 8)
 
     if (loading) return <p>Loading matchups...</p>
 
@@ -74,7 +75,7 @@ export default function Matchups() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ textAlign: 'center', flex: 1 }}>
                               <div style={{ color: m.home_user_id === user?.id ? 'var(--accent)' : 'var(--text)', fontWeight: 'bold', fontSize: '16px' }}>
-                                  {label(m.home_user_id)}
+                                  {getTeamName(m.home_user_id)}
                               </div>
                               <div style={{ fontSize: '28px', fontWeight: 'bold', color: m.winner_user_id === m.home_user_id ? 'var(--accent)' : 'var(--text)', marginTop: '4px' }}>
                                   {m.home_points.toFixed(1)}
@@ -83,7 +84,7 @@ export default function Matchups() {
                           <div style={{ color: 'var(--text-dim)', fontSize: '12px', padding: '0 16px' }}>VS</div>
                           <div style={{ textAlign: 'center', flex: 1 }}>
                               <div style={{ color: m.away_user_id === user?.id ? 'var(--accent)' : 'var(--text)', fontWeight: 'bold', fontSize: '16px' }}>
-                                  {label(m.away_user_id)}
+                                    {getTeamName(m.away_user_id)}
                               </div>
                               <div style={{ fontSize: '28px', fontWeight: 'bold', color: m.winner_user_id === m.away_user_id ? 'var(--accent)' : 'var(--text)', marginTop: '4px' }}>
                                   {m.away_points.toFixed(1)}
@@ -92,7 +93,7 @@ export default function Matchups() {
                       </div>
                       {m.winner_user_id && (
                           <div style={{ textAlign: 'center', marginTop: '12px', color: 'var(--accent)', fontSize: '12px', letterSpacing: '1px' }}>
-                              WINNER: {label(m.winner_user_id)}
+                              WINNER: {getTeamName(m.winner_user_id)}
                           </div>
                       )}
                   </div>
@@ -114,7 +115,7 @@ export default function Matchups() {
                       {standings.map((s, i) => (
                           <tr key={s.user_id} style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: s.user_id === user?.id ? 'var(--accent-dark)' : 'transparent' }}>
                               <td style={{ padding: '12px 16px', color: s.user_id === user?.id ? 'var(--accent)' : 'var(--text)' }}>
-                                  {i + 1}. {label(s.user_id)}
+                                  {i + 1}. {getTeamName(s.user_id)}
                               </td>
                               <td style={{ padding: '12px 16px', color: 'var(--text)', textAlign: 'center' }}>{s.wins}</td>
                               <td style={{ padding: '12px 16px', color: 'var(--text-muted)', textAlign: 'center' }}>{s.losses}</td>

@@ -64,7 +64,7 @@ const cardTitle: React.CSSProperties = {
 
 export default function Dashboard() {
   const { user, session } = useAuth()
-  const { activeLeague } = useLeague()
+  const { activeLeague, getTeamName } = useLeague()
 
   const [standings, setStandings] = useState<Standing[]>([])
   const [matchups, setMatchups] = useState<Matchup[]>([])
@@ -105,7 +105,7 @@ export default function Dashboard() {
     })
   }, [activeLeague, session])
   
-  const label = (userId: string) => userId === user?.id ? 'You' : userId.slice(0, 8)
+  const label = (userId: string) => getTeamName(userId)
 
   const myMatchup = matchups.find(
     m => m.home_user_id === user?.id || m.away_user_id === user?.id

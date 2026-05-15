@@ -22,7 +22,7 @@ export default function ChatScreen() {
     const navigation = useNavigation()
     const { session, user } = useAuth()
     const { theme } = useTheme()
-    const { activeLeague } = useLeague()
+    const { activeLeague, getTeamName } = useLeague()
 
     const [messages, setMessages] = useState<Message[]>([])
     const [text, setText] = useState('')
@@ -45,7 +45,6 @@ export default function ChatScreen() {
 
     useEffect(() => {
         if (!activeLeague) return
-        const { supabase } = require('../lib/supabase')
         const channel = supabase
             .channel(`chat:${activeLeague.id}`)
             .on('postgres_changes', {
@@ -124,7 +123,7 @@ export default function ChatScreen() {
                             <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
                                 {!isMe && (
                                     <Text style={[styles.senderName, { color: theme.textDim }]}>
-                                        {item.sender_name || 'Unknown'}
+                                        {getTeamName(item.user_id)}
                                     </Text>
                                 )}
                                 <View style={[

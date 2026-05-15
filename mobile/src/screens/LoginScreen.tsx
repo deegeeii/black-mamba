@@ -10,6 +10,8 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [resetMode, setResetMode] = useState(false)
+    const [resetSent, setResetSent] = useState(false)
 
     const handleLogin = async () => {
         setLoading(true)
@@ -17,6 +19,30 @@ export default function LoginScreen() {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) setError(error.message)
         setLoading(false)
+    }
+
+    const handleReset = async () => {
+        setLoading(true)
+        setError('')
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: 'https://black-mamba-qtpbzxpu9-deegeetwo.vercel.app/reset-password',
+        })
+        if (error) setError(error.message)
+        else setResetSent(true)
+        setLoading(false)
+    }
+
+    if (resetSent) {
+        return (
+            <KeyboardAvoidingView style={[styles.container, { backgroundColor: t.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                <Text style={[styles.wordmark, { color: t.accent }]}>BLACK MAMBA</Text>
+                <Text style={[styles.subtitle, { color: t.textDim }]}>Fantasy Sports</Text>
+                <Text style={[styles.info, { color: t.text }]}>Check your email for a reset link. It will open in your browser to complete the reset.</Text>
+                <TouchableOpacity onPress={() => { setResetMode(false); setResetSent(false) }}>
+                    <Text style={[styles.link, { color: t.accent }]}>Back to Sign In</Text>
+                </TouchableOpacity>
+            </KeyboardAvoidingView>
+        )
     }
 
     return (
@@ -35,17 +61,33 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 keyboardType="email-address"
             />
-            <TextInput
-                style={[styles.input, { backgroundColor: t.bgCard, color: t.text, borderColor: t.border }]}
-                placeholder="Password"
-                placeholderTextColor={t.textDim}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
 
-            <TouchableOpacity style={[styles.btn, { backgroundColor: t.accent }]} onPress={handleLogin} disabled={loading}>
-                {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.btnText}>Sign In</Text>}
+            {!resetMode && (
+                <TextInput
+                    style={[styles.input, { backgroundColor: t.bgCard, color: t.text, borderColor: t.border }]}
+                    placeholder="Password"
+                    placeholderTextColor={t.textDim}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                />
+            )}
+
+            <TouchableOpacity
+                style={[styles.btn, { backgroundColor: t.accent }]}
+                onPress={resetMode ? handleReset : handleLogin}
+                disabled={loading}
+            >
+                {loading
+                    ? <ActivityIndicator color="#000" />
+                    : <Text style={styles.btnText}>{resetMode ? 'Send Reset Link' : 'Sign In'}</Text>
+                }
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.linkWrap} onPress={() => { setResetMode(!resetMode); setError('') }}>
+                <Text style={[styles.link, { color: t.accent }]}>
+                    {resetMode ? 'Back to Sign In' : 'Forgot Password?'}
+                </Text>
             </TouchableOpacity>
         </KeyboardAvoidingView>
     )
@@ -93,5 +135,17 @@ const styles = StyleSheet.create({
         fontSize: 13,
         marginBottom: 16,
         textAlign: 'center',
+    },
+    linkWrap: {
+        marginTop: 20,
+    },
+    link: {
+        fontSize: 14,
+    },
+    info: {
+        fontSize: 15,
+        textAlign: 'center',
+        marginBottom: 32,
+        lineHeight: 22,
     },
 })

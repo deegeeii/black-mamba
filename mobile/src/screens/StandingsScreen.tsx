@@ -7,7 +7,7 @@ import { useLeague } from '../contexts/LeagueContext'
 
 type Standing = {
     user_id: string
-    team_name: string
+    
     wins: number
     losses: number
     points_for: number
@@ -19,7 +19,7 @@ export default function StandingsScreen() {
     const navigation = useNavigation()
     const { session } = useAuth()
     const { theme } = useTheme()
-    const { activeLeague } = useLeague()
+    const { activeLeague, getTeamName } = useLeague()
 
     const [standings, setStandings] = useState<Standing[]>([])
     const [loading, setLoading] = useState(true)
@@ -65,7 +65,7 @@ export default function StandingsScreen() {
                                 {index + 1}
                             </Text>
                             <Text style={[styles.teamName, { color: theme.text }]} numberOfLines={1}>
-                                {item.team_name || 'Unnamed'}
+                            {getTeamName(item.user_id)}
                             </Text>
                             <Text style={[styles.record, { color: theme.textMuted }]}>
                                 {item.wins}-{item.losses}

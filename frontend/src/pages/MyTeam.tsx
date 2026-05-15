@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
+import { useLeague } from '../contexts/LeagueContext'
 
 const API_URL = import.meta.env.VITE_API_URL
 const CURRENT_WEEK = 1
@@ -52,6 +53,7 @@ const sectionTitle: React.CSSProperties = {
 export default function MyTeam() {
   const { leagueId } = useParams<{ leagueId: string }>()
   const { session, user } = useAuth()
+  const { getTeamName } = useLeague()
   const [tab, setTab] = useState<'roster' | 'free-agents' | 'trades'>('roster')
 
   // Roster state
@@ -396,7 +398,7 @@ export default function MyTeam() {
                 <select value={opponentId} onChange={e => { setOpponentId(e.target.value); setRequestIds([]) }}
                   style={{ width: '100%', backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px', marginBottom: '16px', marginTop: '6px' }}>
                   <option value=''>Select opponent...</option>
-                  {members.map(m => <option key={m.user_id} value={m.user_id}>{m.user_id.slice(0, 8)}</option>)}
+                  {members.map(m => <option key={m.user_id} value={m.user_id}>{getTeamName(m.user_id)}</option>)}
                 </select>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>

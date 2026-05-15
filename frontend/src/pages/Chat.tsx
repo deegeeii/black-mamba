@@ -18,7 +18,7 @@ interface Message {
 
 export default function Chat() {
     const { user, session } = useAuth()
-    const { activeLeague } = useLeague()
+    const { activeLeague, getTeamName } = useLeague()
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [sending, setSending] = useState(false)
@@ -68,9 +68,9 @@ export default function Chat() {
     }
 
     const label = (msg: Message) => {
-        if (msg.is_bot) return 'Commisioner Bot'
+        if (msg.is_bot) return 'Commissioner Bot'
         if (msg.user_id === user?.id) return 'You'
-        return msg.user_id?.slice(0, 8) ?? 'Unknown'
+        return getTeamName(msg.user_id ?? null)
     }
 
     const formatTime = (iso: string) =>

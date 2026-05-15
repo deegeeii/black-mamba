@@ -31,5 +31,17 @@ def join_existing_league(data: JoinLeague, user_id: str = Depends(get_current_us
 @router.get("/{league_id}/members")
 def fetch_members(league_id: str, user_id: str = Depends(get_current_user_id)):
     from app.core.supabase import supabase
-    res = supabase.table("league_members").select("user_id").eq("league_id", league_id).execute()
-    return res.data or []
+    members_res = supabase.table("league_members").select("user_id").eq("league_id", league_id).execute()
+    user_ids = [m["user_id"] for m in (members_res.data or [])]
+    if not user_ids:
+        return []
+    profiles_res = supabase.table("profiles").select("id, username, team_name").in_("id", user_ids).execute()
+    profiles_map = {p["id"]: p for p in (profiles_res.data or [])}
+    result = []
+    for uid in user_ids:
+        p = profiles_map.get(uid, {})
+        result.append({
+            "user_id": uid,
+            "team_name": p.get("team_name") or p.get("username") or "Unknown Team",
+        })
+    return result

@@ -22,7 +22,7 @@ export default function BetsScreen() {
     const navigation = useNavigation()
     const { session, user } = useAuth()
     const { theme } = useTheme()
-    const { activeLeague } = useLeague()
+    const { activeLeague, members, getTeamName } = useLeague()
     const { initPaymentSheet, presentPaymentSheet } = useStripe()
 
     const [bets, setBets] = useState<Bet[]>([])
@@ -127,16 +127,20 @@ export default function BetsScreen() {
                         return (
                             <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                                 <View style={styles.cardHeader}>
-                                    <Text style={{ color: theme.textDim, fontSize: 12 }}>
-                                        {isMine ? 'You proposed' : 'Incoming'} · {item.bet_type}
-                                    </Text>
-                                    <Text style={{ color: statusColor(item.status), fontSize: 12, fontWeight: 'bold' }}>
-                                        {item.status.toUpperCase()}
-                                    </Text>
-                                </View>
-                                <Text style={{ color: theme.accent, fontSize: 24, fontWeight: 'bold', marginVertical: 8 }}>
-                                    ${(item.amount / 100).toFixed(2)}
+                                <Text style={{ color: theme.textDim, fontSize: 12 }}>
+                                    {item.bet_type}
                                 </Text>
+                                <Text style={{ color: statusColor(item.status), fontSize: 12, fontWeight: 'bold' }}>
+                                    {item.status.toUpperCase()}
+                                </Text>
+                            </View>
+                            <Text style={{ color: theme.textMuted, fontSize: 12, marginTop: 6 }}>
+                                {getTeamName(item.proposer_id)} vs {item.opponent_id ? getTeamName(item.opponent_id) : 'Open'}
+                            </Text>
+                            <Text style={{ color: theme.accent, fontSize: 24, fontWeight: 'bold', marginVertical: 8 }}>
+                                ${(item.amount / 100).toFixed(2)}
+                            </Text>
+
                                 {canAccept && (
                                     <TouchableOpacity
                                         style={[styles.acceptBtn, { backgroundColor: theme.accent }]}
@@ -162,15 +166,24 @@ export default function BetsScreen() {
 
                     {error ? <Text style={{ color: theme.danger, marginBottom: 12 }}>{error}</Text> : null}
 
-                    <Text style={[styles.label, { color: theme.textMuted }]}>OPPONENT USER ID (optional — leave blank for open bet)</Text>
-                    <TextInput
-                        style={[styles.input, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border }]}
-                        value={opponentId}
-                        onChangeText={setOpponentId}
-                        placeholder="Leave blank to post openly"
-                        placeholderTextColor={theme.textDim}
-                        autoCapitalize="none"
-                    />
+                    <Text style={[styles.label, { color: theme.textMuted }]}>OPPONENT (optional — leave blank for open bet)</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
+                        {members
+                            .filter(m => m.user_id !== user?.id)
+                            .map(m => (
+                                <TouchableOpacity
+                                    key={m.user_id}
+                                    style={[styles.typeBtn, { backgroundColor: opponentId === m.user_id ? theme.accent : theme.bgCard, borderColor: opponentId === m.user_id ? theme.accent : theme.border }]}
+                                    onPress={() => setOpponentId(opponentId === m.user_id ? '' : m.user_id)}
+                                >
+                                    <Text style={{ color: opponentId === m.user_id ? '#000' : theme.textMuted, fontSize: 13 }}>
+                                        {m.team_name}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))
+                        }
+                    </View>
+
 
                     <Text style={[styles.label, { color: theme.textMuted }]}>AMOUNT (USD)</Text>
                     <TextInput

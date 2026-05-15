@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import axios from 'axios'
+import { useLeague } from '../contexts/LeagueContext'
 
 const API_URL = import.meta.env.VITE_API_URL
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -86,6 +87,7 @@ function BetsInner() {
     const [loading, setLoading] = useState(true)
     const [clientSecret, setClientSecret] = useState('')
     const [, setActiveBetId] = useState('')
+    const { getTeamName } = useLeague()
 
     // Create Form
     const [betType, setBetType] = useState('weekly_matchup')
@@ -130,10 +132,8 @@ function BetsInner() {
         fetchBets()
       }
 
-      const label = (userId: string | null) => {
-        if (!userId) return 'Open'
-        return userId === user?.id ? 'You' : userId.slice(0, 8)
-      }
+      const label = (userId: string | null) => getTeamName(userId)
+
 
       if (loading) return <p>Loading bets...</p>
 

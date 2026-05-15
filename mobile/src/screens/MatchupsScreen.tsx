@@ -12,25 +12,21 @@ type Matchup = {
     id: string
     home_user_id: string
     away_user_id: string
-    home_team_name: string
-    away_team_name: string
-    home_score: number
-    away_score: number
+    home_points: number
+    away_points: number
+    winner_user_id: string | null
     week: number
-    is_complete: boolean
 }
 
 type PlayoffMatchup = {
     id: string
-    home_team_name: string
-    away_team_name: string
-    home_score: number
-    away_score: number
-    week: number
-    round: string
-    winner_team_name: string | null
     home_user_id: string
     away_user_id: string
+    home_points: number
+    away_points: number
+    winner_user_id: string | null
+    week: number
+    round: string
 }
 
 const ROUND_LABELS: Record<string, string> = {
@@ -43,7 +39,7 @@ export default function MatchupsScreen() {
     const navigation = useNavigation()
     const { session, user } = useAuth()
     const { theme } = useTheme()
-    const { activeLeague } = useLeague()
+    const { activeLeague, getTeamName } = useLeague()
 
     const [tab, setTab] = useState<'matchups' | 'playoffs'>('matchups')
     const [matchups, setMatchups] = useState<Matchup[]>([])
@@ -131,8 +127,8 @@ export default function MatchupsScreen() {
                             contentContainerStyle={styles.list}
                             renderItem={({ item }) => {
                                 const isMine = isMyMatchup(item)
-                                const homeWon = item.is_complete && item.home_score > item.away_score
-                                const awayWon = item.is_complete && item.away_score > item.home_score
+                                const homeWon = item.winner_user_id === item.home_user_id
+                                const awayWon = item.winner_user_id === item.away_user_id
                                 return (
                                     <View style={[styles.card, {
                                         backgroundColor: theme.bgCard,
@@ -143,24 +139,24 @@ export default function MatchupsScreen() {
                                         <View style={styles.matchRow}>
                                             <View style={styles.teamCol}>
                                                 <Text style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]} numberOfLines={1}>
-                                                    {item.home_team_name || 'Home'}
+                                                    {getTeamName(item.home_user_id)}
                                                 </Text>
                                                 <Text style={[styles.score, { color: homeWon ? theme.accent : theme.textMuted }]}>
-                                                    {item.home_score?.toFixed(1) ?? '—'}
+                                                    {item.home_points?.toFixed(1) ?? '—'}
                                                 </Text>
                                             </View>
                                             <Text style={[styles.vs, { color: theme.textDim }]}>vs</Text>
                                             <View style={[styles.teamCol, styles.teamColRight]}>
                                                 <Text style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]} numberOfLines={1}>
-                                                    {item.away_team_name || 'Away'}
+                                                    {getTeamName(item.away_user_id)}
                                                 </Text>
                                                 <Text style={[styles.score, { color: awayWon ? theme.accent : theme.textMuted }]}>
-                                                    {item.away_score?.toFixed(1) ?? '—'}
+                                                    {item.away_points?.toFixed(1) ?? '—'}
                                                 </Text>
                                             </View>
                                         </View>
                                         <Text style={[styles.status, { color: theme.textDim }]}>
-                                            {item.is_complete ? 'Final' : 'In Progress'}
+                                            {item.winner_user_id ? 'Final' : 'In Progress'}
                                         </Text>
                                     </View>
                                 )
@@ -185,8 +181,8 @@ export default function MatchupsScreen() {
                                 </Text>
                                 {playoffsByRound[round].map(m => {
                                     const isMine = isMyMatchup(m)
-                                    const homeWon = !!m.winner_team_name && m.winner_team_name === m.home_team_name
-                                    const awayWon = !!m.winner_team_name && m.winner_team_name === m.away_team_name
+                                    const homeWon = m.winner_user_id === m.home_user_id
+                                    const awayWon = m.winner_user_id === m.away_user_id
                                     return (
                                         <View key={m.id} style={[styles.card, {
                                             backgroundColor: theme.bgCard,
@@ -198,25 +194,25 @@ export default function MatchupsScreen() {
                                             <View style={styles.matchRow}>
                                                 <View style={styles.teamCol}>
                                                     <Text style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]} numberOfLines={1}>
-                                                        {m.home_team_name || 'TBD'}
+                                                        {getTeamName(m.home_user_id)}
                                                     </Text>
                                                     <Text style={[styles.score, { color: homeWon ? theme.accent : theme.textMuted }]}>
-                                                        {m.home_score?.toFixed(1) ?? '—'}
+                                                        {m.home_points?.toFixed(1) ?? '—'}
                                                     </Text>
                                                 </View>
                                                 <Text style={[styles.vs, { color: theme.textDim }]}>vs</Text>
                                                 <View style={[styles.teamCol, styles.teamColRight]}>
                                                     <Text style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]} numberOfLines={1}>
-                                                        {m.away_team_name || 'TBD'}
+                                                        {getTeamName(m.away_user_id)}
                                                     </Text>
                                                     <Text style={[styles.score, { color: awayWon ? theme.accent : theme.textMuted }]}>
-                                                        {m.away_score?.toFixed(1) ?? '—'}
+                                                        {m.away_points?.toFixed(1) ?? '—'}
                                                     </Text>
                                                 </View>
                                             </View>
-                                            {m.winner_team_name && (
+                                            {m.winner_user_id && (
                                                 <Text style={[styles.status, { color: theme.accent }]}>
-                                                    Winner: {m.winner_team_name}
+                                                    Winner: {getTeamName(m.winner_user_id)}
                                                 </Text>
                                             )}
                                         </View>

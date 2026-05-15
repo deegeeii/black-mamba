@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { useLeague } from '../contexts/LeagueContext'
 
 const API = process.env.EXPO_PUBLIC_API_URL
 
@@ -32,6 +33,7 @@ export default function TournamentDetailScreen() {
     const { tournament } = route.params
     const { session, user } = useAuth()
     const { theme } = useTheme()
+    const { getTeamName } = useLeague()
 
     const [matchups, setMatchups] = useState<Matchup[]>([])
     const [loading, setLoading] = useState(true)
@@ -174,7 +176,7 @@ export default function TournamentDetailScreen() {
                                                 <View style={styles.matchRow}>
                                                     <View style={styles.teamCol}>
                                                         <Text style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]}>
-                                                            {m.home_user_id === user?.id ? 'You' : m.home_user_id.slice(0, 8)}
+                                                        {getTeamName(m.home_user_id)}
                                                         </Text>
                                                         <Text style={[styles.score, { color: homeWon ? theme.accent : theme.textMuted }]}>
                                                             {m.home_points?.toFixed(1) ?? '—'}
@@ -183,7 +185,7 @@ export default function TournamentDetailScreen() {
                                                     <Text style={[styles.vs, { color: theme.textDim }]}>vs</Text>
                                                     <View style={[styles.teamCol, styles.teamColRight]}>
                                                         <Text style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]}>
-                                                            {m.away_user_id ? (m.away_user_id === user?.id ? 'You' : m.away_user_id.slice(0, 8)) : 'BYE'}
+                                                        {m.away_user_id ? getTeamName(m.away_user_id) : 'BYE'}
                                                         </Text>
                                                         <Text style={[styles.score, { color: awayWon ? theme.accent : theme.textMuted }]}>
                                                             {m.away_points?.toFixed(1) ?? '—'}
@@ -219,7 +221,7 @@ export default function TournamentDetailScreen() {
                                 <View key={s.userId} style={[styles.card, { backgroundColor: theme.bgCard, borderColor: s.userId === user?.id ? theme.accent : theme.border, flexDirection: 'row', alignItems: 'center' }]}>
                                     <Text style={{ color: theme.textDim, fontSize: 16, fontWeight: 'bold', width: 32 }}>{i + 1}</Text>
                                     <Text style={{ color: s.userId === user?.id ? theme.accent : theme.text, flex: 1, fontWeight: 'bold' }}>
-                                        {s.userId === user?.id ? 'You' : s.userId.slice(0, 8)}
+                                    {getTeamName(s.userId)}
                                     </Text>
                                     <Text style={{ color: theme.text, marginRight: 16 }}>{s.wins}W</Text>
                                     <Text style={{ color: theme.textDim, fontSize: 13 }}>{s.points.toFixed(1)} pts</Text>
