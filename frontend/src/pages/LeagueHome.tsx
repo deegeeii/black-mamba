@@ -301,6 +301,52 @@ export default function LeagueHome() {
                                 )}
                             </div>
                         ))}
+                        {isCommissioner && (
+                            <div style={card}>
+                                <div style={{ color: 'var(--accent)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>Add Award</div>
+                                <form onSubmit={handleAddAward}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                        <div>
+                                            <label style={labelStyle}>Season</label>
+                                            <input
+                                                type="number"
+                                                value={newAwardSeason}
+                                                onChange={e => setNewAwardSeason(Number(e.target.value))}
+                                                style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', color: 'var(--text)', fontSize: '14px', marginTop: '4px', boxSizing: 'border-box' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Award Name</label>
+                                            <input
+                                                value={newAwardName}
+                                                onChange={e => setNewAwardName(e.target.value)}
+                                                placeholder="e.g. MVP"
+                                                style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', color: 'var(--text)', fontSize: '14px', marginTop: '4px', boxSizing: 'border-box' }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <label style={labelStyle}>Recipient</label>
+                                        <select
+                                            value={newAwardUser}
+                                            onChange={e => setNewAwardUser(e.target.value)}
+                                            style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', color: 'var(--text)', fontSize: '14px', marginTop: '4px' }}
+                                        >
+                                            <option value="">— Select member —</option>
+                                            {members.map(m => <option key={m.user_id} value={m.user_id}>{m.team_name}</option>)}
+                                        </select>
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={awardSaving}
+                                        style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontWeight: 'bold', cursor: 'pointer' }}
+                                    >
+                                        {awardSaving ? 'Adding...' : 'Add Award'}
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
                         
                     </>
                 )
