@@ -396,7 +396,7 @@ export default function Chat() {
                                 }}>
                                     {label(msg)} · {formatTime(msg.created_at)}
                                 </span>
-                                {isImage(msg.message) ? (
+                                {isImage(msg.message ?? '') ? (
                                     <img
                                         src={msg.message ?? ''}
                                         alt="Chat image"

@@ -83,6 +83,8 @@ export default function LeagueHome() {
 
     const isCommissioner = activeLeague?.commissioner_id === user?.id
     const [botPersona, setBotPersona] = useState<string>('commissioner')
+    const [personaSaving, setPersonaSaving] = useState(false)
+    const [personaSaved, setPersonaSaved] = useState(false)
 
 
     const headers = useMemo(() => ({
@@ -141,16 +143,24 @@ export default function LeagueHome() {
     }
 
     const handleSavePersona = async (persona: string) => {
+        if (!isCommissioner || personaSaving) return
         setBotPersona(persona)
+        setPersonaSaving(true)
+        setPersonaSaved(false)
         try {
             await axios.patch(
                 `${API_URL}/leagues/${leagueId}/bot-persona`,
                 { bot_persona: persona },
                 { headers }
             )
-        } catch {}
-    }
-    
+            setPersonaSaved(true)
+            setTimeout(() => setPersonaSaved(false), 2000)
+        } catch {
+            // silent
+        } finally {
+            setPersonaSaving(false)
+        }
+    }     
 
     const handleAddAward = async (e: { preventDefault(): void }) => {
         e.preventDefault()
@@ -404,8 +414,7 @@ export default function LeagueHome() {
                     ].map(p => (
                         <div
                             key={p.key}
-                            onClick={() => isCommissioner && setBotPersona(p.key)}
-
+                            onClick={() => handleSavePersona(p.key)}
                             style={{
                                 padding: '14px 16px',
                                 marginBottom: '8px',
@@ -413,6 +422,7 @@ export default function LeagueHome() {
                                 border: `1px solid ${botPersona === p.key ? 'var(--accent)' : 'var(--border)'}`,
                                 backgroundColor: botPersona === p.key ? 'var(--accent-dark)' : 'var(--bg-input)',
                                 cursor: isCommissioner ? 'pointer' : 'default',
+                                opacity: personaSaving ? 0.6 : 1,
                             }}
                         >
                             <div style={{
@@ -429,27 +439,12 @@ export default function LeagueHome() {
                     ))}
                     {isCommissioner && (
                         <>
-                            <button
-                                onClick={() => handleSavePersona(botPersona)}
-                                style={{
-                                    backgroundColor: 'var(--accent)',
-                                    color: '#000',
-                                    border: 'none',
-                                    borderRadius: 'var(--radius)',
-                                    padding: '12px 24px',
-                                    fontWeight: 'bold',
-                                    cursor: 'pointer',
-                                    marginTop: '8px',
-                                    width: '100%',
-                                }}
-                            >
-                                Save Persona
-                            </button>
+                            <div style={{ fontSize: '13px', marginTop: '8px', minHeight: '20px', color: personaSaved ? 'var(--accent)' : 'var(--text-dim)' }}>
+                                {personaSaving ? 'Saving...' : personaSaved ? '✓ Saved' : 'Click a persona to select and save'}
+                            </div>
 
                             <div style={{ marginTop: '24px' }}>
-                                <h3 style={{ color: 'var(--accent)', marginBottom: '8px' }}>
-                                    Import ESPN History
-                                </h3>
+                                <h3 style={{ color: 'var(--accent)', marginBottom: '8px' }}>Import ESPN History</h3>
                                 <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '16px' }}>
                                     Pull past season champion and high scorer from ESPN Fantasy. For private leagues,
                                     get your cookies from browser devtools while logged into ESPN.
@@ -525,6 +520,7 @@ export default function LeagueHome() {
                             </div>
                         </>
                     )}
+
 
 
                 </div>

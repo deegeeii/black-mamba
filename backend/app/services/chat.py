@@ -51,10 +51,10 @@ def get_messages(league_id: str):
     res = supabase.table("league_messages") \
         .select("*") \
         .eq("league_id", league_id) \
-        .order("created_at", desc=False) \
-        .limit(50) \
+        .order("created_at", desc=True) \
+        .limit(100) \
         .execute()
-    return res.data or [], None
+    return list(reversed(res.data or [])), None
 
 
 def post_message(league_id: str, user_id: str, message: str):

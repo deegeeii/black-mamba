@@ -47,11 +47,12 @@ def trigger_bot(league_id: str, body: BotRequest, user_id: str = Depends(get_cur
 
 @router.patch("/{league_id}/bot-persona")
 def update_bot_persona(league_id: str, body: PersonaUpdate, user_id: str = Depends(get_current_user)):
-    from app.core.supabase import supabase
     valid = ["commissioner", "funny", "anime"]
     if body.bot_persona not in valid:
-        from fastapi import HTTPException
         raise HTTPException(status_code=400, detail=f"Invalid persona. Choose from: {valid}")
+    league_res = supabase.table("leagues").select("commissioner_id").eq("id", league_id).execute()
+    if not league_res.data or league_res.data[0]["commissioner_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Only the commissioner can change the bot persona")
     supabase.table("leagues").update({"bot_persona": body.bot_persona}).eq("id", league_id).execute()
     return {"ok": True}
 
