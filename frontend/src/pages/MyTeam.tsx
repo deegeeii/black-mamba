@@ -1,7 +1,6 @@
 
-// frontend/src/pages/MyTeam.tsx
-
-import React, { useState, useEffect, useMemo } from 'react'
+import type { CSSProperties } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
@@ -34,7 +33,7 @@ interface Trade {
   week: number
 }
 
-const card: React.CSSProperties = {
+const card: CSSProperties = {
   backgroundColor: 'var(--bg-card)',
   border: '1px solid var(--border)',
   borderRadius: 'var(--radius)',
@@ -42,7 +41,7 @@ const card: React.CSSProperties = {
   marginBottom: '16px',
 }
 
-const sectionTitle: React.CSSProperties = {
+const sectionTitle: CSSProperties = {
   color: 'var(--accent)',
   fontSize: '11px',
   letterSpacing: '1px',
@@ -121,7 +120,7 @@ export default function MyTeam() {
       if (sc.status === 'fulfilled') setScores(sc.value.data)
       if (fa.status === 'fulfilled') setFreeAgents(fa.value.data)
       if (t.status === 'fulfilled') setTrades(t.value.data)
-      if (m.status === 'fulfilled') setMembers(m.value.data.filter((x: any) => x.user_id !== user?.id))
+      if (m.status === 'fulfilled') setMembers(m.value.data.filter((x: { user_id: string }) => x.user_id !== user?.id))
       if (p.status === 'fulfilled') {
         const map: Record<string, FreeAgent> = {}
         p.value.data.forEach((pl: FreeAgent) => { map[pl.id] = pl })
@@ -129,16 +128,16 @@ export default function MyTeam() {
       }
       setLoading(false)
     })
-  }, [leagueId, session])
+  }, [leagueId, session, headers])
 
-  useEffect(() => { if (tab === 'free-agents') fetchFreeAgents() }, [position, search])
+  useEffect(() => { if (tab === 'free-agents') fetchFreeAgents() }, [tab, position, search, leagueId, headers])
 
   useEffect(() => {
     if (!opponentId) return
     axios.get(`${API_URL}/leagues/${leagueId}/roster?target_user_id=${opponentId}`, { headers })
-      .then(r => setOpponentRoster(r.data.map((p: any) => ({ id: p.player_id, name: p.name, position: p.position, nfl_team: p.nfl_team }))))
+      .then(r => setOpponentRoster(r.data.map((p: { player_id: string; name: string; position: string; nfl_team: string | null }) => ({ id: p.player_id, name: p.name, position: p.position, nfl_team: p.nfl_team }))))
       .catch(() => setOpponentRoster([]))
-  }, [opponentId])
+  }, [opponentId, leagueId, headers])
 
   const handleSlotChange = (slot: string, playerId: string) => {
     setLineup(prev => ({ ...prev, [slot]: playerId }))
@@ -207,7 +206,7 @@ export default function MyTeam() {
   const outgoing = trades.filter(t => t.proposer_id === user?.id && t.status === 'pending')
   const history = trades.filter(t => t.status !== 'pending')
 
-  const tabStyle = (t: string): React.CSSProperties => ({
+  const tabStyle = (t: string): CSSProperties => ({
     padding: '10px 20px',
     cursor: 'pointer',
     fontSize: '13px',

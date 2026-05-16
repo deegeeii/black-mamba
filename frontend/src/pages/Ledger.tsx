@@ -51,7 +51,7 @@ export default function Ledger() {
             setLeagueBets(data)
             setLoading(false)
         })
-    }, [leagues, session])
+    }, [leagues, session, headers])
 
     const getResult = (bet: Bet): 'win' | 'loss' | 'pending' => {
         if (bet.status !== 'settled') return 'pending'

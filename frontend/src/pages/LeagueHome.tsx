@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -20,7 +21,7 @@ interface Season {
 
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE']
 
-const card: React.CSSProperties = {
+const card: CSSProperties = {
     backgroundColor: 'var(--bg-card)',
     border: '1px solid var(--border)',
     borderRadius: 'var(--radius)',
@@ -28,7 +29,7 @@ const card: React.CSSProperties = {
     marginBottom: '16px',
 }
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
     width: '100%',
     backgroundColor: 'var(--bg-input)',
     border: '1px solid var(--border)',
@@ -40,7 +41,7 @@ const inputStyle: React.CSSProperties = {
     boxSizing: 'border-box',
 }
 
-const labelStyle: React.CSSProperties = {
+const labelStyle: CSSProperties = {
     color: 'var(--text-dim)',
     fontSize: '12px',
     letterSpacing: '1px',
@@ -90,25 +91,25 @@ export default function LeagueHome() {
             axios.get(`${API_URL}/leagues/`, { headers }),
         ]).then(([membersRes, profileRes, leaguesRes]) => {
             if (membersRes.status === 'fulfilled') {
-                const me = membersRes.value.data.find((m: any) => m.user_id === session.user.id)
+                const me = membersRes.value.data.find((m: { user_id: string; team_name?: string }) => m.user_id === session.user.id)
                 if (me?.team_name) setTeamName(me.team_name)
             }
             if (profileRes.status === 'fulfilled') setAvatarUrl(profileRes.value.data.avatar_url || '')
             if (leaguesRes.status === 'fulfilled') {
-                const league = leaguesRes.value.data.find((l: any) => l.id === leagueId)
+                const league = leaguesRes.value.data.find((l: { id: string; bot_persona?: string }) => l.id === leagueId)
                 if (league?.bot_persona) setBotPersona(league.bot_persona)
             }
             setSettingsLoading(false)
         })
-        
-    }, [session])
+
+    }, [session, leagueId, headers])
 
     useEffect(() => {
         if (!session) return
         axios.get(`${API_URL}/leagues/${leagueId}/rosters`, { headers })
             .then(res => { setRosters(res.data); setRostersLoading(false) })
             .catch(() => setRostersLoading(false))
-    }, [session])
+    }, [session, leagueId, headers])
 
     const fetchHistory = () => {
         if (!session) return
@@ -116,9 +117,9 @@ export default function LeagueHome() {
             .then(res => { setHistory(res.data); setHistoryLoading(false) })
             .catch(() => setHistoryLoading(false))
     }
-    useEffect(() => { fetchHistory() }, [session])
+    useEffect(() => { fetchHistory() }, [session, leagueId, headers])
 
-    const handleSaveSettings = async (e: React.FormEvent) => {
+    const handleSaveSettings = async (e: { preventDefault(): void }) => {
         e.preventDefault()
         setSaving(true)
         setMessage('')
@@ -134,15 +135,17 @@ export default function LeagueHome() {
 
     const handleSavePersona = async (persona: string) => {
         setBotPersona(persona)
-        await axios.patch(
-            `${API_URL}/leagues/${leagueId}/bot-persona`,
-            { bot_persona: persona },
-            { headers }
-        )
+        try {
+            await axios.patch(
+                `${API_URL}/leagues/${leagueId}/bot-persona`,
+                { bot_persona: persona },
+                { headers }
+            )
+        } catch {}
     }
     
 
-    const handleAddAward = async (e: React.FormEvent) => {
+    const handleAddAward = async (e: { preventDefault(): void }) => {
         e.preventDefault()
         if (!newAwardName || !newAwardUser) return
         setAwardSaving(true)
@@ -166,7 +169,7 @@ export default function LeagueHome() {
     const sortedRoster = (players: Player[]) =>
         [...players].sort((a, b) => POSITION_ORDER.indexOf(a.position) - POSITION_ORDER.indexOf(b.position))
 
-    const tabStyle = (t: Tab): React.CSSProperties => ({
+    const tabStyle = (t: Tab): CSSProperties => ({
         padding: '10px 20px',
         cursor: 'pointer',
         fontSize: '13px',
@@ -389,26 +392,27 @@ export default function LeagueHome() {
                         </div>
                     ))}
                     {isCommissioner && (
-                        <button
-                            onClick={() => handleSavePersona(botPersona)}
-                            style={{
-                                backgroundColor: 'var(--accent)',
-                                color: '#000',
-                                border: 'none',
-                                borderRadius: 'var(--radius)',
-                                padding: '12px 24px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                marginTop: '8px',
-                                width: '100%',
-                            }}
-                        >
-                            Save Persona
-                        </button>
-                    )}
+                    <button
+                        onClick={() => handleSavePersona(botPersona)}
+                        style={{
+                            backgroundColor: 'var(--accent)',
+                            color: '#000',
+                            border: 'none',
+                            borderRadius: 'var(--radius)',
+                            padding: '12px 24px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            marginTop: '8px',
+                            width: '100%',
+                        }}
+                    >
+                        Save Persona
+                    </button>
+                )}
 
                 </div>
             )}
         </div>
     )
 }
+

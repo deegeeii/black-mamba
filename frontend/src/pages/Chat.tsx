@@ -11,7 +11,7 @@ const GIPHY_KEY = 'C0akdik55lotqYg8iWkJSbvUyCznltPb'
 interface Message {
     id: string
     user_id: string | null
-    message: string
+    message: string | null
     is_bot: boolean
     bot_name: string | null
     bot_trigger: string | null
@@ -32,6 +32,18 @@ interface GiphyApiGif {
     }
 }
 
+interface ActivityItem {
+    id: string
+    user_id: string
+    team_name: string
+    player_name: string
+    player_position: string
+    move_type: 'add' | 'drop'
+    week: number
+    created_at: string
+}
+
+
 export default function Chat() {
     const { user, session } = useAuth()
     const { activeLeague, getTeamName } = useLeague()
@@ -46,6 +58,10 @@ export default function Chat() {
     const [gifQuery, setGifQuery] = useState('')
     const [gifs, setGifs] = useState<GifResult[]>([])
     const [gifLoading, setGifLoading] = useState(false)
+    const [tab, setTab] = useState<'chat' | 'activity'>('chat')
+    const [activity, setActivity] = useState<ActivityItem[]>([])
+    const [activityLoading, setActivityLoading] = useState(false)
+
 
     const headers = useMemo(
         () => ({ Authorization: `Bearer ${session?.access_token}` }),
@@ -61,6 +77,27 @@ export default function Chat() {
             .then(res => setMessages(res.data))
             .catch(() => {})
     }, [activeLeague, session, headers])
+
+    const fetchActivity = useCallback(async () => {
+        if (!activeLeague || !session) return
+        setActivityLoading(true)
+        try {
+            const res = await axios.get<ActivityItem[]>(
+                `${API_URL}/leagues/${activeLeague.id}/activity`,
+                { headers }
+            )
+            setActivity(res.data)
+        } catch {
+            setActivity([])
+        } finally {
+            setActivityLoading(false)
+        }
+    }, [activeLeague, session, headers])
+    
+    useEffect(() => {
+        if (tab === 'activity') fetchActivity()
+    }, [tab, fetchActivity])    
+
 
     useEffect(() => {
         fetchMessages()
@@ -209,10 +246,33 @@ export default function Chat() {
     return (
         <div style={{ maxWidth: '700px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 48px)' }}>
             <h1 style={{ marginBottom: '4px' }}>League Chat</h1>
-            <p style={{ color: 'var(--text-dim)', marginBottom: '16px' }}>{activeLeague.name}</p>
-
-            {/* GIF Picker Overlay */}
-            {gifOpen && (
+            <p style={{ color: 'var(--text-dim)', marginBottom: '8px' }}>{activeLeague.name}</p>
+    
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '12px' }}>
+                {(['chat', 'activity'] as const).map(t => (
+                    <button
+                        key={t}
+                        onClick={() => setTab(t)}
+                        style={{
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderBottom: `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}`,
+                            color: tab === t ? 'var(--accent)' : 'var(--text-dim)',
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontWeight: tab === t ? 'bold' : 'normal',
+                            fontSize: '13px',
+                            marginBottom: '-1px',
+                        }}
+                    >
+                        {t === 'chat' ? 'Chat' : 'Activity'}
+                    </button>
+                ))}
+            </div>
+    
+            {/* GIF Picker Overlay — only in chat tab */}
+            {tab === 'chat' && gifOpen && (
                 <div style={{
                     position: 'fixed',
                     bottom: '100px',
@@ -298,158 +358,225 @@ export default function Chat() {
                     </div>
                 </div>
             )}
-
-            {/* Message List */}
-            <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                padding: '16px',
-                marginBottom: '12px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-            }}>
-                {messages.length === 0 && (
-                    <p style={{ color: 'var(--text-dim)', textAlign: 'center', marginTop: '40px' }}>
-                        No messages yet. Say something.
-                    </p>
-                )}
-                {messages.map(msg => (
-                    <div
-                        key={msg.id}
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: msg.user_id === user?.id && !msg.is_bot ? 'flex-end' : 'flex-start',
-                        }}
-                    >
-                        <span style={{
-                            fontSize: '11px',
-                            color: msg.is_bot ? 'var(--warning)' : 'var(--text-dim)',
-                            marginBottom: '4px',
-                        }}>
-                            {label(msg)} · {formatTime(msg.created_at)}
-                        </span>
-                        {isImage(msg.message) ? (
-                            <img
-                                src={msg.message}
-                                alt="Chat image"
+    
+            {/* Chat Tab */}
+            {tab === 'chat' && (
+                <>
+                    {/* Message List */}
+                    <div style={{
+                        flex: 1,
+                        overflowY: 'auto',
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        padding: '16px',
+                        marginBottom: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                    }}>
+                        {messages.length === 0 && (
+                            <p style={{ color: 'var(--text-dim)', textAlign: 'center', marginTop: '40px' }}>
+                                No messages yet. Say something.
+                            </p>
+                        )}
+                        {messages.map(msg => (
+                            <div
+                                key={msg.id}
                                 style={{
-                                    maxWidth: '240px',
-                                    borderRadius: 'var(--radius)',
-                                    border: '1px solid var(--border)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: msg.user_id === user?.id && !msg.is_bot ? 'flex-end' : 'flex-start',
                                 }}
-                            />
-                        ) : (
-                            <div style={{
-                                backgroundColor: msg.is_bot ? '#1f1800' : msg.user_id === user?.id ? 'var(--accent-dark)' : 'var(--bg-deep)',
-                                border: `1px solid ${msg.is_bot ? 'var(--warning)' : msg.user_id === user?.id ? 'var(--accent)' : 'var(--border)'}`,
+                            >
+                                <span style={{
+                                    fontSize: '11px',
+                                    color: msg.is_bot ? 'var(--warning)' : 'var(--text-dim)',
+                                    marginBottom: '4px',
+                                }}>
+                                    {label(msg)} · {formatTime(msg.created_at)}
+                                </span>
+                                {isImage(msg.message) ? (
+                                    <img
+                                        src={msg.message ?? ''}
+                                        alt="Chat image"
+                                        style={{
+                                            maxWidth: '240px',
+                                            borderRadius: 'var(--radius)',
+                                            border: '1px solid var(--border)',
+                                        }}
+                                    />
+                                ) : (
+                                    <div style={{
+                                        backgroundColor: msg.is_bot ? '#1f1800' : msg.user_id === user?.id ? 'var(--accent-dark)' : 'var(--bg-deep)',
+                                        border: `1px solid ${msg.is_bot ? 'var(--warning)' : msg.user_id === user?.id ? 'var(--accent)' : 'var(--border)'}`,
+                                        borderRadius: 'var(--radius)',
+                                        padding: '10px 14px',
+                                        maxWidth: '80%',
+                                        color: msg.is_bot ? '#ffcc44' : 'var(--text)',
+                                        fontSize: '14px',
+                                        lineHeight: '1.5',
+                                    }}>
+                                        {msg.message ?? ''}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        <div ref={bottomRef} />
+                    </div>
+    
+                    {/* Input Row */}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            onClick={() => setGifOpen(o => !o)}
+                            style={{
+                                backgroundColor: gifOpen ? 'var(--accent-dark)' : 'transparent',
+                                color: gifOpen ? 'var(--accent)' : 'var(--text-dim)',
+                                border: '1px solid var(--border)',
                                 borderRadius: 'var(--radius)',
                                 padding: '10px 14px',
-                                maxWidth: '80%',
-                                color: msg.is_bot ? '#ffcc44' : 'var(--text)',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '13px',
+                            }}
+                        >
+                            GIF
+                        </button>
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            style={{
+                                backgroundColor: 'transparent',
+                                color: 'var(--text-dim)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius)',
+                                padding: '10px 14px',
+                                cursor: uploading ? 'not-allowed' : 'pointer',
+                                fontSize: '16px',
+                            }}
+                        >
+                            {uploading ? '⏳' : '📎'}
+                        </button>
+                        <input
+                            value={input}
+                            onChange={e => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Say something... (Enter to send)"
+                            style={{
+                                flex: 1,
+                                backgroundColor: 'var(--bg-input)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius)',
+                                padding: '10px 14px',
+                                color: 'var(--text)',
                                 fontSize: '14px',
-                                lineHeight: '1.5',
-                            }}>
-                                {msg.message}
-                            </div>
-                        )}
+                                outline: 'none',
+                            }}
+                        />
+                        <button
+                            onClick={sendMessage}
+                            disabled={sending || !input.trim()}
+                            style={{
+                                backgroundColor: sending || !input.trim() ? 'var(--border)' : 'var(--accent)',
+                                color: sending || !input.trim() ? 'var(--text-dim)' : '#000',
+                                border: 'none',
+                                borderRadius: 'var(--radius)',
+                                padding: '10px 20px',
+                                cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '14px',
+                            }}
+                        >
+                            Send
+                        </button>
+                        <button
+                            onClick={triggerBot}
+                            disabled={botLoading}
+                            style={{
+                                backgroundColor: 'transparent',
+                                color: botLoading ? 'var(--text-dim)' : 'var(--warning)',
+                                border: '1px solid var(--warning)',
+                                borderRadius: 'var(--radius)',
+                                padding: '10px 16px',
+                                cursor: botLoading ? 'not-allowed' : 'pointer',
+                                fontWeight: 'bold',
+                                fontSize: '14px',
+                            }}
+                        >
+                            {botLoading ? '...' : 'Ask Bot'}
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={handleImageUpload}
+                        />
                     </div>
-                ))}
-                <div ref={bottomRef} />
-            </div>
-
-            {/* Input Row */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                    onClick={() => setGifOpen(o => !o)}
-                    style={{
-                        backgroundColor: gifOpen ? 'var(--accent-dark)' : 'transparent',
-                        color: gifOpen ? 'var(--accent)' : 'var(--text-dim)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius)',
-                        padding: '10px 14px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                    }}
-                >
-                    GIF
-                </button>
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    style={{
-                        backgroundColor: 'transparent',
-                        color: 'var(--text-dim)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius)',
-                        padding: '10px 14px',
-                        cursor: uploading ? 'not-allowed' : 'pointer',
-                        fontSize: '16px',
-                    }}
-                >
-                    {uploading ? '⏳' : '📎'}
-                </button>
-                <input
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Say something... (Enter to send)"
-                    style={{
-                        flex: 1,
-                        backgroundColor: 'var(--bg-input)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius)',
-                        padding: '10px 14px',
-                        color: 'var(--text)',
-                        fontSize: '14px',
-                        outline: 'none',
-                    }}
-                />
-                <button
-                    onClick={sendMessage}
-                    disabled={sending || !input.trim()}
-                    style={{
-                        backgroundColor: sending || !input.trim() ? 'var(--border)' : 'var(--accent)',
-                        color: sending || !input.trim() ? 'var(--text-dim)' : '#000',
-                        border: 'none',
-                        borderRadius: 'var(--radius)',
-                        padding: '10px 20px',
-                        cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                    }}
-                >
-                    Send
-                </button>
-                <button
-                    onClick={triggerBot}
-                    disabled={botLoading}
-                    style={{
-                        backgroundColor: 'transparent',
-                        color: botLoading ? 'var(--text-dim)' : 'var(--warning)',
-                        border: '1px solid var(--warning)',
-                        borderRadius: 'var(--radius)',
-                        padding: '10px 16px',
-                        cursor: botLoading ? 'not-allowed' : 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                    }}
-                >
-                    {botLoading ? '...' : 'Ask Bot'}
-                </button>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={handleImageUpload}
-                />
-            </div>
+                </>
+            )}
+    
+            {/* Activity Tab */}
+            {tab === 'activity' && (
+                <div style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    padding: '16px',
+                }}>
+                    {activityLoading && (
+                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', marginTop: '40px' }}>
+                            Loading activity...
+                        </p>
+                    )}
+                    {!activityLoading && activity.length === 0 && (
+                        <p style={{ color: 'var(--text-dim)', textAlign: 'center', marginTop: '40px' }}>
+                            No roster moves yet.
+                        </p>
+                    )}
+                    {activity.map(item => (
+                        <div
+                            key={item.id}
+                            style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '12px 0',
+                                borderBottom: '1px solid var(--border-subtle)',
+                            }}
+                        >
+                            <div>
+                                <span style={{
+                                    color: item.move_type === 'add' ? 'var(--accent)' : 'var(--danger)',
+                                    fontWeight: 'bold',
+                                    fontSize: '12px',
+                                    letterSpacing: '1px',
+                                    textTransform: 'uppercase',
+                                    marginRight: '8px',
+                                }}>
+                                    {item.move_type === 'add' ? '+ ADD' : '− DROP'}
+                                </span>
+                                <span style={{ color: 'var(--text)', fontSize: '14px' }}>
+                                    {item.player_name}
+                                </span>
+                                <span style={{ color: 'var(--text-dim)', fontSize: '12px', marginLeft: '8px' }}>
+                                    {item.player_position}
+                                </span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                                    {item.team_name}
+                                </div>
+                                <div style={{ color: 'var(--text-dim)', fontSize: '11px', marginTop: '2px' }}>
+                                    Wk {item.week} · {formatTime(item.created_at)}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
-    )
+    )    
 }

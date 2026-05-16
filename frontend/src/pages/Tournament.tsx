@@ -65,60 +65,77 @@ export default function Tournament() {
     )
 
     const fetchTournaments = async () => {
-        const res = await axios.get(`${API_URL}/leagues/${leagueId}/tournaments`, { headers })
-        setTournaments(res.data)
-        setLoading(false)
+        try {
+            const res = await axios.get(`${API_URL}/leagues/${leagueId}/tournaments`, { headers })
+            setTournaments(res.data)
+        } catch {} finally {
+            setLoading(false)
+        }
     }
 
     const fetchMatchups = async (tourneyId: string) => {
-        const res = await axios.get(`${API_URL}/leagues/tournaments/${tourneyId}/matchups`, { headers })
-        setMatchups(res.data)
+        try {
+            const res = await axios.get(`${API_URL}/leagues/tournaments/${tourneyId}/matchups`, { headers })
+            setMatchups(res.data)
+        } catch {}
     }
 
-    useEffect(() => { fetchTournaments() }, [])
+    useEffect(() => { fetchTournaments() }, [leagueId, headers])
 
     const handleCreate = async () => {
-        const res = await axios.post(`${API_URL}/leagues/${leagueId}/tournaments`, { name, theme}, { headers })
-        setShowCreate(false)
-        fetchTournaments()
-        setSelectedTourney(res.data)
-        fetchEntities(res.data.id)
-
+        try {
+            const res = await axios.post(`${API_URL}/leagues/${leagueId}/tournaments`, { name, theme }, { headers })
+            setShowCreate(false)
+            fetchTournaments()
+            setSelectedTourney(res.data)
+            fetchEntities(res.data.id)
+        } catch {}
     }
 
     const handleJoin = async (tourneyId: string) => {
-        await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/join`, {}, { headers })
-        fetchTournaments()
+        try {
+            await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/join`, {}, { headers })
+            fetchTournaments()
+        } catch {}
     }
 
     const handleVote = async (tourneyId: string, vote: string) => {
-        await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/vote`, { vote }, { headers })
-        fetchTournaments()
+        try {
+            await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/vote`, { vote }, { headers })
+            fetchTournaments()
+        } catch {}
     }
 
     const handleGenerate = async (tourneyId: string) => {
         setGenerating(true)
-        await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/generate`, {}, { headers })
-        setGenerating(false)
-        fetchTournaments()
-        if (selectedTourney) fetchMatchups(tourneyId)
+        try {
+            await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/generate`, {}, { headers })
+            fetchTournaments()
+            if (selectedTourney) fetchMatchups(tourneyId)
+        } catch {} finally {
+            setGenerating(false)
+        }
     }
 
     const handleCommentary = async (tourneyId: string, matchupId: string) => {
-        await axios.post(
-            `${API_URL}/leagues/tournaments/${tourneyId}/matchups/${matchupId}/commentary`,
-            { prompt: customPrompt },
-            { headers }
-        )
-        fetchMatchups(tourneyId)
+        try {
+            await axios.post(
+                `${API_URL}/leagues/tournaments/${tourneyId}/matchups/${matchupId}/commentary`,
+                { prompt: customPrompt },
+                { headers }
+            )
+            fetchMatchups(tourneyId)
+        } catch {}
     }
 
     const handlePredict = async (tourneyId: string, matchupId: string) => {
-        const res = await axios.get(
-            `${API_URL}/leagues/tournaments/${tourneyId}/matchups/${matchupId}/predict`,
-            { headers }
-        )
-        setPrediction(prev => ({ ...prev, [matchupId]: res.data.prediction }))
+        try {
+            const res = await axios.get(
+                `${API_URL}/leagues/tournaments/${tourneyId}/matchups/${matchupId}/predict`,
+                { headers }
+            )
+            setPrediction(prev => ({ ...prev, [matchupId]: res.data.prediction }))
+        } catch {}
     }
 
     const label = (userId: string | null) => {
@@ -127,16 +144,21 @@ export default function Tournament() {
     }
 
     const fetchEntities = async (tourneyId: string) => {
-        const res = await axios.get(`${API_URL}/leagues/tournaments/${tourneyId}/draft/entities`, { headers })
-        setEntities(res.data)
+        try {
+            const res = await axios.get(`${API_URL}/leagues/tournaments/${tourneyId}/draft/entities`, { headers })
+            setEntities(res.data)
+        } catch {}
     }
-    
+
     const handleGenerateDraft = async (tourneyId: string) => {
         setGeneratingDraft(true)
-        await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/draft/generate`, {}, { headers })
-        setGeneratingDraft(false)
-        fetchEntities(tourneyId)
-        fetchTournaments()
+        try {
+            await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/draft/generate`, {}, { headers })
+            fetchEntities(tourneyId)
+            fetchTournaments()
+        } catch {} finally {
+            setGeneratingDraft(false)
+        }
     }
     
     const handlePick = async (tourneyId: string, entityId: string) => {
@@ -151,10 +173,12 @@ export default function Tournament() {
     }
 
     const handleCloseDraft = async (tourneyId: string) => {
-        await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/draft/close`, {}, { headers })
-        fetchTournaments()
-        fetchEntities(tourneyId)
-    }    
+        try {
+            await axios.post(`${API_URL}/leagues/tournaments/${tourneyId}/draft/close`, {}, { headers })
+            fetchTournaments()
+            fetchEntities(tourneyId)
+        } catch {}
+    }
     
 
     if (loading) return <p>Loading tournaments...</p>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import type { CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
@@ -41,7 +42,15 @@ const ROUND_LABELS: Record<string, string> = {
     third_place: '3rd Place — Week 17',
 }
 
-const tab_style = (active: boolean): React.CSSProperties => ({
+const card: CSSProperties = {
+    backgroundColor: 'var(--bg-card)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)',
+    padding: '20px',
+    marginBottom: '16px',
+}
+
+const tab_style = (active: boolean): CSSProperties => ({
     padding: '8px 20px',
     cursor: 'pointer',
     fontSize: '13px',
@@ -91,15 +100,16 @@ export default function Matchups() {
             }
         }
         fetchData()
-    }, [week])
+    }, [week, leagueId, headers])
 
     useEffect(() => {
         if (tab !== 'playoffs') return
         setPlayoffsLoading(true)
         axios.get(`${API_URL}/leagues/${leagueId}/playoffs`, { headers })
             .then(res => setPlayoffs(res.data))
+            .catch(() => {})
             .finally(() => setPlayoffsLoading(false))
-    }, [tab])
+    }, [tab, leagueId, headers])
 
     const act = async (fn: () => Promise<any>) => {
         setError('')
@@ -112,13 +122,6 @@ export default function Matchups() {
         }
     }
 
-    const card: React.CSSProperties = {
-        backgroundColor: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)',
-        padding: '20px',
-        marginBottom: '16px',
-    }
 
     if (loading) return <p>Loading matchups...</p>
 

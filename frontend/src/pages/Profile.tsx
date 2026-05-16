@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useMemo } from 'react'
+import type { CSSProperties } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import axios from 'axios'
@@ -25,7 +26,7 @@ interface Profile {
     ai_brain: string
 }
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
     width: '100%',
     backgroundColor: 'var(--bg-input)',
     border: '1px solid var(--border)',
@@ -36,14 +37,14 @@ const inputStyle: React.CSSProperties = {
     marginTop: '6px',
 }
 
-const labelStyle: React.CSSProperties = {
+const labelStyle: CSSProperties = {
     color: 'var(--text-dim)',
     fontSize: '12px',
     letterSpacing: '1px',
     textTransform: 'uppercase',
 }
 
-const sectionStyle: React.CSSProperties = {
+const sectionStyle: CSSProperties = {
     backgroundColor: 'var(--bg-card)',
     border: '1px solid var(--border)',
     borderRadius: 'var(--radius)',
@@ -83,8 +84,8 @@ export default function Profile() {
             setPodcast2(p.podcast_2 || '')
             setPodcast3(p.podcast_3 || '')
             setAiBrain(p.ai_brain || 'claude')
-        }).finally(() => setLoading(false))
-    }, [session])
+        }).catch(() => {}).finally(() => setLoading(false))
+    }, [session, headers])
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()

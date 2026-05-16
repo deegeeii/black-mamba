@@ -74,7 +74,7 @@ export default function DraftRoom() {
 
   useEffect(() => {
     fetchAll()
-  }, [])
+  }, [leagueId, headers])
 
   const handleStartDraft = async () => {
     try {

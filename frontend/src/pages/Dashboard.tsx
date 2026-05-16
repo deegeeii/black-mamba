@@ -103,7 +103,7 @@ export default function Dashboard() {
             
         setLoading(false)
     })
-  }, [activeLeague, session])
+  }, [activeLeague?.id, session, headers])
   
   const label = (userId: string) => getTeamName(userId)
 

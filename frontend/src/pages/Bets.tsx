@@ -102,12 +102,14 @@ function BetsInner() {
     )
 
     const fetchBets = async () => {
-        const res = await axios.get(`${API_URL}/leagues/${leagueId}/bets`, { headers })
-        setBets(res.data)
-        setLoading(false)
-      }
-    
-    useEffect(() => { fetchBets() }, [])
+        try {
+            const res = await axios.get(`${API_URL}/leagues/${leagueId}/bets`, { headers })
+            setBets(res.data)
+        } catch {}
+        finally { setLoading(false) }
+    }
+
+    useEffect(() => { fetchBets() }, [leagueId, headers])
 
     const handleCreate = async () => {
         const res = await axios.post(
