@@ -73,6 +73,13 @@ export default function LeagueHome() {
     const [newAwardUser, setNewAwardUser] = useState('')
     const [newAwardSeason, setNewAwardSeason] = useState(2024)
     const [awardSaving, setAwardSaving] = useState(false)
+    const [espnLeagueId, setEspnLeagueId] = useState('')
+    const [espnSeason, setEspnSeason] = useState(2024)
+    const [espnS2, setEspnS2] = useState('')
+    const [espnSwid, setEspnSwid] = useState('')
+    const [importing, setImporting] = useState(false)
+    const [importMessage, setImportMessage] = useState('')
+
 
     const isCommissioner = activeLeague?.commissioner_id === user?.id
     const [botPersona, setBotPersona] = useState<string>('commissioner')
@@ -165,6 +172,35 @@ export default function LeagueHome() {
         await axios.delete(`${API_URL}/leagues/${leagueId}/history/awards/${awardId}`, { headers })
         fetchHistory()
     }
+
+    const handleESPNImport = async (e: { preventDefault(): void }) => {
+        e.preventDefault()
+        if (!espnLeagueId) return
+        setImporting(true)
+        setImportMessage('')
+        try {
+            const res = await axios.post(
+                `${API_URL}/leagues/${leagueId}/history/import-espn`,
+                {
+                    espn_league_id: espnLeagueId,
+                    season: espnSeason,
+                    espn_s2: espnS2 || null,
+                    swid: espnSwid || null,
+                },
+                { headers }
+            )
+            setImportMessage(
+                `Imported ${res.data.season}: ${res.data.champion_name || '—'} won, ` +
+                `${res.data.high_scorer_name || '—'} scored most points`
+            )
+            fetchHistory()
+        } catch (e: any) {
+            setImportMessage(e.response?.data?.detail || 'Import failed')
+        } finally {
+            setImporting(false)
+        }
+    }
+    
 
     const sortedRoster = (players: Player[]) =>
         [...players].sort((a, b) => POSITION_ORDER.indexOf(a.position) - POSITION_ORDER.indexOf(b.position))
@@ -392,23 +428,104 @@ export default function LeagueHome() {
                         </div>
                     ))}
                     {isCommissioner && (
-                    <button
-                        onClick={() => handleSavePersona(botPersona)}
-                        style={{
-                            backgroundColor: 'var(--accent)',
-                            color: '#000',
-                            border: 'none',
-                            borderRadius: 'var(--radius)',
-                            padding: '12px 24px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            marginTop: '8px',
-                            width: '100%',
-                        }}
-                    >
-                        Save Persona
-                    </button>
-                )}
+                        <>
+                            <button
+                                onClick={() => handleSavePersona(botPersona)}
+                                style={{
+                                    backgroundColor: 'var(--accent)',
+                                    color: '#000',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius)',
+                                    padding: '12px 24px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    marginTop: '8px',
+                                    width: '100%',
+                                }}
+                            >
+                                Save Persona
+                            </button>
+
+                            <div style={{ marginTop: '24px' }}>
+                                <h3 style={{ color: 'var(--accent)', marginBottom: '8px' }}>
+                                    Import ESPN History
+                                </h3>
+                                <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '16px' }}>
+                                    Pull past season champion and high scorer from ESPN Fantasy. For private leagues,
+                                    get your cookies from browser devtools while logged into ESPN.
+                                </p>
+                                <form onSubmit={handleESPNImport}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                        <div>
+                                            <label style={labelStyle}>ESPN League ID</label>
+                                            <input
+                                                style={inputStyle}
+                                                value={espnLeagueId}
+                                                onChange={e => setEspnLeagueId(e.target.value)}
+                                                placeholder="e.g. 1234567"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>Season Year</label>
+                                            <input
+                                                type="number"
+                                                style={inputStyle}
+                                                value={espnSeason}
+                                                onChange={e => setEspnSeason(Number(e.target.value))}
+                                                min={2010}
+                                                max={2025}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <label style={labelStyle}>espn_s2 Cookie (private leagues only)</label>
+                                        <input
+                                            style={inputStyle}
+                                            value={espnS2}
+                                            onChange={e => setEspnS2(e.target.value)}
+                                            placeholder="Optional"
+                                        />
+                                    </div>
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <label style={labelStyle}>SWID Cookie (private leagues only)</label>
+                                        <input
+                                            style={inputStyle}
+                                            value={espnSwid}
+                                            onChange={e => setEspnSwid(e.target.value)}
+                                            placeholder="Optional — include curly braces"
+                                        />
+                                    </div>
+                                    {importMessage && (
+                                        <p style={{
+                                            color: importMessage.includes('failed') || importMessage.includes('Failed')
+                                                ? 'var(--danger)'
+                                                : 'var(--accent)',
+                                            fontSize: '13px',
+                                            marginBottom: '12px',
+                                        }}>
+                                            {importMessage}
+                                        </p>
+                                    )}
+                                    <button
+                                        type="submit"
+                                        disabled={importing || !espnLeagueId}
+                                        style={{
+                                            backgroundColor: importing || !espnLeagueId ? 'var(--border)' : 'var(--accent)',
+                                            color: importing || !espnLeagueId ? 'var(--text-dim)' : '#000',
+                                            border: 'none',
+                                            borderRadius: 'var(--radius)',
+                                            padding: '10px 20px',
+                                            fontWeight: 'bold',
+                                            cursor: importing || !espnLeagueId ? 'not-allowed' : 'pointer',
+                                        }}
+                                    >
+                                        {importing ? 'Importing...' : 'Import Season'}
+                                    </button>
+                                </form>
+                            </div>
+                        </>
+                    )}
+
 
                 </div>
             )}

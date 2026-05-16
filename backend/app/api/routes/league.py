@@ -6,6 +6,7 @@ from app.core.security import get_current_user_id
 from app.core.supabase import supabase
 from pydantic import BaseModel
 from typing import List, Optional
+import requests
 
 router = APIRouter(prefix="/leagues", tags=["leagues"])
 
@@ -19,6 +20,13 @@ class AwardCreate(BaseModel):
     season: int
     award_name: str
     user_id: str
+
+class ESPNImport(BaseModel):
+    espn_league_id: str
+    season: int
+    espn_s2: Optional[str] = None
+    swid: Optional[str] = None
+
 
 
 @router.post("/", response_model=LeagueResponse)
@@ -143,6 +151,29 @@ def fetch_history(league_id: str, user_id: str = Depends(get_current_user_id)):
             "high_scorer": {"user_id": high["user_id"], "team_name": get_name(high["user_id"]), "points": high["points"]} if high else None,
             "awards": awards_by_season.get(season, []),
         })
+
+        hist_res = (
+        supabase.table("league_historical_seasons")
+        .select("*")
+        .eq("league_id", league_id)
+        .order("season", desc=True)
+        .execute()
+    )
+    existing_seasons = {r["season"] for r in result}
+    for h in (hist_res.data or []):
+        if h["season"] not in existing_seasons:
+            result.append({
+                "season": h["season"],
+                "champion": {"user_id": None, "team_name": h["champion_name"]} if h["champion_name"] else None,
+                "high_scorer": {
+                    "user_id": None,
+                    "team_name": h["high_scorer_name"],
+                    "points": h["high_scorer_points"],
+                } if h["high_scorer_name"] else None,
+                "awards": [],
+            })
+    result.sort(key=lambda r: r["season"], reverse=True)
+
     return result
 
 
@@ -167,3 +198,100 @@ def delete_award(league_id: str, award_id: str, user_id: str = Depends(get_curre
         raise HTTPException(status_code=403, detail="Only the commissioner can delete awards")
     supabase.table("league_awards").delete().eq("id", award_id).execute()
     return {"ok": True}
+
+
+@router.post("/{league_id}/history/import-espn")
+def import_espn_history(
+    league_id: str,
+    data: ESPNImport,
+    user_id: str = Depends(get_current_user_id),
+):
+    league_res = supabase.table("leagues").select("commissioner_id").eq("id", league_id).execute()
+    if not league_res.data or league_res.data[0]["commissioner_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Only the commissioner can import history")
+
+    url = f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{data.season}/segments/0/leagues/{data.espn_league_id}"
+
+    cookies = {}
+    if data.espn_s2:
+        cookies["espn_s2"] = data.espn_s2
+    if data.swid:
+        cookies["SWID"] = data.swid
+
+    try:
+        res = requests.get(
+            url,
+            params={"view": ["mStandings", "mTeam"]},
+            cookies=cookies,
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"},
+            timeout=10,
+        )
+        
+        res.raise_for_status()
+        espn_data = res.json()
+    except Exception as e:
+        print(f"ESPN fetch error: {e}")
+        raise HTTPException(
+            status_code=502,
+            detail="Failed to fetch ESPN data. Check league ID and cookies.",
+        )
+
+
+
+
+
+    teams = espn_data.get("teams", [])
+
+    if not teams:
+        raise HTTPException(
+            status_code=404,
+            detail="No teams found. Private league? Provide espn_s2 and SWID.",
+        )
+
+        def team_name(t: dict) -> str:
+            return t.get("name") or t.get("abbrev", "Unknown")
+
+
+    champion = next(
+        (t for t in teams if t.get("rankCalculatedFinal") == 1),
+        None,
+    )
+    if not champion:
+        champion = max(
+            teams,
+            key=lambda t: t.get("record", {}).get("overall", {}).get("wins", 0),
+            default=None,
+        )
+
+    high_scorer = max(
+        teams,
+        key=lambda t: t.get("record", {}).get("overall", {}).get("pointsFor", 0),
+        default=None,
+    )
+
+    champion_name = team_name(champion) if champion else None
+    high_scorer_name = team_name(high_scorer) if high_scorer else None
+    high_scorer_points = (
+        high_scorer.get("record", {}).get("overall", {}).get("pointsFor")
+        if high_scorer
+        else None
+    )
+
+    supabase.table("league_historical_seasons").upsert(
+        {
+            "league_id": league_id,
+            "season": data.season,
+            "champion_name": champion_name,
+            "high_scorer_name": high_scorer_name,
+            "high_scorer_points": high_scorer_points,
+            "espn_league_id": data.espn_league_id,
+        },
+        on_conflict="league_id,season",
+    ).execute()
+
+    return {
+        "season": data.season,
+        "champion_name": champion_name,
+        "high_scorer_name": high_scorer_name,
+        "high_scorer_points": high_scorer_points,
+    }
