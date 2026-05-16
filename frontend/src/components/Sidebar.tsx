@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
+import type { CSSProperties } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useLeague } from '../contexts/LeagueContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -20,6 +21,8 @@ const BOTTOM_ITEMS = [
     { label: 'Profile', path: '/profile' },
 ]
 
+const GLOBAL_ROUTES = ['/dashboard', '/profile', '/ledger']
+
 type Notification = {
     id: string
     type: string
@@ -28,7 +31,12 @@ type Notification = {
     created_at: string
 }
 
-const styles: Record<string, React.CSSProperties> = {
+type LeagueMessage = {
+    user_id: string | null
+    is_bot: boolean
+}
+
+const styles: Record<string, CSSProperties> = {
     sidebar: {
         width: '220px',
         height: '100vh',
@@ -56,14 +64,14 @@ const styles: Record<string, React.CSSProperties> = {
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-        position: 'relative' as const,
+        position: 'relative',
         padding: '0',
         color: 'var(--text-dim)',
         display: 'flex',
         alignItems: 'center',
     },
     badge: {
-        position: 'absolute' as const,
+        position: 'absolute',
         top: '-6px',
         right: '-6px',
         backgroundColor: 'var(--danger)',
@@ -79,7 +87,7 @@ const styles: Record<string, React.CSSProperties> = {
         padding: '0 3px',
     },
     dropdown: {
-        position: 'fixed' as const,
+        position: 'fixed',
         top: '60px',
         left: '220px',
         width: '300px',
@@ -110,7 +118,7 @@ const styles: Record<string, React.CSSProperties> = {
         cursor: 'pointer',
     },
     notifList: {
-        overflowY: 'auto' as const,
+        overflowY: 'auto',
         flex: 1,
     },
     notifItem: {
@@ -129,7 +137,7 @@ const styles: Record<string, React.CSSProperties> = {
     },
     empty: {
         padding: '24px 16px',
-        textAlign: 'center' as const,
+        textAlign: 'center',
         color: 'var(--text-dim)',
         fontSize: '13px',
     },
@@ -141,7 +149,7 @@ const styles: Record<string, React.CSSProperties> = {
         color: 'var(--text-dim)',
         fontSize: '11px',
         letterSpacing: '1px',
-        textTransform: 'uppercase' as const,
+        textTransform: 'uppercase',
         marginBottom: '8px',
     },
     select: {
@@ -156,7 +164,7 @@ const styles: Record<string, React.CSSProperties> = {
     nav: {
         flex: 1,
         padding: '16px 0',
-        overflowY: 'auto' as const,
+        overflowY: 'auto',
     },
     navItem: {
         display: 'block',
@@ -172,22 +180,6 @@ const styles: Record<string, React.CSSProperties> = {
         color: 'var(--accent)',
         borderLeft: '3px solid var(--accent)',
         backgroundColor: 'var(--accent-dark)',
-    },
-    navGroupLabel: {
-        padding: '16px 24px 6px',
-        color: 'var(--text-dim)',
-        fontSize: '11px',
-        letterSpacing: '1px',
-        textTransform: 'uppercase' as const,
-    },
-    navSubItem: {
-        display: 'block',
-        padding: '10px 24px 10px 32px',
-        color: 'var(--text-dim)',
-        fontSize: '13px',
-        cursor: 'pointer',
-        borderLeft: '3px solid transparent',
-        transition: 'all 0.15s',
     },
     signOut: {
         padding: '16px 24px',
@@ -206,6 +198,8 @@ export default function Sidebar() {
 
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [bellOpen, setBellOpen] = useState(false)
+    const [chatUnread, setChatUnread] = useState(false)
+
     const dropdownRef = useRef<HTMLDivElement>(null)
 
     const headers = useMemo(() => ({
@@ -220,7 +214,8 @@ export default function Sidebar() {
         fetch(`${API_URL}/leagues/${activeLeague.id}/notifications`, { headers })
             .then(r => r.json())
             .then(data => setNotifications(Array.isArray(data) ? data : []))
-    }, [activeLeague?.id, session])
+            .catch(() => {})
+    }, [activeLeague?.id, session, headers])
 
     useEffect(() => {
         if (!activeLeague || !session) return
@@ -244,6 +239,32 @@ export default function Sidebar() {
     }, [activeLeague?.id, session?.user.id])
 
     useEffect(() => {
+        if (!activeLeague || !session) return
+        fetch(
+            `${API_URL}/leagues/${activeLeague.id}/chat/unread-count`,
+            { headers }
+        )
+            .then(r => r.json())
+            .then(data => { if (data?.count > 0) setChatUnread(true) })
+            .catch(() => {})
+        const channel = supabase
+            .channel(`chat-unread:${activeLeague.id}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'league_messages',
+                filter: `league_id=eq.${activeLeague.id}`,
+            }, (payload) => {
+                const msg = payload.new as LeagueMessage
+                if (msg.user_id !== session.user.id && !msg.is_bot) {
+                    setChatUnread(true)
+                }
+            })
+            .subscribe()
+        return () => { supabase.removeChannel(channel) }
+    }, [activeLeague?.id, session?.user.id, headers])
+
+    useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
                 setBellOpen(false)
@@ -255,27 +276,42 @@ export default function Sidebar() {
 
     const markAllRead = async () => {
         if (!activeLeague) return
-        await fetch(`${API_URL}/leagues/${activeLeague.id}/notifications/read-all`, { method: 'PATCH', headers })
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+        try {
+            await fetch(
+                `${API_URL}/leagues/${activeLeague.id}/notifications/read-all`,
+                { method: 'PATCH', headers }
+            )
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+        } catch {}
     }
 
     const markRead = async (id: string) => {
         if (!activeLeague) return
-        await fetch(`${API_URL}/leagues/${activeLeague.id}/notifications/read`, {
-            method: 'PATCH', headers,
-            body: JSON.stringify({ notification_ids: [id] }),
-        })
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+        try {
+            await fetch(
+                `${API_URL}/leagues/${activeLeague.id}/notifications/read`,
+                {
+                    method: 'PATCH',
+                    headers,
+                    body: JSON.stringify({ notification_ids: [id] }),
+                }
+            )
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+        } catch {}
     }
 
     const formatTime = (ts: string) => {
         const d = new Date(ts)
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+        return d.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        })
     }
 
-    const GLOBAL_ROUTES = ['/dashboard', '/profile', '/ledger']
-
     const handleNav = (path: string) => {
+        if (path === '/chat') setChatUnread(false)
         if (GLOBAL_ROUTES.includes(path)) { navigate(path); return }
         if (!activeLeague) return
         navigate(`/leagues/${activeLeague.id}${path}`)
@@ -307,8 +343,21 @@ export default function Sidebar() {
 
             <div style={styles.wordmark}>
                 BLACK MAMBA
-                <button className={`bell-btn ${unreadCount > 0 ? 'scroll-unread' : ''}`} style={styles.bellBtn} onClick={() => setBellOpen(o => !o)}>
-                    <svg className="scroll-icon" width="18" height="20" viewBox="0 0 18 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <button
+                    className={`bell-btn ${unreadCount > 0 ? 'scroll-unread' : ''}`}
+                    style={styles.bellBtn}
+                    onClick={() => setBellOpen(o => !o)}
+                >
+                    <svg
+                        className="scroll-icon"
+                        width="18"
+                        height="20"
+                        viewBox="0 0 18 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                    >
                         <ellipse cx="9" cy="3.5" rx="7" ry="2.5"/>
                         <line x1="2" y1="3.5" x2="2" y2="16.5"/>
                         <line x1="16" y1="3.5" x2="16" y2="16.5"/>
@@ -317,7 +366,11 @@ export default function Sidebar() {
                         <line x1="5.5" y1="11" x2="12.5" y2="11" strokeWidth="1"/>
                         <line x1="5.5" y1="14" x2="10" y2="14" strokeWidth="1"/>
                     </svg>
-                    {unreadCount > 0 && <span style={styles.badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                    {unreadCount > 0 && (
+                        <span style={styles.badge}>
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                    )}
                 </button>
             </div>
 
@@ -325,13 +378,24 @@ export default function Sidebar() {
                 <div style={styles.dropdown} ref={dropdownRef}>
                     <div style={styles.dropdownHeader}>
                         Notifications
-                        {unreadCount > 0 && <button style={styles.markAllBtn} onClick={markAllRead}>Mark all read</button>}
+                        {unreadCount > 0 && (
+                            <button style={styles.markAllBtn} onClick={markAllRead}>
+                                Mark all read
+                            </button>
+                        )}
                     </div>
                     <div style={styles.notifList}>
                         {notifications.length === 0 ? (
                             <div style={styles.empty}>No notifications</div>
                         ) : notifications.map(n => (
-                            <div key={n.id} style={{ ...styles.notifItem, backgroundColor: n.read ? 'transparent' : 'var(--accent-dark)' }} onClick={() => markRead(n.id)}>
+                            <div
+                                key={n.id}
+                                style={{
+                                    ...styles.notifItem,
+                                    backgroundColor: n.read ? 'transparent' : 'var(--accent-dark)',
+                                }}
+                                onClick={() => markRead(n.id)}
+                            >
                                 <div style={styles.notifMessage}>{n.message}</div>
                                 <div style={styles.notifTime}>{formatTime(n.created_at)}</div>
                             </div>
@@ -342,29 +406,66 @@ export default function Sidebar() {
 
             <div style={styles.leagueSection}>
                 <div style={styles.leagueLabel}>League</div>
-                <select style={styles.select} value={activeLeague?.id || ''} onChange={e => {
-                    const league = leagues.find(l => l.id === e.target.value)
-                    if (league) setActiveLeague(league)
-                }}>
-                    {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                <select
+                    style={styles.select}
+                    value={activeLeague?.id || ''}
+                    onChange={e => {
+                        const league = leagues.find(l => l.id === e.target.value)
+                        if (league) setActiveLeague(league)
+                    }}
+                >
+                    {leagues.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                    ))}
                 </select>
             </div>
 
             <nav style={styles.nav}>
                 {NAV_ITEMS.map(item => (
-                    <div key={item.path} style={{ ...styles.navItem, ...(isActive(item.path) ? styles.navItemActive : {}) }} onClick={() => handleNav(item.path)}>
-                        {item.label}
+                    <div
+                        key={item.path}
+                        style={{
+                            ...styles.navItem,
+                            ...(isActive(item.path) ? styles.navItemActive : {}),
+                        }}
+                        onClick={() => handleNav(item.path)}
+                    >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {item.label}
+                            {item.path === '/chat' && chatUnread && (
+                                <span style={{
+                                    width: '7px',
+                                    height: '7px',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'var(--accent)',
+                                    display: 'inline-block',
+                                    flexShrink: 0,
+                                }} />
+                            )}
+                        </span>
                     </div>
                 ))}
 
-            <div key="/league-home" style={{ ...styles.navItem, ...(isActive('/league-home') ? styles.navItemActive : {}) }} onClick={() => handleNav('/league-home')}>
-                League
-            </div>
-
-
+                <div
+                    key="/league-home"
+                    style={{
+                        ...styles.navItem,
+                        ...(isActive('/league-home') ? styles.navItemActive : {}),
+                    }}
+                    onClick={() => handleNav('/league-home')}
+                >
+                    League
+                </div>
 
                 {BOTTOM_ITEMS.map(item => (
-                    <div key={item.path} style={{ ...styles.navItem, ...(isActive(item.path) ? styles.navItemActive : {}) }} onClick={() => handleNav(item.path)}>
+                    <div
+                        key={item.path}
+                        style={{
+                            ...styles.navItem,
+                            ...(isActive(item.path) ? styles.navItemActive : {}),
+                        }}
+                        onClick={() => handleNav(item.path)}
+                    >
                         {item.label}
                     </div>
                 ))}

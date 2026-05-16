@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import axios from 'axios'
+import { supabase } from '../lib/supabase'
 
 const API_URL = import.meta.env.VITE_API_URL
 
+const GIPHY_KEY = 'C0akdik55lotqYg8iWkJSbvUyCznltPb'
 
 interface Message {
     id: string
@@ -16,6 +18,19 @@ interface Message {
     created_at: string
 }
 
+interface GifResult {
+    id: string
+    url: string
+    preview: string
+}
+
+interface GiphyApiGif {
+    id: string
+    images: {
+        original: { url: string }
+        fixed_height_small: { url: string }
+    }
+}
 
 export default function Chat() {
     const { user, session } = useAuth()
@@ -25,54 +40,145 @@ export default function Chat() {
     const [sending, setSending] = useState(false)
     const bottomRef = useRef<HTMLDivElement>(null)
     const [botLoading, setBotLoading] = useState(false)
-
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [uploading, setUploading] = useState(false)
+    const [gifOpen, setGifOpen] = useState(false)
+    const [gifQuery, setGifQuery] = useState('')
+    const [gifs, setGifs] = useState<GifResult[]>([])
+    const [gifLoading, setGifLoading] = useState(false)
 
     const headers = useMemo(
         () => ({ Authorization: `Bearer ${session?.access_token}` }),
         [session?.access_token]
     )
 
-    const fetchMessages = () => {
+    const fetchMessages = useCallback(() => {
         if (!activeLeague || !session) return
-        axios.get(`${API_URL}/leagues/${activeLeague.id}/chat`, { headers })
+        axios.get<Message[]>(
+            `${API_URL}/leagues/${activeLeague.id}/chat`,
+            { headers }
+        )
             .then(res => setMessages(res.data))
             .catch(() => {})
-    }
+    }, [activeLeague, session, headers])
 
     useEffect(() => {
         fetchMessages()
+        if (activeLeague && session) {
+            axios.patch(
+                `${API_URL}/leagues/${activeLeague.id}/chat/read`,
+                {},
+                { headers }
+            ).catch(() => {})
+        }
         const interval = setInterval(fetchMessages, 8000)
         return () => clearInterval(interval)
-      }, [activeLeague, session])
-    
+    }, [fetchMessages, activeLeague, session, headers])
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
 
+    const searchGifs = async (q: string) => {
+        if (!q.trim()) return
+        setGifLoading(true)
+        try {
+            const res = await fetch(
+                `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(q)}&limit=12&rating=pg-13`
+            )
+            const data = await res.json()
+            setGifs(
+                (data.data ?? []).map((g: GiphyApiGif) => ({
+                    id: g.id,
+                    url: g.images.original.url,
+                    preview: g.images.fixed_height_small.url,
+                }))
+            )
+        } catch {
+            setGifs([])
+        } finally {
+            setGifLoading(false)
+        }
+    }
+
+    const sendGif = async (url: string) => {
+        if (!activeLeague) return
+        setGifOpen(false)
+        setGifQuery('')
+        setGifs([])
+        try {
+            await axios.post(
+                `${API_URL}/leagues/${activeLeague.id}/chat`,
+                { message: url },
+                { headers }
+            )
+            fetchMessages()
+        } catch {
+            // silent — GIF failed to send
+        }
+    }
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !activeLeague) return
+        setUploading(true)
+        try {
+            const path = `${activeLeague.id}/${Date.now()}-${file.name}`
+            const { error } = await supabase.storage
+                .from('chat-images')
+                .upload(path, file)
+            if (!error) {
+                const { data } = supabase.storage
+                    .from('chat-images')
+                    .getPublicUrl(path)
+                await axios.post(
+                    `${API_URL}/leagues/${activeLeague.id}/chat`,
+                    { message: data.publicUrl },
+                    { headers }
+                )
+                fetchMessages()
+            }
+        } catch {
+            // silent — upload failed
+        } finally {
+            e.target.value = ''
+            setUploading(false)
+        }
+    }
+
     const triggerBot = async () => {
         if (!activeLeague) return
         setBotLoading(true)
-        await axios.post(
-            `${API_URL}/leagues/${activeLeague.id}/chat/bot`,
-            { trigger: 'manual', context: 'League members requested a bot update.' },
-            { headers }
-        )
-        fetchMessages()
-        setBotLoading(false)
-    }    
+        try {
+            await axios.post(
+                `${API_URL}/leagues/${activeLeague.id}/chat/bot`,
+                { trigger: 'manual', context: 'League members requested a bot update.' },
+                { headers }
+            )
+            fetchMessages()
+        } catch {
+            // silent
+        } finally {
+            setBotLoading(false)
+        }
+    }
 
     const sendMessage = async () => {
-        if (!input.trim() || !activeLeague) return
+        if (sending || !input.trim() || !activeLeague) return
         setSending(true)
-        await axios.post(
-            `${API_URL}/leagues/${activeLeague.id}/chat`,
-            { message: input },
-            { headers }
-        )
-        setInput('')
-        fetchMessages()
-        setSending(false)
+        try {
+            await axios.post(
+                `${API_URL}/leagues/${activeLeague.id}/chat`,
+                { message: input },
+                { headers }
+            )
+            setInput('')
+            fetchMessages()
+        } catch {
+            // silent
+        } finally {
+            setSending(false)
+        }
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -82,8 +188,15 @@ export default function Chat() {
         }
     }
 
+    const isImage = (msg: string) =>
+        !!msg && (
+            /\.(gif|png|jpe?g|webp)$/i.test(msg) ||
+            msg.includes('giphy.com') ||
+            (msg.includes('supabase') && msg.includes('chat-images'))
+        )
+
     const label = (msg: Message) => {
-        if (msg.is_bot) return (msg as any).bot_name || 'Commissioner Bot'
+        if (msg.is_bot) return msg.bot_name || 'Commissioner Bot'
         if (msg.user_id === user?.id) return 'You'
         return getTeamName(msg.user_id ?? null)
     }
@@ -97,7 +210,95 @@ export default function Chat() {
         <div style={{ maxWidth: '700px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 48px)' }}>
             <h1 style={{ marginBottom: '4px' }}>League Chat</h1>
             <p style={{ color: 'var(--text-dim)', marginBottom: '16px' }}>{activeLeague.name}</p>
-    
+
+            {/* GIF Picker Overlay */}
+            {gifOpen && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '100px',
+                    left: '260px',
+                    width: '420px',
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    padding: '12px',
+                    zIndex: 100,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                }}>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                        <input
+                            autoFocus
+                            value={gifQuery}
+                            onChange={e => setGifQuery(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') searchGifs(gifQuery) }}
+                            placeholder="Search GIFs..."
+                            style={{
+                                flex: 1,
+                                backgroundColor: 'var(--bg-input)',
+                                border: '1px solid var(--border)',
+                                borderRadius: 'var(--radius)',
+                                padding: '8px 12px',
+                                color: 'var(--text)',
+                                fontSize: '13px',
+                                outline: 'none',
+                            }}
+                        />
+                        <button
+                            onClick={() => searchGifs(gifQuery)}
+                            style={{
+                                backgroundColor: 'var(--accent)',
+                                color: '#000',
+                                border: 'none',
+                                borderRadius: 'var(--radius)',
+                                padding: '8px 14px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                            }}
+                        >
+                            Search
+                        </button>
+                        <button
+                            onClick={() => { setGifOpen(false); setGifQuery(''); setGifs([]) }}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-dim)',
+                                cursor: 'pointer',
+                                fontSize: '18px',
+                            }}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    {gifLoading && <p style={{ color: 'var(--text-dim)', fontSize: '13px' }}>Searching...</p>}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '6px',
+                        maxHeight: '260px',
+                        overflowY: 'auto',
+                    }}>
+                        {gifs.map(g => (
+                            <img
+                                key={g.id}
+                                src={g.preview}
+                                alt="GIF option"
+                                onClick={() => sendGif(g.url)}
+                                style={{
+                                    width: '100%',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    border: '2px solid transparent',
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                                onMouseLeave={e => (e.currentTarget.style.borderColor = 'transparent')}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Message List */}
             <div style={{
                 flex: 1,
@@ -109,7 +310,7 @@ export default function Chat() {
                 marginBottom: '12px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px'
+                gap: '12px',
             }}>
                 {messages.length === 0 && (
                     <p style={{ color: 'var(--text-dim)', textAlign: 'center', marginTop: '40px' }}>
@@ -122,31 +323,77 @@ export default function Chat() {
                         style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            alignItems: msg.user_id === user?.id && !msg.is_bot ? 'flex-end' : 'flex-start'
+                            alignItems: msg.user_id === user?.id && !msg.is_bot ? 'flex-end' : 'flex-start',
                         }}
                     >
-                        <span style={{ fontSize: '11px', color: msg.is_bot ? 'var(--warning)' : 'var(--text-dim)', marginBottom: '4px' }}>
+                        <span style={{
+                            fontSize: '11px',
+                            color: msg.is_bot ? 'var(--warning)' : 'var(--text-dim)',
+                            marginBottom: '4px',
+                        }}>
                             {label(msg)} · {formatTime(msg.created_at)}
                         </span>
-                        <div style={{
-                            backgroundColor: msg.is_bot ? '#1f1800' : msg.user_id === user?.id ? 'var(--accent-dark)' : 'var(--bg-deep)',
-                            border: `1px solid ${msg.is_bot ? 'var(--warning)' : msg.user_id === user?.id ? 'var(--accent)' : 'var(--border)'}`,
-                            borderRadius: 'var(--radius)',
-                            padding: '10px 14px',
-                            maxWidth: '80%',
-                            color: msg.is_bot ? '#ffcc44' : 'var(--text)',
-                            fontSize: '14px',
-                            lineHeight: '1.5'
-                        }}>
-                            {msg.message}
-                        </div>
+                        {isImage(msg.message) ? (
+                            <img
+                                src={msg.message}
+                                alt="Chat image"
+                                style={{
+                                    maxWidth: '240px',
+                                    borderRadius: 'var(--radius)',
+                                    border: '1px solid var(--border)',
+                                }}
+                            />
+                        ) : (
+                            <div style={{
+                                backgroundColor: msg.is_bot ? '#1f1800' : msg.user_id === user?.id ? 'var(--accent-dark)' : 'var(--bg-deep)',
+                                border: `1px solid ${msg.is_bot ? 'var(--warning)' : msg.user_id === user?.id ? 'var(--accent)' : 'var(--border)'}`,
+                                borderRadius: 'var(--radius)',
+                                padding: '10px 14px',
+                                maxWidth: '80%',
+                                color: msg.is_bot ? '#ffcc44' : 'var(--text)',
+                                fontSize: '14px',
+                                lineHeight: '1.5',
+                            }}>
+                                {msg.message}
+                            </div>
+                        )}
                     </div>
                 ))}
                 <div ref={bottomRef} />
             </div>
-    
-            {/* Input */}
+
+            {/* Input Row */}
             <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                    onClick={() => setGifOpen(o => !o)}
+                    style={{
+                        backgroundColor: gifOpen ? 'var(--accent-dark)' : 'transparent',
+                        color: gifOpen ? 'var(--accent)' : 'var(--text-dim)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        padding: '10px 14px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                    }}
+                >
+                    GIF
+                </button>
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    style={{
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-dim)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius)',
+                        padding: '10px 14px',
+                        cursor: uploading ? 'not-allowed' : 'pointer',
+                        fontSize: '16px',
+                    }}
+                >
+                    {uploading ? '⏳' : '📎'}
+                </button>
                 <input
                     value={input}
                     onChange={e => setInput(e.target.value)}
@@ -160,7 +407,7 @@ export default function Chat() {
                         padding: '10px 14px',
                         color: 'var(--text)',
                         fontSize: '14px',
-                        outline: 'none'
+                        outline: 'none',
                     }}
                 />
                 <button
@@ -174,7 +421,7 @@ export default function Chat() {
                         padding: '10px 20px',
                         cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
                         fontWeight: 'bold',
-                        fontSize: '14px'
+                        fontSize: '14px',
                     }}
                 >
                     Send
@@ -195,8 +442,14 @@ export default function Chat() {
                 >
                     {botLoading ? '...' : 'Ask Bot'}
                 </button>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleImageUpload}
+                />
             </div>
         </div>
     )
-    
 }

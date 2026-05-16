@@ -9,7 +9,13 @@ def get_current_user_id(
         credentials: HTTPAuthorizationCredentials = Security(security)
 ) -> str:
     token = credentials.credentials
-    response = supabase.auth.get_user(token)
+    try:
+        response = supabase.auth.get_user(token)
+    except Exception:
+        try:
+            response = supabase.auth.get_user(token)
+        except Exception:
+            raise HTTPException(status_code=401, detail="Authentication failed")
     if not response.user:
-        raise HTTPException(status_code=401, detail="Ivalid or expired token")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
     return response.user.id
