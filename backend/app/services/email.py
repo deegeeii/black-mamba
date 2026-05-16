@@ -40,13 +40,14 @@ def send_notification_email(user_id: str, notif_type: str, message: str):
         <hr style="border-color:#333;margin-bottom:24px;"/>
         <p style="font-size:16px;margin-bottom:8px;">{message}</p>
         <p style="color:#888;font-size:13px;">{preview}</p>
-        <a href="http://localhost:5173" style="display:inline-block;margin-top:24px;padding:10px 20px;background:#00cc66;color:#000;border-radius:6px;text-decoration:none;font-weight:bold;">Open Black Mamba</a>
+        <a href="https://blackmambafantasysports.com" style="display:inline-block;margin-top:24px;padding:10px 20px;background:#00cc66;color:#000;border-radius:6px;text-decoration:none;font-weight:bold;">Open Black Mamba</a>
+
     </div>
     """
 
     try:
         resend.Emails.send({
-            "from": "Black Mamba <onboarding@resend.dev>",
+            "from": "Black Mamba <hello@blackmambafantasysports.com>",
             "to": [email],
             "subject": subject,
             "html": html,
