@@ -114,7 +114,15 @@ export default function DashboardScreen() {
                     <Text style={[styles.cardLabel, { color: theme.text }]}>League</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>Settings, rosters & history</Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+                    onPress={() => navigation.navigate('Headlines')}
+                >
+                    <Text style={[styles.cardLabel, { color: theme.text }]}>Headlines</Text>
+                    <Text style={[styles.cardSub, { color: theme.textDim }]}>NFL news</Text>
+                </TouchableOpacity>
             </View>
+
 
             {ledger !== null && (
                 <View style={[styles.ledger, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>

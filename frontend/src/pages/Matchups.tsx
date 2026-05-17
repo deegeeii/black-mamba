@@ -35,6 +35,19 @@ interface PlayoffMatchup {
     week: number
 }
 
+interface GameScore {
+    home_team: string
+    home_name: string
+    home_score: string
+    away_team: string
+    away_name: string
+    away_score: string
+    status: string
+    completed: boolean
+    period: number
+    clock: string
+}
+
 const ROUND_LABELS: Record<string, string> = {
     wildcard: 'Wild Card — Week 15',
     semifinal: 'Semifinals — Week 16',
@@ -65,7 +78,7 @@ export default function Matchups() {
     const { session, user } = useAuth()
     const { getTeamName, activeLeague } = useLeague()
 
-    const [tab, setTab] = useState<'season' | 'playoffs'>('season')
+    const [tab, setTab] = useState<'season' | 'playoffs' | 'live' | 'scores'>('season')
     const [week, setWeek] = useState(CURRENT_WEEK)
     const [matchups, setMatchups] = useState<Matchup[]>([])
     const [standings, setStandings] = useState<Standing[]>([])
@@ -78,6 +91,11 @@ export default function Matchups() {
     const [tiebreaker, setTiebreaker] = useState('points')
     const [advanceWeek, setAdvanceWeek] = useState(15)
     const [scoreWeek, setScoreWeek] = useState(15)
+    const [games, setGames] = useState<GameScore[]>([])
+    const [gamesLoading, setGamesLoading] = useState(false)
+    const [scores, setScores] = useState<{ user_id: string; total_points: number }[]>([])
+    const [scoresLoading, setScoresLoading] = useState(false)
+
 
     const isCommissioner = activeLeague?.commissioner_id === user?.id
 
@@ -111,6 +129,27 @@ export default function Matchups() {
             .finally(() => setPlayoffsLoading(false))
     }, [tab, leagueId, headers])
 
+    useEffect(() => {
+        if (tab !== 'live') return
+        setGamesLoading(true)
+        axios.get(`${API_URL}/scoreboard`, { headers })
+            .then(res => setGames(res.data))
+            .catch(() => {})
+            .finally(() => setGamesLoading(false))
+    }, [tab, headers])
+
+    useEffect(() => {
+        if (tab !== 'scores') return
+        setScoresLoading(true)
+        axios.get(`${API_URL}/leagues/${leagueId}/scores?week=${week}`, { headers })
+            .then(res => setScores(
+                [...res.data].sort((a, b) => b.total_points - a.total_points)
+            ))
+            .catch(() => {})
+            .finally(() => setScoresLoading(false))
+    }, [tab, week, leagueId, headers])
+    
+
     const act = async (fn: () => Promise<any>) => {
         setError('')
         setSuccess('')
@@ -122,7 +161,6 @@ export default function Matchups() {
         }
     }
 
-
     if (loading) return <p>Loading matchups...</p>
 
     return (
@@ -132,14 +170,27 @@ export default function Matchups() {
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', marginBottom: '24px' }}>
                 <div style={tab_style(tab === 'season')} onClick={() => setTab('season')}>Season</div>
                 <div style={tab_style(tab === 'playoffs')} onClick={() => setTab('playoffs')}>Playoffs</div>
+                <div style={tab_style(tab === 'live')} onClick={() => setTab('live')}>Live</div>
+                <div style={tab_style(tab === 'scores')} onClick={() => setTab('scores')}>Scores</div>
+
             </div>
 
             {tab === 'season' && (
                 <>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-                        <button onClick={() => setWeek(w => Math.max(1, w - 1))} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '20px', cursor: 'pointer' }}>‹</button>
+                        <button
+                            onClick={() => setWeek(w => Math.max(1, w - 1))}
+                            style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '20px', cursor: 'pointer' }}
+                        >
+                            ‹
+                        </button>
                         <span style={{ color: 'var(--text-dim)' }}>Week {week}</span>
-                        <button onClick={() => setWeek(w => w + 1)} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '20px', cursor: 'pointer' }}>›</button>
+                        <button
+                            onClick={() => setWeek(w => w + 1)}
+                            style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '20px', cursor: 'pointer' }}
+                        >
+                            ›
+                        </button>
                     </div>
 
                     {matchups.length === 0 ? (
@@ -211,7 +262,9 @@ export default function Matchups() {
 
                     {playoffsLoading ? <p>Loading playoffs...</p> : playoffs.length === 0 ? (
                         <div style={card}>
-                            <p style={{ color: 'var(--text-dim)' }}>No playoff bracket yet.{isCommissioner ? ' Generate it below.' : ' Check back after the regular season.'}</p>
+                            <p style={{ color: 'var(--text-dim)' }}>
+                                No playoff bracket yet.{isCommissioner ? ' Generate it below.' : ' Check back after the regular season.'}
+                            </p>
                         </div>
                     ) : (
                         ['wildcard', 'semifinal', 'championship', 'third_place'].map(round => {
@@ -238,7 +291,9 @@ export default function Matchups() {
                                                     <span style={{ color: 'var(--text)', fontWeight: 'bold', fontSize: '18px' }}>{m.away_points.toFixed(1)}</span>
                                                 </div>
                                             </div>
-                                            {m.winner_user_id && <span style={{ marginLeft: '16px', color: 'var(--accent)', fontSize: '11px', letterSpacing: '1px' }}>FINAL</span>}
+                                            {m.winner_user_id && (
+                                                <span style={{ marginLeft: '16px', color: 'var(--accent)', fontSize: '11px', letterSpacing: '1px' }}>FINAL</span>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -253,42 +308,74 @@ export default function Matchups() {
                                 <div>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '10px' }}>Settings</p>
                                     <label style={{ color: 'var(--text-dim)', fontSize: '12px' }}>Playoff Teams</label>
-                                    <select value={playoffTeams} onChange={e => setPlayoffTeams(Number(e.target.value))} style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px', marginBottom: '10px', marginTop: '4px' }}>
+                                    <select
+                                        value={playoffTeams}
+                                        onChange={e => setPlayoffTeams(Number(e.target.value))}
+                                        style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px', marginBottom: '10px', marginTop: '4px' }}
+                                    >
                                         <option value={4}>4 Teams</option>
                                         <option value={6}>6 Teams</option>
                                         <option value={8}>8 Teams</option>
                                     </select>
                                     <label style={{ color: 'var(--text-dim)', fontSize: '12px' }}>Tiebreaker</label>
-                                    <select value={tiebreaker} onChange={e => setTiebreaker(e.target.value)} style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px', marginBottom: '12px', marginTop: '4px' }}>
+                                    <select
+                                        value={tiebreaker}
+                                        onChange={e => setTiebreaker(e.target.value)}
+                                        style={{ display: 'block', width: '100%', backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px', marginBottom: '12px', marginTop: '4px' }}
+                                    >
                                         <option value="points">Total Points</option>
                                         <option value="money_won">Most Money Won</option>
                                         <option value="head_to_head">Head to Head</option>
                                     </select>
-                                    <button onClick={() => act(() => axios.patch(`${API_URL}/leagues/${leagueId}/playoffs/settings`, { playoff_teams: playoffTeams, tiebreaker }, { headers }))} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
+                                    <button
+                                        onClick={() => act(() => axios.patch(`${API_URL}/leagues/${leagueId}/playoffs/settings`, { playoff_teams: playoffTeams, tiebreaker }, { headers }))}
+                                        style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
+                                    >
                                         Save Settings
                                     </button>
                                 </div>
                                 <div>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '10px' }}>Bracket Actions</p>
-                                    <button onClick={() => act(() => axios.post(`${API_URL}/leagues/${leagueId}/playoffs/bracket`, {}, { headers }))} style={{ display: 'block', width: '100%', backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginBottom: '10px' }}>
+                                    <button
+                                        onClick={() => act(() => axios.post(`${API_URL}/leagues/${leagueId}/playoffs/bracket`, {}, { headers }))}
+                                        style={{ display: 'block', width: '100%', backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginBottom: '10px' }}
+                                    >
                                         Generate Bracket
                                     </button>
                                     <label style={{ color: 'var(--text-dim)', fontSize: '12px' }}>Score Week</label>
                                     <div style={{ display: 'flex', gap: '8px', marginTop: '4px', marginBottom: '10px' }}>
-                                        <select value={scoreWeek} onChange={e => setScoreWeek(Number(e.target.value))} style={{ flex: 1, backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px' }}>
+                                        <select
+                                            value={scoreWeek}
+                                            onChange={e => setScoreWeek(Number(e.target.value))}
+                                            style={{ flex: 1, backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px' }}
+                                        >
                                             <option value={15}>Week 15</option>
                                             <option value={16}>Week 16</option>
                                             <option value={17}>Week 17</option>
                                         </select>
-                                        <button onClick={() => act(() => axios.post(`${API_URL}/leagues/${leagueId}/playoffs/score`, { week: scoreWeek }, { headers }))} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 16px', cursor: 'pointer', fontSize: '13px' }}>Score</button>
+                                        <button
+                                            onClick={() => act(() => axios.post(`${API_URL}/leagues/${leagueId}/playoffs/score`, { week: scoreWeek }, { headers }))}
+                                            style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 16px', cursor: 'pointer', fontSize: '13px' }}
+                                        >
+                                            Score
+                                        </button>
                                     </div>
                                     <label style={{ color: 'var(--text-dim)', fontSize: '12px' }}>Advance After Week</label>
                                     <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                                        <select value={advanceWeek} onChange={e => setAdvanceWeek(Number(e.target.value))} style={{ flex: 1, backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px' }}>
+                                        <select
+                                            value={advanceWeek}
+                                            onChange={e => setAdvanceWeek(Number(e.target.value))}
+                                            style={{ flex: 1, backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px' }}
+                                        >
                                             <option value={15}>Week 15</option>
                                             <option value={16}>Week 16</option>
                                         </select>
-                                        <button onClick={() => act(() => axios.post(`${API_URL}/leagues/${leagueId}/playoffs/advance`, { completed_week: advanceWeek }, { headers }))} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 16px', cursor: 'pointer', fontSize: '13px' }}>Advance</button>
+                                        <button
+                                            onClick={() => act(() => axios.post(`${API_URL}/leagues/${leagueId}/playoffs/advance`, { completed_week: advanceWeek }, { headers }))}
+                                            style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 16px', cursor: 'pointer', fontSize: '13px' }}
+                                        >
+                                            Advance
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -296,6 +383,74 @@ export default function Matchups() {
                     )}
                 </>
             )}
+
+            {tab === 'live' && (
+                <>
+                    {gamesLoading ? <p>Loading...</p> : games.length === 0 ? (
+                        <div style={card}>
+                            <p style={{ color: 'var(--text-dim)' }}>No games in progress. Check back on game days.</p>
+                        </div>
+                    ) : games.map((g, i) => (
+                        <div key={i} style={card}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ textAlign: 'center', flex: 1 }}>
+                                    <div style={{ color: 'var(--text)', fontWeight: 'bold', fontSize: '15px' }}>{g.away_team}</div>
+                                    <div style={{ color: 'var(--text-dim)', fontSize: '11px', marginBottom: '4px' }}>{g.away_name}</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text)' }}>{g.away_score}</div>
+                                </div>
+                                <div style={{ textAlign: 'center', padding: '0 16px' }}>
+                                    <div style={{ color: g.completed ? 'var(--text-dim)' : 'var(--accent)', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                                        {g.completed ? 'FINAL' : g.status === 'Scheduled' ? g.status : `Q${g.period} ${g.clock}`}
+                                    </div>
+                                    <div style={{ color: 'var(--text-dim)', fontSize: '11px', marginTop: '4px' }}>@</div>
+                                </div>
+                                <div style={{ textAlign: 'center', flex: 1 }}>
+                                    <div style={{ color: 'var(--text)', fontWeight: 'bold', fontSize: '15px' }}>{g.home_team}</div>
+                                    <div style={{ color: 'var(--text-dim)', fontSize: '11px', marginBottom: '4px' }}>{g.home_name}</div>
+                                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text)' }}>{g.home_score}</div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </>
+            )}
+            {tab === 'scores' && (
+                <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                        <button
+                            onClick={() => setWeek(w => Math.max(1, w - 1))}
+                            style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '20px', cursor: 'pointer' }}
+                        >
+                            ‹
+                        </button>
+                        <span style={{ color: 'var(--text-dim)' }}>Week {week}</span>
+                        <button
+                            onClick={() => setWeek(w => w + 1)}
+                            style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '20px', cursor: 'pointer' }}
+                        >
+                            ›
+                        </button>
+                    </div>
+                    {scoresLoading ? <p>Loading...</p> : scores.length === 0 ? (
+                        <div style={card}>
+                            <p style={{ color: 'var(--text-dim)' }}>No scores yet for week {week}. Sync scores first.</p>
+                        </div>
+                    ) : scores.map((s, i) => (
+                        <div key={s.user_id} style={{ ...card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <span style={{ color: 'var(--text-dim)', fontSize: '13px', width: '20px' }}>{i + 1}</span>
+                                <span style={{ color: s.user_id === user?.id ? 'var(--accent)' : 'var(--text)', fontWeight: s.user_id === user?.id ? 'bold' : 'normal' }}>
+                                    {getTeamName(s.user_id)}
+                                </span>
+                            </div>
+                            <span style={{ fontSize: '22px', fontWeight: 'bold', color: s.user_id === user?.id ? 'var(--accent)' : 'var(--text)' }}>
+                                {s.total_points.toFixed(1)}
+                            </span>
+                        </div>
+                    ))}
+                </>
+            )}
+
         </div>
     )
 }

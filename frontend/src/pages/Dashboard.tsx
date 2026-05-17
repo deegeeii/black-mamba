@@ -7,6 +7,11 @@ import axios from 'axios'
 const API_URL = import.meta.env.VITE_API_URL
 const CURRENT_WEEK = 1
 
+interface Headline {
+  headline: string
+  description: string
+  link: string
+}
 
 interface Standing {
   user_id: string
@@ -61,11 +66,11 @@ const cardTitle: React.CSSProperties = {
   marginBottom: '12px',
 }
 
-
 export default function Dashboard() {
   const { user, session } = useAuth()
   const { activeLeague, getTeamName } = useLeague()
 
+  const [headlines, setHeadlines] = useState<Headline[]>([])
   const [standings, setStandings] = useState<Standing[]>([])
   const [matchups, setMatchups] = useState<Matchup[]>([])
   const [bets, setBets] = useState<Bet[]>([])
@@ -73,7 +78,6 @@ export default function Dashboard() {
   const [myScore, setMyScore] = useState<MyScore | null>(null)
   const [loading, setLoading] = useState(true)
   const [username, setUsername] = useState<string | null>(null)
-
 
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${session?.access_token}` }),
@@ -85,26 +89,25 @@ export default function Dashboard() {
     const id = activeLeague.id
 
     Promise.allSettled([
-        axios.get(`${API_URL}/leagues/${id}/standings`, { headers }),
-        axios.get(`${API_URL}/leagues/${id}/matchups?week=${CURRENT_WEEK}`, { headers }),
-        axios.get(`${API_URL}/leagues/${id}/bets`, { headers }),
-        axios.get(`${API_URL}/leagues/${id}/tournaments`, { headers }),
-        axios.get(`${API_URL}/leagues/${id}/scores/me?week=${CURRENT_WEEK}`, { headers }),
-        axios.get(`${API_URL}/profile/`, { headers }),
-
-    ]).then(([s, m, b, t, sc, p]) => {
-        if (s.status === 'fulfilled') setStandings(s.value.data)
-        if (m.status === 'fulfilled') setMatchups(m.value.data)
-        if (b.status === 'fulfilled') setBets(b.value.data)
-        if (t.status === 'fulfilled') setTournaments(t.value.data)
-        if (sc.status === 'fulfilled') setMyScore(sc.value.data)
-          // add this line:
-        if (p.status === 'fulfilled') setUsername(p.value.data.username || null)
-            
-        setLoading(false)
+      axios.get(`${API_URL}/headlines`, { headers }),
+      axios.get(`${API_URL}/leagues/${id}/standings`, { headers }),
+      axios.get(`${API_URL}/leagues/${id}/matchups?week=${CURRENT_WEEK}`, { headers }),
+      axios.get(`${API_URL}/leagues/${id}/bets`, { headers }),
+      axios.get(`${API_URL}/leagues/${id}/tournaments`, { headers }),
+      axios.get(`${API_URL}/leagues/${id}/scores/me?week=${CURRENT_WEEK}`, { headers }),
+      axios.get(`${API_URL}/profile/`, { headers }),
+    ]).then(([hl, s, m, b, t, sc, p]) => {
+      if (hl.status === 'fulfilled') setHeadlines((hl.value.data as Headline[]).slice(0, 8))
+      if (s.status === 'fulfilled') setStandings(s.value.data)
+      if (m.status === 'fulfilled') setMatchups(m.value.data)
+      if (b.status === 'fulfilled') setBets(b.value.data)
+      if (t.status === 'fulfilled') setTournaments(t.value.data)
+      if (sc.status === 'fulfilled') setMyScore(sc.value.data)
+      if (p.status === 'fulfilled') setUsername(p.value.data.username || null)
+      setLoading(false)
     })
   }, [activeLeague?.id, session, headers])
-  
+
   const label = (userId: string) => getTeamName(userId)
 
   const myMatchup = matchups.find(
@@ -113,7 +116,7 @@ export default function Dashboard() {
   const myStanding = standings.find(s => s.user_id === user?.id)
   const recentBets = bets.slice(0, 3)
   const topStandings = standings.slice(0, 3)
-  
+
   if (!activeLeague) return <p style={{ color: 'var(--text-dim)' }}>Select a league from the sidebar.</p>
   if (loading) return <p>Loading dashboard...</p>
 
@@ -123,97 +126,118 @@ export default function Dashboard() {
       <h1 style={{ marginBottom: '4px' }}>{username || user?.email}</h1>
       <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>{activeLeague.name}</p>
 
-
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 
         {/* My Score */}
         <div style={card}>
-            <div style={ cardTitle }>Week {CURRENT_WEEK} Score</div>
-            {myScore ? (
-              <div style={{ fontSize: '36px', fontWeight: 'bold', color: 'var(--text)'}}>
-                {myScore.total_points.toFixed((1))} <span style={{ fontSize: '16px', color: 'var(--text-dim)' }}>pts</span>
-              </div>
-            ) : (
-              <p style={{ color: 'var(--text-dim)' }}>No score yet</p>
-            )}
-            {myStanding && (
-              <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '14px' }}>
-                Record: {myStanding.wins}W - {myStanding.losses}L
-              </p>
-            )}
+          <div style={cardTitle}>Week {CURRENT_WEEK} Score</div>
+          {myScore ? (
+            <div style={{ fontSize: '36px', fontWeight: 'bold', color: 'var(--text)' }}>
+              {myScore.total_points.toFixed(1)} <span style={{ fontSize: '16px', color: 'var(--text-dim)' }}>pts</span>
+            </div>
+          ) : (
+            <p style={{ color: 'var(--text-dim)' }}>No score yet</p>
+          )}
+          {myStanding && (
+            <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '14px' }}>
+              Record: {myStanding.wins}W - {myStanding.losses}L
+            </p>
+          )}
         </div>
 
-          {/* Current Matchup */}
-          <div style={card}>
-            <div style={cardTitle}>This Week's Matchup</div>
-            {myMatchup ? (
-              <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: myMatchup.home_user_id === user?.id ? 'var(--accent)' : 'var(--text)' }}>
-                      {label(myMatchup.home_user_id)}
-                    </span>
-                    <span style={{ color: 'var(--text-dim)', fontSize: '12px' }}>vs</span>
-                    <span style={{ color: myMatchup.away_user_id === user?.id ? 'var(--accent)' : 'var(--text)' }}>
-                      {label(myMatchup.away_user_id)}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}> 
-                      <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>{myMatchup.home_points.toFixed(1)}</span>
-                      <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>{myMatchup.away_points.toFixed(1)}</span>
-                  </div>
+        {/* Current Matchup */}
+        <div style={card}>
+          <div style={cardTitle}>This Week's Matchup</div>
+          {myMatchup ? (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: myMatchup.home_user_id === user?.id ? 'var(--accent)' : 'var(--text)' }}>
+                  {label(myMatchup.home_user_id)}
+                </span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '12px' }}>vs</span>
+                <span style={{ color: myMatchup.away_user_id === user?.id ? 'var(--accent)' : 'var(--text)' }}>
+                  {label(myMatchup.away_user_id)}
+                </span>
               </div>
-            ) : (
-                <p style={{ color: 'var(--text-dim)' }}>No matchup this week</p>
-            )}
-          </div>
-          
-
-                          {/* Standings */}
-                          <div style={card}>
-                    <div style={cardTitle}>Standings</div>
-                    {topStandings.map((s, i) => (
-                        <div key={s.user_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                            <span style={{ color: s.user_id === user?.id ? 'var(--accent)' : 'var(--text-muted)' }}>
-                                {i + 1}. {label(s.user_id)}
-                            </span>
-                            <span style={{ color: 'var(--text-dim)', fontSize: '13px' }}>{s.wins}W {s.losses}L</span>
-                        </div>
-                    ))}
-                    {standings.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No standings yet</p>}
-                </div>
-
-                {/* Recent Bets */}
-                <div style={card}>
-                    <div style={cardTitle}>Recent Bets</div>
-                    {recentBets.length === 0 ? (
-                        <p style={{ color: 'var(--text-dim)' }}>No bets yet</p>
-                    ) : recentBets.map(bet => (
-                        <div key={bet.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{bet.bet_type}</span>
-                            <span style={{ color: bet.status === 'settled' ? 'var(--accent)' : 'var(--warning)', fontSize: '13px' }}>
-                                ${(bet.amount / 100).toFixed(2)} · {bet.status}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Tournaments */}
-                <div style={{ ...card, gridColumn: '1 / -1' }}>
-                    <div style={cardTitle}>Tournaments</div>
-                    {tournaments.length === 0 ? (
-                        <p style={{ color: 'var(--text-dim)' }}>No tournaments yet</p>
-                    ) : tournaments.map(t => (
-                        <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
-                            <span style={{ color: 'var(--text)' }}>{t.name}</span>
-                            <span style={{ color: t.status === 'active' ? 'var(--accent)' : 'var(--text-dim)', fontSize: '13px' }}>
-                                {t.status} · {t.ai_brain}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>{myMatchup.home_points.toFixed(1)}</span>
+                <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>{myMatchup.away_points.toFixed(1)}</span>
+              </div>
             </div>
+          ) : (
+            <p style={{ color: 'var(--text-dim)' }}>No matchup this week</p>
+          )}
+        </div>
 
+        {/* Standings */}
+        <div style={card}>
+          <div style={cardTitle}>Standings</div>
+          {topStandings.map((s, i) => (
+            <div key={s.user_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+              <span style={{ color: s.user_id === user?.id ? 'var(--accent)' : 'var(--text-muted)' }}>
+                {i + 1}. {label(s.user_id)}
+              </span>
+              <span style={{ color: 'var(--text-dim)', fontSize: '13px' }}>{s.wins}W {s.losses}L</span>
+            </div>
+          ))}
+          {standings.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No standings yet</p>}
+        </div>
+
+        {/* Recent Bets */}
+        <div style={card}>
+          <div style={cardTitle}>Recent Bets</div>
+          {recentBets.length === 0 ? (
+            <p style={{ color: 'var(--text-dim)' }}>No bets yet</p>
+          ) : recentBets.map(bet => (
+            <div key={bet.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{bet.bet_type}</span>
+              <span style={{ color: bet.status === 'settled' ? 'var(--accent)' : 'var(--warning)', fontSize: '13px' }}>
+                ${(bet.amount / 100).toFixed(2)} · {bet.status}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Tournaments */}
+        <div style={{ ...card, gridColumn: '1 / -1' }}>
+          <div style={cardTitle}>Tournaments</div>
+          {tournaments.length === 0 ? (
+            <p style={{ color: 'var(--text-dim)' }}>No tournaments yet</p>
+          ) : tournaments.map(t => (
+            <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+              <span style={{ color: 'var(--text)' }}>{t.name}</span>
+              <span style={{ color: t.status === 'active' ? 'var(--accent)' : 'var(--text-dim)', fontSize: '13px' }}>
+                {t.status} · {t.ai_brain}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Headlines */}
+        <div style={{ ...card, gridColumn: '1 / -1' }}>
+          <div style={cardTitle}>Headlines</div>
+          {headlines.length === 0 ? (
+            <p style={{ color: 'var(--text-dim)' }}>No headlines available</p>
+          ) : headlines.map((h, i) => (
+            <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+              <a
+                href={h.link}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: 'var(--text)', fontWeight: 'bold', fontSize: '14px', textDecoration: 'none' }}
+              >
+                {h.headline}
+              </a>
+              {h.description && (
+                <p style={{ color: 'var(--text-dim)', fontSize: '12px', marginTop: '4px', marginBottom: 0 }}>
+                  {h.description}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+      </div>
     </div>
   )
 }

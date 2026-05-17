@@ -29,6 +29,13 @@ type PlayoffMatchup = {
     round: string
 }
 
+type GameScore = {
+    home_team: string; home_name: string; home_score: string
+    away_team: string; away_name: string; away_score: string
+    status: string; completed: boolean; period: number; clock: string
+}
+
+
 const ROUND_LABELS: Record<string, string> = {
     wildcard: 'Wild Card',
     semifinal: 'Semifinal',
@@ -40,13 +47,19 @@ export default function MatchupsScreen() {
     const { session, user } = useAuth()
     const { theme } = useTheme()
     const { activeLeague, getTeamName } = useLeague()
+    
 
-    const [tab, setTab] = useState<'matchups' | 'playoffs'>('matchups')
+    const [tab, setTab] = useState<'matchups' | 'playoffs' | 'live' | 'scores'>('matchups')
     const [matchups, setMatchups] = useState<Matchup[]>([])
     const [playoffs, setPlayoffs] = useState<PlayoffMatchup[]>([])
     const [week, setWeek] = useState(CURRENT_WEEK)
     const [loading, setLoading] = useState(true)
     const [playoffsLoading, setPlayoffsLoading] = useState(false)
+    const [games, setGames] = useState<GameScore[]>([])
+    const [gamesLoading, setGamesLoading] = useState(false)
+    const [scores, setScores] = useState<{ user_id: string; total_points: number }[]>([])
+    const [scoresLoading, setScoresLoading] = useState(false)
+
 
     const headers = { Authorization: `Bearer ${session?.access_token}` }
 
@@ -67,6 +80,32 @@ export default function MatchupsScreen() {
             .then(data => { setPlayoffs(Array.isArray(data) ? data : []); setPlayoffsLoading(false) })
             .catch(() => setPlayoffsLoading(false))
     }, [tab, activeLeague?.id, session])
+
+    useEffect(() => {
+        if (tab !== 'live') return
+        setGamesLoading(true)
+        fetch(`${API}/scoreboard`)
+            .then(r => r.json())
+            .then(data => { setGames(Array.isArray(data) ? data : []); setGamesLoading(false) })
+            .catch(() => setGamesLoading(false))
+    }, [tab])
+
+    useEffect(() => {
+        if (tab !== 'scores' || !activeLeague || !session) return
+        setScoresLoading(true)
+        fetch(`${API}/leagues/${activeLeague.id}/scores?week=${week}`, { headers })
+            .then(r => r.json())
+            .then(data => {
+                const sorted = Array.isArray(data)
+                    ? [...data].sort((a, b) => b.total_points - a.total_points)
+                    : []
+                setScores(sorted)
+                setScoresLoading(false)
+            })
+            .catch(() => setScoresLoading(false))
+    }, [tab, week, activeLeague?.id, session])
+    
+    
 
     const isMyMatchup = (m: Matchup | PlayoffMatchup) =>
         m.home_user_id === user?.id || m.away_user_id === user?.id
@@ -91,14 +130,14 @@ export default function MatchupsScreen() {
             </View>
 
             <View style={[styles.tabRow, { borderBottomColor: theme.borderSubtle }]}>
-                {(['matchups', 'playoffs'] as const).map(t => (
+                {(['matchups', 'playoffs', 'live', 'scores'] as const).map(t => (
                     <TouchableOpacity
                         key={t}
                         style={[styles.tab, tab === t && { borderBottomColor: theme.accent, borderBottomWidth: 2 }]}
                         onPress={() => setTab(t)}
                     >
                         <Text style={{ color: tab === t ? theme.accent : theme.textDim, fontWeight: tab === t ? 'bold' : 'normal', fontSize: 14 }}>
-                            {t === 'matchups' ? 'Season' : 'Playoffs'}
+                            {t === 'matchups' ? 'Season' : t === 'playoffs' ? 'Playoffs' : t === 'live' ? 'Live' : 'Scores'}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -164,7 +203,7 @@ export default function MatchupsScreen() {
                         />
                     )}
                 </>
-            ) : (
+            ) : tab === 'playoffs' ? (
                 playoffsLoading ? (
                     <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
                 ) : playoffs.length === 0 ? (
@@ -222,10 +261,77 @@ export default function MatchupsScreen() {
                         )}
                     />
                 )
+            ) : tab === 'live' ? (
+                gamesLoading ? (
+                    <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
+                ) : games.length === 0 ? (
+                    <Text style={[styles.empty, { color: theme.textDim }]}>No games right now. Check back on game days.</Text>
+                ) : (
+                    <FlatList
+                        data={games}
+                        keyExtractor={(_, i) => String(i)}
+                        contentContainerStyle={styles.list}
+                        renderItem={({ item: g }) => (
+                            <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border, borderWidth: 1 }]}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <View style={{ flex: 1, alignItems: 'center' }}>
+                                        <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 14 }}>{g.away_team}</Text>
+                                        <Text style={{ color: theme.textDim, fontSize: 11, marginBottom: 4 }}>{g.away_name}</Text>
+                                        <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 26 }}>{g.away_score}</Text>
+                                    </View>
+                                    <View style={{ alignItems: 'center', paddingHorizontal: 12 }}>
+                                        <Text style={{ color: g.completed ? theme.textDim : theme.accent, fontSize: 11, fontWeight: 'bold', letterSpacing: 1 }}>
+                                            {g.completed ? 'FINAL' : g.status === 'Scheduled' ? g.status : `Q${g.period} ${g.clock}`}
+                                        </Text>
+                                        <Text style={{ color: theme.textDim, fontSize: 11, marginTop: 4 }}>@</Text>
+                                    </View>
+                                    <View style={{ flex: 1, alignItems: 'center' }}>
+                                        <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 14 }}>{g.home_team}</Text>
+                                        <Text style={{ color: theme.textDim, fontSize: 11, marginBottom: 4 }}>{g.home_name}</Text>
+                                        <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 26 }}>{g.home_score}</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        )}
+                    />
+                )
+            ) : (
+                scoresLoading ? (
+                    <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
+                ) : scores.length === 0 ? (
+                    <Text style={[styles.empty, { color: theme.textDim }]}>No scores yet for week {week}</Text>
+                ) : (
+                    <FlatList
+                        data={scores}
+                        keyExtractor={item => item.user_id}
+                        contentContainerStyle={styles.list}
+                        renderItem={({ item: s, index: i }) => (
+                            <View style={[styles.card, {
+                                backgroundColor: theme.bgCard,
+                                borderColor: s.user_id === user?.id ? theme.accent : theme.border,
+                                borderWidth: s.user_id === user?.id ? 1.5 : 1,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                            }]}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                    <Text style={{ color: theme.textDim, fontSize: 13, width: 20 }}>{i + 1}</Text>
+                                    <Text style={{ color: s.user_id === user?.id ? theme.accent : theme.text, fontWeight: s.user_id === user?.id ? 'bold' : 'normal', fontSize: 14 }}>
+                                        {getTeamName(s.user_id)}
+                                    </Text>
+                                </View>
+                                <Text style={{ color: s.user_id === user?.id ? theme.accent : theme.text, fontWeight: 'bold', fontSize: 22 }}>
+                                    {s.total_points.toFixed(1)}
+                                </Text>
+                            </View>
+                        )}
+                    />
+                )
             )}
         </View>
     )
 }
+
 
 const styles = StyleSheet.create({
     header: {
