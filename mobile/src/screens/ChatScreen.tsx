@@ -2,13 +2,15 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import {
     View, Text, StyleSheet, FlatList, TextInput,
     TouchableOpacity, KeyboardAvoidingView, Platform,
-    ActivityIndicator, Image,
+    ActivityIndicator, Image, Modal, ScrollView,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { supabase } from '../lib/supabase'
+import * as ImagePicker from 'expo-image-picker'
+
 
 const API = process.env.EXPO_PUBLIC_API_URL
 
@@ -33,12 +35,16 @@ type ActivityItem = {
     created_at: string
 }
 
-const isImage = (msg: string | null) =>
-    !!msg && (
-        /\.(gif|png|jpe?g|webp)$/i.test(msg) ||
-        msg.includes('giphy.com') ||
-        (msg.includes('supabase') && msg.includes('chat-images'))
+const isImage = (msg: string | null) => {
+    if (!msg) return false
+    return (
+        msg.includes('/storage/v1/object/') ||
+        msg.includes('chat-images') ||
+        /\.(gif|png|jpe?g|webp)(\?.*)?$/i.test(msg) ||
+        msg.includes('giphy.com')
     )
+}
+
 
 export default function ChatScreen() {
     const navigation = useNavigation()
@@ -54,6 +60,13 @@ export default function ChatScreen() {
     const [sending, setSending] = useState(false)
     const [botLoading, setBotLoading] = useState(false)
     const [activityLoading, setActivityLoading] = useState(false)
+    const [trayOpen, setTrayOpen] = useState(false)
+    const [gifOpen, setGifOpen] = useState(false)
+    const [gifQuery, setGifQuery] = useState('')
+    const [gifs, setGifs] = useState<{ id: string; url: string; preview: string }[]>([])
+    const [gifLoading, setGifLoading] = useState(false)
+    const [uploading, setUploading] = useState(false)
+
     const listRef = useRef<FlatList>(null)
 
     const headers = {
@@ -141,6 +154,84 @@ export default function ChatScreen() {
         }
     }
 
+    const searchGifs = async (q: string) => {
+        if (!q.trim()) return
+        setGifLoading(true)
+        try {
+            const res = await fetch(
+                `https://api.giphy.com/v1/gifs/search?api_key=C0akdik55lotqYg8iWkJSbvUyCznltPb&q=${encodeURIComponent(q)}&limit=12&rating=pg-13`
+            )
+            const data = await res.json()
+            setGifs((data.data ?? []).map((g: any) => ({
+                id: g.id,
+                url: g.images.original.url,
+                preview: g.images.fixed_height_small.url,
+            })))
+        } catch {
+            setGifs([])
+        } finally {
+            setGifLoading(false)
+        }
+    }
+    
+    const sendGif = async (url: string) => {
+        if (!activeLeague) return
+        setGifOpen(false)
+        setGifQuery('')
+        setGifs([])
+        setTrayOpen(false)
+        try {
+            await fetch(`${API}/leagues/${activeLeague.id}/chat`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ message: url }),
+            })
+        } catch {
+            // silent
+        }
+    }
+    
+    const handleImageUpload = async () => {
+        if (!activeLeague) return
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
+        if (!permission.granted) return
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            quality: 0.8,
+            base64: true,
+        })
+        if (result.canceled || !result.assets[0]) return
+        setUploading(true)
+        setTrayOpen(false)
+        try {
+            const asset = result.assets[0]
+            if (!asset.base64) return
+            const binaryString = atob(asset.base64)
+            const bytes = new Uint8Array(binaryString.length)
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i)
+            }
+            const path = `${activeLeague.id}/${Date.now()}.jpg`
+            const { error } = await supabase.storage
+                .from('chat-images')
+                .upload(path, bytes, { contentType: 'image/jpeg' })
+            if (!error) {
+                const { data } = supabase.storage.from('chat-images').getPublicUrl(path)
+                await fetch(`${API}/leagues/${activeLeague.id}/chat`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ message: data.publicUrl }),
+                })
+            }
+        } catch (e) {
+            console.log('upload error:', e)
+        } finally {
+            setUploading(false)
+        }
+    }
+    
+    
+
     const formatTime = (ts: string) =>
         new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 
@@ -218,6 +309,7 @@ export default function ChatScreen() {
                                                 source={{ uri: item.message! }}
                                                 style={styles.imageMsg}
                                                 resizeMode="cover"
+                                                onError={(e) => console.log('Image load error:', e.nativeEvent)}
                                             />
                                         ) : (
                                             <View style={[
@@ -240,7 +332,46 @@ export default function ChatScreen() {
                         />
                     )}
 
+                    {/* Tray */}
+                    {trayOpen && (
+                        <View style={[styles.tray, { backgroundColor: theme.bgCard, borderTopColor: theme.border }]}>
+                            <TouchableOpacity
+                                style={[styles.trayBtn, { borderColor: theme.border }]}
+                                onPress={() => { setTrayOpen(false); setGifOpen(true) }}
+                            >
+                                <Text style={{ color: theme.accent, fontWeight: 'bold', fontSize: 13 }}>GIF</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.trayBtn, { borderColor: theme.border }]}
+                                onPress={handleImageUpload}
+                                disabled={uploading}
+                            >
+                                <Text style={{ color: theme.text, fontSize: 18 }}>
+                                    {uploading ? '⏳' : '📎'}
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.trayBtn, { borderColor: theme.border, opacity: botLoading ? 0.5 : 1 }]}
+                                onPress={() => { handleAskBot(); setTrayOpen(false) }}
+                                disabled={botLoading}
+                            >
+                                <Text style={{ color: theme.accent, fontWeight: 'bold', fontSize: 13 }}>
+                                    {botLoading ? '...' : '🤖 BOT'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+                    {/* Input Row */}
                     <View style={[styles.inputRow, { backgroundColor: theme.bgDeep, borderTopColor: theme.borderSubtle }]}>
+                        <TouchableOpacity
+                            style={[styles.plusBtn, { backgroundColor: trayOpen ? theme.accent : theme.bgCard, borderColor: theme.border }]}
+                            onPress={() => setTrayOpen(o => !o)}
+                        >
+                            <Text style={{ color: trayOpen ? '#000' : theme.textDim, fontSize: 20, lineHeight: 24 }}>
+                                {trayOpen ? '×' : '+'}
+                            </Text>
+                        </TouchableOpacity>
                         <TextInput
                             style={[styles.input, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border }]}
                             value={text}
@@ -251,15 +382,6 @@ export default function ChatScreen() {
                             maxLength={500}
                         />
                         <TouchableOpacity
-                            style={[styles.botBtn, { borderColor: theme.accent, opacity: botLoading ? 0.5 : 1 }]}
-                            onPress={handleAskBot}
-                            disabled={botLoading}
-                        >
-                            <Text style={{ color: theme.accent, fontSize: 11, fontWeight: 'bold' }}>
-                                {botLoading ? '...' : 'BOT'}
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
                             style={[styles.sendBtn, { backgroundColor: text.trim() ? theme.accent : theme.bgCard }]}
                             onPress={handleSend}
                             disabled={sending || !text.trim()}
@@ -267,6 +389,48 @@ export default function ChatScreen() {
                             <Text style={{ color: text.trim() ? '#000' : theme.textDim, fontWeight: 'bold' }}>↑</Text>
                         </TouchableOpacity>
                     </View>
+
+                    {/* GIF Modal */}
+                    <Modal visible={gifOpen} animationType="slide" transparent>
+                        <KeyboardAvoidingView
+                            style={styles.modalBackdrop}
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        >
+                            <View style={[styles.gifModal, { backgroundColor: theme.bgCard }]}>
+                                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                                    <TextInput
+                                        style={[styles.gifInput, { backgroundColor: theme.bg, color: theme.text, borderColor: theme.border }]}
+                                        value={gifQuery}
+                                        onChangeText={setGifQuery}
+                                        onSubmitEditing={() => searchGifs(gifQuery)}
+                                        placeholder="Search GIFs..."
+                                        placeholderTextColor={theme.textDim}
+                                        returnKeyType="search"
+                                        autoFocus
+                                    />
+                                    <TouchableOpacity
+                                        style={[styles.gifSearchBtn, { backgroundColor: theme.accent }]}
+                                        onPress={() => searchGifs(gifQuery)}
+                                    >
+                                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>Go</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={() => { setGifOpen(false); setGifQuery(''); setGifs([]) }}
+                                    >
+                                        <Text style={{ color: theme.textDim, fontSize: 22, lineHeight: 36 }}>×</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                {gifLoading && <ActivityIndicator color={theme.accent} />}
+                                <ScrollView contentContainerStyle={styles.gifGrid}>
+                                    {gifs.map(g => (
+                                        <TouchableOpacity key={g.id} onPress={() => sendGif(g.url)} style={styles.gifThumb}>
+                                            <Image source={{ uri: g.preview }} style={{ width: '100%', height: 80, borderRadius: 6 }} resizeMode="cover" />
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        </KeyboardAvoidingView>
+                    </Modal>
                 </>
             )}
 
@@ -372,15 +536,64 @@ const styles = StyleSheet.create({
         fontSize: 14,
         maxHeight: 100,
     },
-    botBtn: {
-        width: 42,
+    tray: {
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        gap: 12,
+        borderTopWidth: 1,
+    },
+    trayBtn: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 10,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    plusBtn: {
+        width: 38,
         height: 38,
         borderRadius: 19,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    sendBtn: {
+    modalBackdrop: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    gifModal: {
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        padding: 16,
+        maxHeight: '60%',
+    },
+    gifInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        fontSize: 14,
+    },
+    gifSearchBtn: {
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    gifGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+    },
+    gifThumb: {
+        width: '31%',
+    },
+
+        sendBtn: {
         width: 38,
         height: 38,
         borderRadius: 19,
@@ -391,4 +604,6 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderBottomWidth: 1,
     },
+    imageMsg: { width: 200, height: 150, borderRadius: 12, backgroundColor: '#222' },
+
 })
