@@ -33,12 +33,15 @@ def join_tournament(tournament_id: str, user_id: str):
     existing = supabase.table("tournament_members").select("id").eq("tournament_id", tournament_id).eq("user_id", user_id).execute()
     if existing.data:
         return None, "Already joined"
+    draft_team_name = _generate_draft_name()
     res = supabase.table("tournament_members").insert({
         "tournament_id": tournament_id,
         "user_id": user_id,
         "paid": True,
+        "draft_team_name": draft_team_name,
     }).execute()
     return res.data[0], None
+
 
 
 def vote_ai_brain(tournament_id: str, user_id: str, vote: str):
@@ -83,6 +86,21 @@ def generate_bracket(tournament_id: str):
         "Example: {\"description\": \"...\", \"bonuses\": [{\"name\": \"TD in overtime\", \"points\": 3}]}"
     )
     raw = _ai(scoring_prompt)
+
+def _generate_draft_name() -> str:
+    try:
+        msg = _anthropic.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=16,
+            messages=[{
+                "role": "user",
+                "content": "Generate one creative fantasy sports team name. Return ONLY the name, nothing else. Be varied and inventive.",
+            }],
+        )
+        return msg.content[0].text.strip().strip('"').strip("'")
+    except Exception:
+        return "Mystery Squad"
+
     try:
         # Extract JSON from response (handle markdown code blocks)
         if "```" in raw:

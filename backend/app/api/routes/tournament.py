@@ -27,6 +27,12 @@ def join(tournament_id: str, user_id: str = Depends(get_current_user)):
         raise HTTPException(400, err)
     return result
 
+@router.get("/tournaments/{tournament_id}/members")
+def get_members(tournament_id: str, user_id: str = Depends(get_current_user)):
+    from app.core.supabase import supabase
+    res = supabase.table("tournament_members").select("user_id, draft_team_name").eq("tournament_id", tournament_id).execute()
+    return res.data
+
 
 @router.post("/tournaments/{tournament_id}/vote")
 def vote(tournament_id: str, data: VoteRequest, user_id: str = Depends(get_current_user)):

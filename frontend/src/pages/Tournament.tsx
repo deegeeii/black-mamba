@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
+import { useLeague } from '../contexts/LeagueContext'
+
 
 const  API_URL = import.meta.env.VITE_API_URL
 
@@ -41,6 +43,7 @@ interface Entity {
 export default function Tournament() {
     const { leagueId } = useParams<{ leagueId: string }>()
     const { session, user } = useAuth()
+    const { getTeamName } = useLeague()
     const [tournaments, setTournaments] = useState<Tournament[]>([])
     const [selectedTourney, setSelectedTourney] = useState<Tournament | null>(null)
     const [matchups, setMatchups] = useState<TournamentMatchup[]>([])
@@ -51,6 +54,7 @@ export default function Tournament() {
     const [generatingDraft, setGeneratingDraft] = useState(false)
     const [picking, setPicking] = useState<string | null>(null)
     const [tab, setTab] = useState<'h2h' | 'myteam' | 'standings' | 'draft'>('h2h')
+    const [members, setMembers] = useState<{ user_id: string; draft_team_name: string | null }[]>([])
 
 
     //  Create Form
@@ -75,10 +79,15 @@ export default function Tournament() {
 
     const fetchMatchups = async (tourneyId: string) => {
         try {
-            const res = await axios.get(`${API_URL}/leagues/tournaments/${tourneyId}/matchups`, { headers })
-            setMatchups(res.data)
+            const [matchupsRes, membersRes] = await Promise.all([
+                axios.get(`${API_URL}/leagues/tournaments/${tourneyId}/matchups`, { headers }),
+                axios.get(`${API_URL}/leagues/tournaments/${tourneyId}/members`, { headers }),
+            ])
+            setMatchups(matchupsRes.data)
+            setMembers(membersRes.data)
         } catch {}
     }
+    
 
     useEffect(() => { fetchTournaments() }, [leagueId, headers])
 
@@ -140,8 +149,10 @@ export default function Tournament() {
 
     const label = (userId: string | null) => {
         if (!userId) return 'BYE'
-        return userId === user?.id ? 'You' : userId.slice(0, 8)
+        const member = members.find(m => m.user_id === userId)
+        return member?.draft_team_name || getTeamName(userId)
     }
+    
 
     const fetchEntities = async (tourneyId: string) => {
         try {

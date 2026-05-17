@@ -43,6 +43,7 @@ export default function TournamentDetailScreen() {
     const [picking, setPicking] = useState<string | null>(null)
     const [tab, setTab] = useState<'h2h' | 'myteam' | 'standings' | 'draft'>('h2h')
     const [tournamentStatus, setTournamentStatus] = useState(tournament.status)
+    const [members, setMembers] = useState<{ user_id: string; draft_team_name: string | null }[]>([])
 
 
     const headers = { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' }
@@ -51,11 +52,14 @@ export default function TournamentDetailScreen() {
         Promise.allSettled([
             fetch(`${API}/leagues/tournaments/${tournament.id}/matchups`, { headers }).then(r => r.json()),
             fetch(`${API}/leagues/tournaments/${tournament.id}/draft/entities`, { headers }).then(r => r.json()),
-        ]).then(([matchupsRes, entitiesRes]) => {
+            fetch(`${API}/leagues/tournaments/${tournament.id}/members`, { headers }).then(r => r.json()),
+        ]).then(([matchupsRes, entitiesRes, membersRes]) => {
             if (matchupsRes.status === 'fulfilled') setMatchups(Array.isArray(matchupsRes.value) ? matchupsRes.value : [])
             if (entitiesRes.status === 'fulfilled') setEntities(Array.isArray(entitiesRes.value) ? entitiesRes.value : [])
+            if (membersRes.status === 'fulfilled') setMembers(Array.isArray(membersRes.value) ? membersRes.value : [])
             setLoading(false)
         }).catch(() => setLoading(false))
+        
     }, [tournament.id])
     
 
@@ -82,6 +86,13 @@ export default function TournamentDetailScreen() {
             setEntities(Array.isArray(data) ? data : [])
         } catch {}
     }
+
+    const label = (userId: string | null) => {
+        if (!userId) return 'BYE'
+        const member = members.find(m => m.user_id === userId)
+        return member?.draft_team_name || getTeamName(userId)
+    }
+    
     
     const handleGenerateDraft = async () => {
         setGeneratingDraft(true)
@@ -176,7 +187,7 @@ export default function TournamentDetailScreen() {
                                                 <View style={styles.matchRow}>
                                                     <View style={styles.teamCol}>
                                                         <Text style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]}>
-                                                        {getTeamName(m.home_user_id)}
+                                                        {label(m.home_user_id)}
                                                         </Text>
                                                         <Text style={[styles.score, { color: homeWon ? theme.accent : theme.textMuted }]}>
                                                             {m.home_points?.toFixed(1) ?? '—'}
@@ -185,7 +196,7 @@ export default function TournamentDetailScreen() {
                                                     <Text style={[styles.vs, { color: theme.textDim }]}>vs</Text>
                                                     <View style={[styles.teamCol, styles.teamColRight]}>
                                                         <Text style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]}>
-                                                        {m.away_user_id ? getTeamName(m.away_user_id) : 'BYE'}
+                                                        {m.away_user_id ? label(m.away_user_id) : 'BYE'}
                                                         </Text>
                                                         <Text style={[styles.score, { color: awayWon ? theme.accent : theme.textMuted }]}>
                                                             {m.away_points?.toFixed(1) ?? '—'}
@@ -221,7 +232,7 @@ export default function TournamentDetailScreen() {
                                 <View key={s.userId} style={[styles.card, { backgroundColor: theme.bgCard, borderColor: s.userId === user?.id ? theme.accent : theme.border, flexDirection: 'row', alignItems: 'center' }]}>
                                     <Text style={{ color: theme.textDim, fontSize: 16, fontWeight: 'bold', width: 32 }}>{i + 1}</Text>
                                     <Text style={{ color: s.userId === user?.id ? theme.accent : theme.text, flex: 1, fontWeight: 'bold' }}>
-                                    {getTeamName(s.userId)}
+                                    {label(s.userId)}
                                     </Text>
                                     <Text style={{ color: theme.text, marginRight: 16 }}>{s.wins}W</Text>
                                     <Text style={{ color: theme.textDim, fontSize: 13 }}>{s.points.toFixed(1)} pts</Text>
