@@ -1,19 +1,20 @@
 {
-    "cli": {
-      "version": ">= 16.0.0"
-    },
-    "build": {
-      "preview": {
-        "android": {
-          "buildType": "apk"
-        },
-        "distribution": "internal"
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
       },
-      "production": {
-        "android": {
-          "buildType": "app-bundle"
-        }
-      }
+      "distribution": "internal",
+      "node": "22.14.0"
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "node": "22.14.0"
     }
   }
-  
+}
