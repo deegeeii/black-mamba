@@ -253,21 +253,3 @@ def delete_bet(bet_id: str, user_id: str):
             pass
     supabase.table("bets").delete().eq("id", bet_id).execute()
     return {"deleted": True}, None
-
-
-def delete_bet(bet_id: str, user_id: str):
-    bet_res = supabase.table("bets").select("*").eq("id", bet_id).execute()
-    if not bet_res.data:
-        return None, "Bet not found"
-    bet = bet_res.data[0]
-    if bet["proposer_id"] != user_id:
-        return None, "Only the proposer can delete a bet"
-    if bet["status"] not in ("pending", "open"):
-        return None, "Can only delete pending or open bets"
-    if bet.get("proposer_payment_intent"):
-        try:
-            stripe.PaymentIntent.cancel(bet["proposer_payment_intent"])
-        except Exception:
-            pass
-    supabase.table("bets").delete().eq("id", bet_id).execute()
-    return {"deleted": True}, None

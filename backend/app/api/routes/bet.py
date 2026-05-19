@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.models.bet import CreateBetRequest, EnterPoolBetRequest, SettleBetRequest
-from app.services.bet import create_bet, accept_bet, get_bets, settle_bet, enter_pool_bet, auto_settle_bet
+from app.services.bet import create_bet, accept_bet, get_bets, settle_bet, enter_pool_bet, auto_settle_bet, delete_bet as svc_delete_bet
 from app.services.chat import bot_post
 from app.core.security import get_current_user_id
 
@@ -52,16 +52,8 @@ def auto_settle_existing_bet(league_id: str, bet_id: str, user_id: str = Depends
     return result
 
 @router.delete("/{league_id}/bets/{bet_id}")
-def delete_bet(league_id: str, bet_id: str, user_id: str = Depends(get_current_user)):
-    result, err = svc.delete_bet(bet_id, user_id)
-    if err:
-        raise HTTPException(400, err)
-    return result
-
-
-@router.delete("/{league_id}/bets/{bet_id}")
-def delete_bet(league_id: str, bet_id: str, user_id: str = Depends(get_current_user)):
-    result, err = svc.delete_bet(bet_id, user_id)
+def remove_bet(league_id: str, bet_id: str, user_id: str = Depends(get_current_user_id)):
+    result, err = svc_delete_bet(bet_id, user_id)
     if err:
         raise HTTPException(400, err)
     return result
