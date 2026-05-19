@@ -1,12 +1,15 @@
 
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import axios from 'axios'
 
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 const CURRENT_WEEK = 1
 
+// ── INTERFACES / TYPES ────────────────────────────────────────────────────────
 interface Headline {
   headline: string
   description: string
@@ -50,6 +53,7 @@ interface MyScore {
   week: number
 }
 
+// ── STYLE CONSTANTS ───────────────────────────────────────────────────────────
 const card: React.CSSProperties = {
   backgroundColor: 'var(--bg-card)',
   border: '1px solid var(--border)',
@@ -67,6 +71,8 @@ const cardTitle: React.CSSProperties = {
 }
 
 export default function Dashboard() {
+
+  // ── STATE ───────────────────────────────────────────────────────────────────
   const { user, session } = useAuth()
   const { activeLeague, getTeamName } = useLeague()
 
@@ -84,6 +90,7 @@ export default function Dashboard() {
     [session?.access_token]
   )
 
+  // ── EFFECTS / FETCH ON MOUNT ──────────────────────────────────────────────
   useEffect(() => {
     if (!activeLeague || !session) return
     const id = activeLeague.id
@@ -108,6 +115,7 @@ export default function Dashboard() {
     })
   }, [activeLeague?.id, session, headers])
 
+  // ── HELPERS ───────────────────────────────────────────────────────────────
   const label = (userId: string) => getTeamName(userId)
 
   const myMatchup = matchups.find(
@@ -120,15 +128,18 @@ export default function Dashboard() {
   if (!activeLeague) return <p style={{ color: 'var(--text-dim)' }}>Select a league from the sidebar.</p>
   if (loading) return <p>Loading dashboard...</p>
 
+  // ── JSX ───────────────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: '900px', color: 'var(--text)' }}>
+
+      {/* ── Page Header ── */}
       <p style={{ color: 'var(--text-dim)', marginBottom: '4px', fontSize: '14px' }}>Hey there</p>
       <h1 style={{ marginBottom: '4px' }}>{username || user?.email}</h1>
       <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>{activeLeague.name}</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 
-        {/* My Score */}
+        {/* ── My Score Card ── */}
         <div style={card}>
           <div style={cardTitle}>Week {CURRENT_WEEK} Score</div>
           {myScore ? (
@@ -145,7 +156,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Current Matchup */}
+        {/* ── Current Matchup Card ── */}
         <div style={card}>
           <div style={cardTitle}>This Week's Matchup</div>
           {myMatchup ? (
@@ -169,7 +180,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Standings */}
+        {/* ── Standings Card ── */}
         <div style={card}>
           <div style={cardTitle}>Standings</div>
           {topStandings.map((s, i) => (
@@ -183,7 +194,7 @@ export default function Dashboard() {
           {standings.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No standings yet</p>}
         </div>
 
-        {/* Recent Bets */}
+        {/* ── Recent Bets Card ── */}
         <div style={card}>
           <div style={cardTitle}>Recent Bets</div>
           {recentBets.length === 0 ? (
@@ -198,7 +209,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Tournaments */}
+        {/* ── Tournaments Card ── */}
         <div style={{ ...card, gridColumn: '1 / -1' }}>
           <div style={cardTitle}>Tournaments</div>
           {tournaments.length === 0 ? (
@@ -213,7 +224,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Headlines */}
+        {/* ── Headlines Card ── */}
         <div style={{ ...card, gridColumn: '1 / -1' }}>
           <div style={cardTitle}>Headlines</div>
           {headlines.length === 0 ? (
@@ -241,3 +252,6 @@ export default function Dashboard() {
     </div>
   )
 }
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+// exported as default above

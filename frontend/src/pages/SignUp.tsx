@@ -1,9 +1,12 @@
 
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 export default function SignUp() {
+
+  // ── STATE ───────────────────────────────────────────────────────────────────
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -11,6 +14,7 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
+  // ── HANDLERS ─────────────────────────────────────────────────────────────────
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -32,16 +36,22 @@ export default function SignUp() {
     }
   }
 
+  // ── JSX ──────────────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px' }}>
+
+            {/* ── Brand Header ── */}
             <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                 <h1 style={{ color: 'var(--accent)', fontSize: '28px', letterSpacing: '3px', marginBottom: '8px' }}>BLACK MAMBA</h1>
                 <p style={{ color: 'var(--text-dim)', fontSize: '13px' }}>Fantasy sports, elevated.</p>
             </div>
 
+            {/* ── Sign Up Card ── */}
             <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '32px' }}>
                 <h2 style={{ marginBottom: '24px', fontSize: '18px' }}>Create Account</h2>
+
+                {/* ── Sign Up Form ── */}
                 <form onSubmit={handleSignUp}>
                     {[
                         { lbl: 'Email', type: 'email', val: email, set: setEmail },
@@ -74,3 +84,6 @@ export default function SignUp() {
   )
 
 }
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+// exported as default above

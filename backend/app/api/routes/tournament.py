@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Optional
 from app.core.security import get_current_user_id as get_current_user
-from app.models.tournament import CreateTournamentRequest, VoteRequest, CustomPromptRequest
+from app.models.tournament import CreateTournamentRequest, VoteRequest, CustomPromptRequest, ScheduleDraftRequest
 from app.services import tournament as svc
 
 router = APIRouter(prefix="/leagues", tags=["tournaments"])
@@ -17,7 +17,7 @@ def create(league_id: str, data: CreateTournamentRequest, user_id: str = Depends
 
 @router.get("/{league_id}/tournaments")
 def list_all(league_id: str, user_id: str = Depends(get_current_user)):
-    return svc.list_tournaments(league_id)
+    return svc.list_tournaments(league_id, user_id)
 
 
 @router.post("/tournaments/{tournament_id}/join")
@@ -27,16 +27,12 @@ def join(tournament_id: str, user_id: str = Depends(get_current_user)):
         raise HTTPException(400, err)
     return result
 
+
 @router.get("/tournaments/{tournament_id}/members")
 def get_members(tournament_id: str, user_id: str = Depends(get_current_user)):
     from app.core.supabase import supabase
     res = supabase.table("tournament_members").select("user_id, draft_team_name").eq("tournament_id", tournament_id).execute()
     return res.data
-
-
-@router.post("/tournaments/{tournament_id}/vote")
-def vote(tournament_id: str, data: VoteRequest, user_id: str = Depends(get_current_user)):
-    return svc.vote_ai_brain(tournament_id, user_id, data.vote)
 
 
 @router.post("/tournaments/{tournament_id}/generate")
@@ -72,9 +68,9 @@ def predict(tournament_id: str, matchup_id: str, user_id: str = Depends(get_curr
 
 
 @router.post("/tournaments/{tournament_id}/draft/generate")
-def generate_draft_entities(tournament_id: str, user_id: str = Depends(get_current_user)):
+def generate_draft_entities(tournament_id: str, data: ScheduleDraftRequest, user_id: str = Depends(get_current_user)):
     from app.services.tournament_draft import generate_entities
-    result, err = generate_entities(tournament_id)
+    result, err = generate_entities(tournament_id, data.draft_start_time)
     if err:
         raise HTTPException(400, err)
     return result
@@ -97,6 +93,7 @@ def pick_entity(tournament_id: str, entity_id: str, user_id: str = Depends(get_c
 
 @router.post("/tournaments/{tournament_id}/draft/close")
 def close_draft(tournament_id: str, user_id: str = Depends(get_current_user)):
-    from app.core.supabase import supabase
-    supabase.table("tournaments").update({"status": "active"}).eq("id", tournament_id).execute()
-    return {"status": "active"}
+    result, err = svc.close_draft_and_generate_bracket(tournament_id)
+    if err:
+        raise HTTPException(400, err)
+    return result

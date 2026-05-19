@@ -6,15 +6,18 @@ class CreateTournamentRequest(BaseModel):
     name: str
     theme: Optional[str] = None
     entry_fee: int = 0
+    entity_type: Optional[str] = None
+    format: Optional[str] = "points_race"
+    score_mode: Optional[str] = "manual"
 
+class ScheduleDraftRequest(BaseModel):
+    draft_start_time: datetime
 
 class VoteRequest(BaseModel):
-    vote: str # "claude" or GPT4
-
+    vote: str
 
 class CustomPromptRequest(BaseModel):
     prompt: str
-
 
 class TournamentResponse(BaseModel):
     id: str
@@ -27,7 +30,6 @@ class TournamentResponse(BaseModel):
     scoring_rules: Optional[dict]
     created_at: datetime
 
-
 class TournamentMatchupResponse(BaseModel):
     id: str
     tournament_id: str
@@ -38,4 +40,3 @@ class TournamentMatchupResponse(BaseModel):
     away_points: float
     winner_user_id: Optional[str]
     commentary: Optional[str]
-    

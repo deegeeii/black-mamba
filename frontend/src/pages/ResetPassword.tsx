@@ -1,14 +1,18 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 export default function ResetPassword() {
+
+    // ── STATE ─────────────────────────────────────────────────────────────────
     const [password, setPassword] = useState('')
     const [confirm, setConfirm] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
+    // ── HANDLERS ──────────────────────────────────────────────────────────────
     const handleReset = async (e: React.FormEvent) => {
         e.preventDefault()
         if (password !== confirm) { setError('Passwords do not match'); return }
@@ -20,14 +24,21 @@ export default function ResetPassword() {
         else navigate('/dashboard')
     }
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px' }}>
+
+                {/* ── Brand Header ── */}
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                     <h1 style={{ color: 'var(--accent)', fontSize: '28px', letterSpacing: '3px', marginBottom: '8px' }}>BLACK MAMBA</h1>
                 </div>
+
+                {/* ── Reset Password Card ── */}
                 <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '32px' }}>
                     <h2 style={{ marginBottom: '24px', fontSize: '18px' }}>New Password</h2>
+
+                    {/* ── Reset Form ── */}
                     <form onSubmit={handleReset}>
                         <div style={{ marginBottom: '16px' }}>
                             <label style={{ color: 'var(--text-dim)', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' as const }}>New Password</label>
@@ -49,3 +60,6 @@ export default function ResetPassword() {
         </div>
     )
 }
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+// exported as default above

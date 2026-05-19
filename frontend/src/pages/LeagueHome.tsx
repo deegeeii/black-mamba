@@ -1,3 +1,4 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import type { CSSProperties } from 'react'
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
@@ -5,8 +6,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import axios from 'axios'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 type Tab = 'settings' | 'rosters' | 'history' | 'commissioner'
 
 interface Player { player_id: string; name: string; position: string; nfl_team: string | null }
@@ -19,6 +22,7 @@ interface Season {
     awards: Award[]
 }
 
+// ── STYLE CONSTANTS ────────────────────────────────────────────────────────────
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE']
 
 const card: CSSProperties = {
@@ -49,6 +53,7 @@ const labelStyle: CSSProperties = {
 }
 
 export default function LeagueHome() {
+    // ── STATE ──────────────────────────────────────────────────────────────────
     const { leagueId } = useParams<{ leagueId: string }>()
     const { session, user } = useAuth()
     const { activeLeague, members } = useLeague()
@@ -80,13 +85,13 @@ export default function LeagueHome() {
     const [importing, setImporting] = useState(false)
     const [importMessage, setImportMessage] = useState('')
 
-
+    // Commissioner state
     const isCommissioner = activeLeague?.commissioner_id === user?.id
     const [botPersona, setBotPersona] = useState<string>('commissioner')
     const [personaSaving, setPersonaSaving] = useState(false)
     const [personaSaved, setPersonaSaved] = useState(false)
 
-
+    // ── EFFECTS / FETCH ON MOUNT ───────────────────────────────────────────────
     const headers = useMemo(() => ({
         Authorization: `Bearer ${session?.access_token}`,
         'Content-Type': 'application/json',
@@ -128,6 +133,7 @@ export default function LeagueHome() {
     }
     useEffect(() => { fetchHistory() }, [session, leagueId, headers])
 
+    // ── HANDLERS ───────────────────────────────────────────────────────────────
     const handleSaveSettings = async (e: { preventDefault(): void }) => {
         e.preventDefault()
         setSaving(true)
@@ -160,7 +166,7 @@ export default function LeagueHome() {
         } finally {
             setPersonaSaving(false)
         }
-    }     
+    }
 
     const handleAddAward = async (e: { preventDefault(): void }) => {
         e.preventDefault()
@@ -210,8 +216,8 @@ export default function LeagueHome() {
             setImporting(false)
         }
     }
-    
 
+    // ── HELPERS ────────────────────────────────────────────────────────────────
     const sortedRoster = (players: Player[]) =>
         [...players].sort((a, b) => POSITION_ORDER.indexOf(a.position) - POSITION_ORDER.indexOf(b.position))
 
@@ -226,11 +232,13 @@ export default function LeagueHome() {
         borderBottom: tab === t ? '2px solid var(--accent)' : '2px solid transparent',
     })
 
+    // ── JSX ────────────────────────────────────────────────────────────────────
     return (
         <div style={{ maxWidth: '700px', color: 'var(--text)' }}>
             <h1 style={{ marginBottom: '4px' }}>League</h1>
             <p style={{ color: 'var(--text-dim)', marginBottom: '16px' }}>{activeLeague?.name}</p>
 
+            {/* ── Tabs ── */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '24px' }}>
                 <button style={tabStyle('settings')} onClick={() => setTab('settings')}>Team Settings</button>
                 <button style={tabStyle('rosters')} onClick={() => setTab('rosters')}>Rosters</button>
@@ -238,10 +246,11 @@ export default function LeagueHome() {
                 <button style={tabStyle('commissioner')} onClick={() => setTab('commissioner')}>Commissioner</button>
             </div>
 
-            {/* ── TEAM SETTINGS TAB ── */}
+            {/* ── Team Settings Tab ── */}
             {tab === 'settings' && (
                 settingsLoading ? <p>Loading...</p> : (
                     <form onSubmit={handleSaveSettings} style={{ maxWidth: '500px' }}>
+                        {/* ── Team Identity Card ── */}
                         <div style={card}>
                             <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Team Identity</h3>
                             <div style={{ marginBottom: '16px' }}>
@@ -257,6 +266,7 @@ export default function LeagueHome() {
                             )}
                         </div>
                         {message && <p style={{ color: message === 'Saved!' ? 'var(--accent)' : 'var(--danger)', marginBottom: '12px' }}>{message}</p>}
+                        {/* ── Save Button ── */}
                         <button type="submit" disabled={saving} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
                             {saving ? 'Saving...' : 'Save Team Settings'}
                         </button>
@@ -264,10 +274,11 @@ export default function LeagueHome() {
                 )
             )}
 
-            {/* ── ROSTERS TAB ── */}
+            {/* ── Rosters Tab ── */}
             {tab === 'rosters' && (
                 rostersLoading ? <p>Loading rosters...</p> : (
                     <>
+                        {/* ── Member Roster Cards ── */}
                         {rosters.map(member => (
                             <div key={member.user_id} style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginBottom: '12px', overflow: 'hidden' }}>
                                 <div
@@ -289,6 +300,7 @@ export default function LeagueHome() {
                                     </div>
                                     <span style={{ color: 'var(--text-dim)', fontSize: '18px' }}>{expanded === member.user_id ? '▲' : '▼'}</span>
                                 </div>
+                                {/* ── Expanded Player List ── */}
                                 {expanded === member.user_id && (
                                     <div style={{ borderTop: '1px solid var(--border-subtle)', padding: '12px 20px' }}>
                                         {POSITION_ORDER.map(pos => {
@@ -314,13 +326,14 @@ export default function LeagueHome() {
                 )
             )}
 
-            {/* ── LEAGUE HISTORY TAB ── */}
+            {/* ── League History Tab ── */}
             {tab === 'history' && (
                 historyLoading ? <p>Loading history...</p> : (
                     <>
                         {history.length === 0 && (
                             <div style={card}><p style={{ color: 'var(--text-dim)' }}>No history yet. Check back after the season ends.</p></div>
                         )}
+                        {/* ── Season Cards ── */}
                         {history.map(season => (
                             <div key={season.season} style={card}>
                                 <div style={{ color: 'var(--accent)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>{season.season} Season</div>
@@ -350,6 +363,7 @@ export default function LeagueHome() {
                                 )}
                             </div>
                         ))}
+                        {/* ── Add Award Form ── */}
                         {isCommissioner && (
                             <div style={card}>
                                 <div style={{ color: 'var(--accent)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>Add Award</div>
@@ -396,13 +410,15 @@ export default function LeagueHome() {
                             </div>
                         )}
 
-                        
+
                     </>
                 )
             )}
-            {/* ── COMMISSIONER TAB ── */}
+
+            {/* ── Commissioner Tab ── */}
             {tab === 'commissioner' && (
                 <div>
+                    {/* ── Bot Persona Selector ── */}
                     <h3 style={{ color: 'var(--accent)', marginBottom: '8px' }}>AI Bot Persona</h3>
                     <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '16px' }}>
                         {isCommissioner ? "Choose the bot's personality for league chat." : 'Only the commissioner can change the bot persona.'}
@@ -443,6 +459,7 @@ export default function LeagueHome() {
                                 {personaSaving ? 'Saving...' : personaSaved ? '✓ Saved' : 'Click a persona to select and save'}
                             </div>
 
+                            {/* ── ESPN Import Form ── */}
                             <div style={{ marginTop: '24px' }}>
                                 <h3 style={{ color: 'var(--accent)', marginBottom: '8px' }}>Import ESPN History</h3>
                                 <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '16px' }}>
@@ -501,6 +518,7 @@ export default function LeagueHome() {
                                             {importMessage}
                                         </p>
                                     )}
+                                    {/* ── Import Button ── */}
                                     <button
                                         type="submit"
                                         disabled={importing || !espnLeagueId}
@@ -529,3 +547,5 @@ export default function LeagueHome() {
     )
 }
 
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
+// default export is declared on the function above

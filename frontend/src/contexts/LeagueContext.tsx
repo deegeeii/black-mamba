@@ -1,10 +1,13 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import axios from "axios";
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 interface League {
     id: string
     name: string
@@ -24,8 +27,7 @@ interface LeagueContextType {
     getTeamName: (userId: string | null) => string
 }
 
-
-
+// ── CONTEXT / PROVIDER SETUP ───────────────────────────────────────────────────
 const LeagueContext = createContext<LeagueContextType>({
     leagues: [],
     activeLeague: null,
@@ -36,10 +38,13 @@ const LeagueContext = createContext<LeagueContextType>({
 
 export function LeagueProvider({ children }: { children: ReactNode }) {
     const { session } = useAuth()
+
+    // ── STATE ───────────────────────────────────────────────────────────────────
     const [leagues, setLeagues] = useState<League[]>([])
     const [activeLeague, setActiveLeague] = useState<League | null>(null)
     const [members, setMembers] = useState<Member[]>([])
 
+    // ── EFFECTS / FETCH ON MOUNT ────────────────────────────────────────────────
     useEffect(() => {
         if (!session?.access_token) return
         const headers = { Authorization: `Bearer ${session.access_token}` }
@@ -59,12 +64,14 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
         })
     }, [session?.access_token, activeLeague?.id])
 
+    // ── HELPERS ─────────────────────────────────────────────────────────────────
     const getTeamName = useCallback((userId: string | null) => {
         if (!userId) return 'Open'
         if (userId === session?.user?.id) return 'You'
         return members.find(m => m.user_id === userId)?.team_name || userId.slice(0, 8)
     }, [members, session?.user?.id])
 
+    // ── JSX / RENDER ────────────────────────────────────────────────────────────
     return (
         <LeagueContext.Provider value={{ leagues, activeLeague, setActiveLeague, members, getTeamName }}>
             {children}
@@ -72,4 +79,5 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     )
 }
 
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
 export const useLeague = () => useContext(LeagueContext)

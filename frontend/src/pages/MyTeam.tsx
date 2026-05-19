@@ -1,4 +1,5 @@
 
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import type { CSSProperties } from 'react'
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
@@ -6,11 +7,13 @@ import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
 import { useLeague } from '../contexts/LeagueContext'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 const CURRENT_WEEK = 1
 const SLOTS = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'BN']
 const POSITIONS = ['', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF']
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 interface RosterPlayer {
   player_id: string
   name: string
@@ -33,6 +36,7 @@ interface Trade {
   week: number
 }
 
+// ── STYLE CONSTANTS ────────────────────────────────────────────────────────────
 const card: CSSProperties = {
   backgroundColor: 'var(--bg-card)',
   border: '1px solid var(--border)',
@@ -50,6 +54,7 @@ const sectionTitle: CSSProperties = {
 }
 
 export default function MyTeam() {
+  // ── STATE ──────────────────────────────────────────────────────────────────
   const { leagueId } = useParams<{ leagueId: string }>()
   const { session, user } = useAuth()
   const { getTeamName } = useLeague()
@@ -87,6 +92,7 @@ export default function MyTeam() {
     [session?.access_token]
   )
 
+  // ── HELPERS ────────────────────────────────────────────────────────────────
   const fetchRoster = () =>
     axios.get(`${API_URL}/leagues/${leagueId}/roster`, { headers }).then(r => setRoster(r.data))
 
@@ -100,6 +106,7 @@ export default function MyTeam() {
   const fetchTrades = () =>
     axios.get(`${API_URL}/leagues/${leagueId}/trades`, { headers }).then(r => setTrades(r.data))
 
+  // ── EFFECTS / FETCH ON MOUNT ───────────────────────────────────────────────
   useEffect(() => {
     if (!leagueId || !session) return
     Promise.allSettled([
@@ -139,6 +146,7 @@ export default function MyTeam() {
       .catch(() => setOpponentRoster([]))
   }, [opponentId, leagueId, headers])
 
+  // ── HANDLERS ──────────────────────────────────────────────────────────────
   const handleSlotChange = (slot: string, playerId: string) => {
     setLineup(prev => ({ ...prev, [slot]: playerId }))
     setSaved(false)
@@ -201,6 +209,7 @@ export default function MyTeam() {
     } catch (e: any) { setError(e.response?.data?.detail || 'Action failed') }
   }
 
+  // ── HELPERS ────────────────────────────────────────────────────────────────
   const playerName = (id: string) => allPlayers[id]?.name || id.slice(0, 8)
   const incoming = trades.filter(t => t.opponent_id === user?.id && t.status === 'pending')
   const outgoing = trades.filter(t => t.proposer_id === user?.id && t.status === 'pending')
@@ -216,16 +225,17 @@ export default function MyTeam() {
     border: 'none',
     borderBottom: tab === t ? '2px solid var(--accent)' : '2px solid transparent',
   })
-  
+
 
   if (loading) return <p>Loading...</p>
 
+  // ── JSX ───────────────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: '900px', color: 'var(--text)' }}>
       <h1 style={{ marginBottom: '4px' }}>My Team</h1>
       <p style={{ color: 'var(--text-dim)', marginBottom: '16px' }}>Week {CURRENT_WEEK}</p>
 
-      {/* Tabs */}
+      {/* ── Tabs ── */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '24px' }}>
         <button style={tabStyle('roster')} onClick={() => setTab('roster')}>Roster</button>
         <button style={tabStyle('free-agents')} onClick={() => setTab('free-agents')}>Free Agents</button>
@@ -239,6 +249,7 @@ export default function MyTeam() {
         <>
           {saved && <p style={{ color: 'var(--accent)', marginBottom: '12px' }}>Lineup saved!</p>}
 
+          {/* ── Lineup Slot Table ── */}
           <div style={{ ...card, padding: 0, overflow: 'hidden', marginBottom: '16px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
@@ -264,10 +275,12 @@ export default function MyTeam() {
             </table>
           </div>
 
+          {/* ── Save Lineup Button ── */}
           <button onClick={handleSaveLineup} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '24px' }}>
             Save Lineup
           </button>
 
+          {/* ── Full Roster List ── */}
           <h2 style={{ marginBottom: '12px' }}>Full Roster ({roster.length}/15)</h2>
           <div style={{ ...card }}>
             {roster.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No players yet.</p>}
@@ -295,6 +308,7 @@ export default function MyTeam() {
       {/* ── FREE AGENTS TAB ── */}
       {tab === 'free-agents' && (
         <>
+          {/* ── Search + Filter Controls ── */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
             <select value={position} onChange={e => setPosition(e.target.value)}
               style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 12px', fontSize: '14px' }}>
@@ -304,6 +318,7 @@ export default function MyTeam() {
               style={{ flex: 1, backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 12px', fontSize: '14px' }} />
           </div>
 
+          {/* ── Free Agent List ── */}
           <div style={card}>
             <div style={sectionTitle}>Available ({freeAgents.length})</div>
             {freeAgents.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No players found.</p>}
@@ -318,6 +333,7 @@ export default function MyTeam() {
             ))}
           </div>
 
+          {/* ── Drop Modal ── */}
           {dropModal && (
             <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
               <div style={{ ...card, width: '400px', marginBottom: 0 }}>
@@ -342,10 +358,12 @@ export default function MyTeam() {
       {/* ── TRADES TAB ── */}
       {tab === 'trades' && (
         <>
+          {/* ── Propose Trade Button ── */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
             <button onClick={() => setShowPropose(true)} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontWeight: 'bold', cursor: 'pointer' }}>Propose Trade</button>
           </div>
 
+          {/* ── Incoming Offers ── */}
           <div style={card}>
             <div style={sectionTitle}>Incoming ({incoming.length})</div>
             {incoming.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No incoming offers.</p>}
@@ -363,6 +381,7 @@ export default function MyTeam() {
             ))}
           </div>
 
+          {/* ── Outgoing Offers ── */}
           <div style={card}>
             <div style={sectionTitle}>Outgoing ({outgoing.length})</div>
             {outgoing.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No pending offers.</p>}
@@ -377,6 +396,7 @@ export default function MyTeam() {
             ))}
           </div>
 
+          {/* ── Trade History ── */}
           {history.length > 0 && (
             <div style={card}>
               <div style={sectionTitle}>History</div>
@@ -389,16 +409,19 @@ export default function MyTeam() {
             </div>
           )}
 
+          {/* ── Propose Trade Modal ── */}
           {showPropose && (
             <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
               <div style={{ ...card, width: '560px', maxHeight: '80vh', overflowY: 'auto', marginBottom: 0 }}>
                 <h3 style={{ marginBottom: '16px' }}>Propose Trade</h3>
+                {/* ── Opponent Selector ── */}
                 <label style={{ color: 'var(--text-dim)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' }}>Opponent</label>
                 <select value={opponentId} onChange={e => { setOpponentId(e.target.value); setRequestIds([]) }}
                   style={{ width: '100%', backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px', fontSize: '14px', marginBottom: '16px', marginTop: '6px' }}>
                   <option value=''>Select opponent...</option>
                   {members.map(m => <option key={m.user_id} value={m.user_id}>{getTeamName(m.user_id)}</option>)}
                 </select>
+                {/* ── Player Selection Grid ── */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
                     <div style={{ color: 'var(--text-dim)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>Your Players</div>
@@ -421,6 +444,7 @@ export default function MyTeam() {
                     ))}
                   </div>
                 </div>
+                {/* ── Modal Actions ── */}
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
                   <button onClick={() => { setShowPropose(false); setError('') }} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 16px', cursor: 'pointer' }}>Cancel</button>
                   <button onClick={handlePropose} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer' }}>Send Offer</button>
@@ -433,3 +457,6 @@ export default function MyTeam() {
     </div>
   )
 }
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
+// (default export declared on function above)

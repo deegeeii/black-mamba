@@ -1,10 +1,13 @@
 
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState, useEffect } from "react";
 import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 interface League {
     id: string
     name: string
@@ -16,6 +19,7 @@ interface League {
 }
 
 export default function Leagues() {
+    // ── STATE ──────────────────────────────────────────────────────────────────
     const { session } = useAuth()
     const [leagues, setLeagues] = useState<League[]>([])
     const [loading, setLoading] = useState(true)
@@ -27,22 +31,24 @@ export default function Leagues() {
     const [scoringType, setScoringType] = useState('standard')
     const [maxTeams, setMaxTeams] = useState(12)
     const [teamName, setTeamName] = useState('')
-    
+
     // Join form status
     const [inviteCode, setInviteCode] = useState('')
     const [joinTeamName, setJoinTeamName] = useState('')
-    
+
     const [error, setError] = useState('')
 
     const headers = { Authorization: `Bearer ${session?.access_token}` }
 
+    // ── EFFECTS / FETCH ON MOUNT ───────────────────────────────────────────────
     useEffect(() => {
         axios
             .get(`${API_URL}/leagues/`, { headers })
             .then((res) => setLeagues(res.data))
             .finally(() => setLoading(false))
     }, [])
-    
+
+    // ── HANDLERS ──────────────────────────────────────────────────────────────
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
@@ -78,13 +84,15 @@ export default function Leagues() {
           setError('Invalid invite code or already a member.')
         }
       }
-    
+
       if (loading) return <p>Loading leagues...</p>
-            
+
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <div>
             <h1>My Leagues</h1>
 
+            {/* ── Action Buttons ── */}
             <button onClick={() => { setShowCreate(true); setShowJoin(false) }}>
                 Create League
             </button>
@@ -94,6 +102,7 @@ export default function Leagues() {
 
             {error && <p style={{ color: 'red' }}>{error}</p>}
 
+            {/* ── Create League Form ── */}
             {showCreate && (
         <form onSubmit={handleCreate}>
           <h2>Create a League</h2>
@@ -128,6 +137,7 @@ export default function Leagues() {
         </form>
       )}
 
+      {/* ── Join League Form ── */}
       {showJoin && (
         <form onSubmit={handleJoin}>
           <h2>Join a League</h2>
@@ -144,6 +154,7 @@ export default function Leagues() {
         </form>
       )}
 
+      {/* ── League List ── */}
       {leagues.length === 0 ? (
         <p>You're not in any leagues yet.</p>
       ) : (
@@ -159,3 +170,6 @@ export default function Leagues() {
     </div>
   )
 }
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
+// (default export declared on function above)

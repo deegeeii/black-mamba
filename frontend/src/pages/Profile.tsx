@@ -1,10 +1,12 @@
 
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState, useEffect, useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import axios from 'axios'
 
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 
 const NFL_TEAMS = [
@@ -14,6 +16,7 @@ const NFL_TEAMS = [
     'NYJ','PHI','PIT','SEA','SF','TB','TEN','WAS'
 ]
 
+// ── INTERFACES / TYPES ────────────────────────────────────────────────────────
 interface Profile {
     id: string
     username: string
@@ -26,6 +29,7 @@ interface Profile {
     ai_brain: string
 }
 
+// ── STYLE CONSTANTS ───────────────────────────────────────────────────────────
 const inputStyle: CSSProperties = {
     width: '100%',
     backgroundColor: 'var(--bg-input)',
@@ -53,6 +57,8 @@ const sectionStyle: CSSProperties = {
 }
 
 export default function Profile() {
+
+    // ── STATE ─────────────────────────────────────────────────────────────────
     const { session } = useAuth()
     const { theme, toggleTheme } = useTheme()
     const [username, setUsername] = useState('')
@@ -66,6 +72,19 @@ export default function Profile() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [message, setMessage] = useState('')
+
+    const [payoutStatus, setPayoutStatus] = useState<{ has_account: boolean; account_id?: string; ready_to_receive_payments?: boolean; onboarding_complete?: boolean; requirements_status?: string | null } | null>(null)
+    const [payoutDisplayName, setPayoutDisplayName] = useState('')
+    const [payoutEmail, setPayoutEmail] = useState('')
+    const [payoutCreating, setPayoutCreating] = useState(false)
+    const [payoutError, setPayoutError] = useState('')
+
+    // ── EFFECTS / FETCH ON MOUNT ──────────────────────────────────────────────
+    useEffect(() => {
+        if (!session) return
+        fetch(`${API_URL}/connect/accounts/status`, { headers: { Authorization: `Bearer ${session.access_token}` } })
+            .then(r => r.json()).then(setPayoutStatus).catch(() => setPayoutStatus({ has_account: false }))
+    }, [session])
 
     const headers = useMemo(
         () => ({ Authorization: `Bearer ${session?.access_token}` }),
@@ -86,6 +105,42 @@ export default function Profile() {
             setAiBrain(p.ai_brain || 'claude')
         }).catch(() => {}).finally(() => setLoading(false))
     }, [session, headers])
+
+    // ── HANDLERS ──────────────────────────────────────────────────────────────
+    async function handleCreatePayoutAccount() {
+        if (!payoutDisplayName || !payoutEmail) return
+        setPayoutCreating(true)
+        setPayoutError('')
+        try {
+            const res = await fetch(`${API_URL}/connect/accounts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+                body: JSON.stringify({ display_name: payoutDisplayName, contact_email: payoutEmail }),
+            })
+            const data = await res.json()
+            if (!res.ok) { setPayoutError(data.detail || 'Failed'); return }
+            const status = await fetch(`${API_URL}/connect/accounts/status`, { headers: { Authorization: `Bearer ${session?.access_token}` } })
+            setPayoutStatus(await status.json())
+        } catch { setPayoutError('Network error') }
+        finally { setPayoutCreating(false) }
+    }
+
+    async function handleOnboard() {
+        try {
+            const res = await fetch(`${API_URL}/connect/accounts/onboard`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${session?.access_token}` },
+            })
+            const data = await res.json()
+            if (!res.ok) { setPayoutError(data.detail || 'Failed'); return }
+            window.location.href = data.url
+        } catch { setPayoutError('Network error') }
+    }
+
+    async function refreshPayoutStatus() {
+        const res = await fetch(`${API_URL}/connect/accounts/status`, { headers: { Authorization: `Bearer ${session?.access_token}` } })
+        setPayoutStatus(await res.json())
+    }
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -112,12 +167,15 @@ export default function Profile() {
 
     if (loading) return <p>Loading profile...</p>
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <div style={{ maxWidth: '600px' }}>
+
+            {/* ── Page Header ── */}
             <h1 style={{ marginBottom: '4px' }}>Profile Settings</h1>
             <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>Manage your account and preferences</p>
 
-            {/* Appearance — outside form so toggle is instant */}
+            {/* ── Appearance Section (outside form so toggle is instant) ── */}
             <div style={sectionStyle}>
                 <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Appearance</h3>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -147,6 +205,8 @@ export default function Profile() {
             </div>
 
             <form onSubmit={handleSave}>
+
+                {/* ── Identity Section ── */}
                 <div style={sectionStyle}>
                     <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Identity</h3>
                     <div style={{ marginBottom: '12px' }}>
@@ -163,6 +223,7 @@ export default function Profile() {
                     </div>
                 </div>
 
+                {/* ── NFL Allegiance Section ── */}
                 <div style={sectionStyle}>
                     <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>NFL Allegiance</h3>
                     <div>
@@ -174,6 +235,7 @@ export default function Profile() {
                     </div>
                 </div>
 
+                {/* ── Top 3 Podcasts Section ── */}
                 <div style={sectionStyle}>
                     <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Top 3 Podcasts</h3>
                     {[
@@ -188,6 +250,7 @@ export default function Profile() {
                     ))}
                 </div>
 
+                {/* ── AI Preference Section ── */}
                 <div style={sectionStyle}>
                     <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>AI Preference</h3>
                     <div>
@@ -200,6 +263,78 @@ export default function Profile() {
                     </div>
                 </div>
 
+                {/* ── Payouts Section ── */}
+                <div style={sectionStyle}>
+                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Payouts</h3>
+                    {payoutError && (
+                        <p style={{ color: 'var(--danger)', fontSize: '13px', marginBottom: '12px' }}>{payoutError}</p>
+                    )}
+                    {!payoutStatus?.has_account ? (
+                        <>
+                            {/* ── Create Payout Account Form ── */}
+                            <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '12px' }}>
+                                Set up a payout account to automatically receive bet winnings via Stripe.
+                            </p>
+                            <div style={{ marginBottom: '12px' }}>
+                                <label style={labelStyle}>Display Name</label>
+                                <input style={inputStyle} placeholder="Your name or team name" value={payoutDisplayName} onChange={e => setPayoutDisplayName(e.target.value)} />
+                            </div>
+                            <div style={{ marginBottom: '12px' }}>
+                                <label style={labelStyle}>Contact Email</label>
+                                <input style={inputStyle} type="email" placeholder="Email for Stripe" value={payoutEmail} onChange={e => setPayoutEmail(e.target.value)} />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleCreatePayoutAccount}
+                                disabled={payoutCreating}
+                                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 20px', color: 'var(--accent)', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}
+                            >
+                                {payoutCreating ? 'Creating...' : 'Create Payout Account'}
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            {/* ── Existing Payout Account Status ── */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', fontSize: '13px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={labelStyle}>Account</span>
+                                    <span style={{ fontFamily: 'monospace', color: 'var(--text)' }}>{payoutStatus.account_id}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={labelStyle}>Onboarding</span>
+                                    <span style={{ color: payoutStatus.onboarding_complete ? '#4caf50' : '#ff9800', fontWeight: 600 }}>
+                                        {payoutStatus.onboarding_complete ? '✓ Complete' : '⚠ Incomplete'}
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={labelStyle}>Transfers</span>
+                                    <span style={{ color: payoutStatus.ready_to_receive_payments ? '#4caf50' : '#ff9800', fontWeight: 600 }}>
+                                        {payoutStatus.ready_to_receive_payments ? '✓ Active' : '⏳ Pending'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {!payoutStatus.onboarding_complete && (
+                                    <button type="button" onClick={handleOnboard}
+                                        style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                        Complete Onboarding →
+                                    </button>
+                                )}
+                                <button type="button" onClick={refreshPayoutStatus}
+                                    style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '10px 20px', color: 'var(--text-dim)', fontSize: '13px', cursor: 'pointer' }}>
+                                    Refresh
+                                </button>
+                            </div>
+                            {payoutStatus.onboarding_complete && payoutStatus.ready_to_receive_payments && (
+                                <p style={{ color: '#4caf50', fontSize: '12px', marginTop: '10px', marginBottom: 0 }}>
+                                    ✓ You'll automatically receive winnings when bets settle.
+                                </p>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* ── Save Button ── */}
                 {message && (
                     <p style={{ color: message.includes('saved') ? 'var(--accent)' : 'var(--danger)', marginBottom: '12px' }}>
                         {message}
@@ -216,3 +351,6 @@ export default function Profile() {
         </div>
     )
 }
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+// exported as default above

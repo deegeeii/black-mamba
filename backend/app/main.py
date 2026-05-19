@@ -15,6 +15,7 @@ from app.api.routes.trade import router as trade_router
 from app.api.routes.playoff import router as playoff_router
 from app.api.routes.notification import router as notification_router
 from app.api.routes.news import router as news_router
+from app.api.routes.stripe_connect import router as connect_router
 
 
 app = FastAPI(title="Black Mamba API")
@@ -43,6 +44,7 @@ app.include_router(trade_router)
 app.include_router(playoff_router)
 app.include_router(notification_router)
 app.include_router(news_router)
+app.include_router(connect_router)
 
 
 

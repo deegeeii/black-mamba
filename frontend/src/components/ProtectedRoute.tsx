@@ -1,8 +1,8 @@
-
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-
+// ── JSX / RENDER ───────────────────────────────────────────────────────────────
 export default function ProtectedRoute({ children }: { children: React.ReactNode}) {
     const { user, loading } = useAuth()
 

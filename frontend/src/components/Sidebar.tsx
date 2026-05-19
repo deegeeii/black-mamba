@@ -1,3 +1,4 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState, useEffect, useRef, useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -5,6 +6,7 @@ import { useLeague } from '../contexts/LeagueContext'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 
 const NAV_ITEMS = [
@@ -23,6 +25,7 @@ const BOTTOM_ITEMS = [
 
 const GLOBAL_ROUTES = ['/dashboard', '/profile', '/ledger']
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 type Notification = {
     id: string
     type: string
@@ -36,6 +39,7 @@ type LeagueMessage = {
     is_bot: boolean
 }
 
+// ── STYLE CONSTANTS ────────────────────────────────────────────────────────────
 const styles: Record<string, CSSProperties> = {
     sidebar: {
         width: '220px',
@@ -191,6 +195,7 @@ const styles: Record<string, CSSProperties> = {
 }
 
 export default function Sidebar() {
+    // ── STATE ─────────────────────────────────────────────────────────────────
     const navigate = useNavigate()
     const location = useLocation()
     const { leagues, activeLeague, setActiveLeague } = useLeague()
@@ -208,7 +213,13 @@ export default function Sidebar() {
     }), [session?.access_token])
 
     const unreadCount = notifications.filter(n => !n.read).length
+    const betUnread = notifications.some(n =>
+        !n.read && ['bet_offer', 'bet_accepted', 'bet_won', 'bet_lost'].includes(n.type)
+    )
+    const [betDot, setBetDot] = useState(false)
 
+
+    // ── EFFECTS / FETCH ON MOUNT ──────────────────────────────────────────────
     useEffect(() => {
         if (!activeLeague || !session) return
         fetch(`${API_URL}/leagues/${activeLeague.id}/notifications`, { headers })
@@ -274,6 +285,10 @@ export default function Sidebar() {
         return () => document.removeEventListener('mousedown', handler)
     }, [])
 
+    useEffect(() => { if (betUnread) setBetDot(true) }, [betUnread])
+
+
+    // ── HANDLERS ─────────────────────────────────────────────────────────────
     const markAllRead = async () => {
         if (!activeLeague) return
         try {
@@ -300,6 +315,7 @@ export default function Sidebar() {
         } catch {}
     }
 
+    // ── HELPERS ───────────────────────────────────────────────────────────────
     const formatTime = (ts: string) => {
         const d = new Date(ts)
         return d.toLocaleDateString('en-US', {
@@ -312,16 +328,19 @@ export default function Sidebar() {
 
     const handleNav = (path: string) => {
         if (path === '/chat') setChatUnread(false)
+        if (path === '/bets') setBetDot(false)
         if (GLOBAL_ROUTES.includes(path)) { navigate(path); return }
         if (!activeLeague) return
         navigate(`/leagues/${activeLeague.id}${path}`)
     }
+
 
     const isActive = (path: string) => {
         if (GLOBAL_ROUTES.includes(path)) return location.pathname === path
         return location.pathname.includes(path)
     }
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <div style={styles.sidebar}>
             <style>{`
@@ -341,8 +360,10 @@ export default function Sidebar() {
                 .scroll-pop .scroll-icon { animation: scrollPop 0.5s ease forwards !important; }
             `}</style>
 
+            {/* ── Wordmark & Bell ── */}
             <div style={styles.wordmark}>
                 BLACK MAMBA
+                {/* ── Notification Bell Button ── */}
                 <button
                     className={`bell-btn ${unreadCount > 0 ? 'scroll-unread' : ''}`}
                     style={styles.bellBtn}
@@ -374,6 +395,7 @@ export default function Sidebar() {
                 </button>
             </div>
 
+            {/* ── Notifications Dropdown ── */}
             {bellOpen && (
                 <div style={styles.dropdown} ref={dropdownRef}>
                     <div style={styles.dropdownHeader}>
@@ -384,6 +406,7 @@ export default function Sidebar() {
                             </button>
                         )}
                     </div>
+                    {/* ── Notification List ── */}
                     <div style={styles.notifList}>
                         {notifications.length === 0 ? (
                             <div style={styles.empty}>No notifications</div>
@@ -404,6 +427,7 @@ export default function Sidebar() {
                 </div>
             )}
 
+            {/* ── League Selector ── */}
             <div style={styles.leagueSection}>
                 <div style={styles.leagueLabel}>League</div>
                 <select
@@ -420,6 +444,7 @@ export default function Sidebar() {
                 </select>
             </div>
 
+            {/* ── Nav Items ── */}
             <nav style={styles.nav}>
                 {NAV_ITEMS.map(item => (
                     <div
@@ -432,7 +457,19 @@ export default function Sidebar() {
                     >
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {item.label}
+                            {/* ── Chat Unread Dot ── */}
                             {item.path === '/chat' && chatUnread && (
+                                <span style={{
+                                    width: '7px',
+                                    height: '7px',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'var(--accent)',
+                                    display: 'inline-block',
+                                    flexShrink: 0,
+                                }} />
+                            )}
+                            {/* ── Bets Unread Dot ── */}
+                            {item.path === '/bets' && betDot && (
                                 <span style={{
                                     width: '7px',
                                     height: '7px',
@@ -446,6 +483,7 @@ export default function Sidebar() {
                     </div>
                 ))}
 
+                {/* ── League Home Nav Item ── */}
                 <div
                     key="/league-home"
                     style={{
@@ -457,6 +495,7 @@ export default function Sidebar() {
                     League
                 </div>
 
+                {/* ── Bottom Nav Items ── */}
                 {BOTTOM_ITEMS.map(item => (
                     <div
                         key={item.path}
@@ -471,7 +510,11 @@ export default function Sidebar() {
                 ))}
             </nav>
 
+            {/* ── Sign Out ── */}
             <div style={styles.signOut} onClick={signOut}>Sign Out</div>
         </div>
     )
 }
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
+// default export declared on component above

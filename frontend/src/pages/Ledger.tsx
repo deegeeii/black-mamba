@@ -1,10 +1,13 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import axios from 'axios'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 interface Bet {
     id: string
     league_id: string
@@ -27,11 +30,13 @@ interface LeagueBets {
 }
 
 export default function Ledger() {
+    // ── STATE ──────────────────────────────────────────────────────────────────
     const { session, user } = useAuth()
     const { leagues } = useLeague()
     const [leagueBets, setLeagueBets] = useState<LeagueBets[]>([])
     const [loading, setLoading] = useState(true)
 
+    // ── EFFECTS / FETCH ON MOUNT ───────────────────────────────────────────────
     const headers = useMemo(
         () => ({ Authorization: `Bearer ${session?.access_token}` }),
         [session?.access_token]
@@ -53,6 +58,7 @@ export default function Ledger() {
         })
     }, [leagues, session, headers])
 
+    // ── HELPERS ────────────────────────────────────────────────────────────────
     const getResult = (bet: Bet): 'win' | 'loss' | 'pending' => {
         if (bet.status !== 'settled') return 'pending'
         return bet.winner_id === user?.id ? 'win' : 'loss'
@@ -78,11 +84,12 @@ export default function Ledger() {
 
     if (loading) return <p>Loading ledger...</p>
 
+    // ── JSX ────────────────────────────────────────────────────────────────────
     return (
         <div style={{ maxWidth: '900px' }}>
             <h1 style={{ marginBottom: '4px' }}>Money Ledger</h1>
-    
-            {/* Summary Cards */}
+
+            {/* ── Summary Cards ── */}
             <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
                 {[
                     { label: 'Total Won', value: totalWon, color: 'var(--accent)' },
@@ -104,8 +111,8 @@ export default function Ledger() {
                     </div>
                 ))}
             </div>
-    
-            {/* Per-league tables */}
+
+            {/* ── Per-League Bet Tables ── */}
             {leagueBets.map(lb => {
                 const myBets = lb.bets.filter(b => b.proposer_id === user?.id || b.opponent_id === user?.id)
                 if (!myBets.length) return null
@@ -114,6 +121,7 @@ export default function Ledger() {
                         <h2 style={{ color: 'var(--accent)', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
                             {lb.leagueName}
                         </h2>
+                        {/* ── Bets Table ── */}
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                             <thead>
                                 <tr style={{ color: 'var(--text-dim)', textAlign: 'left' }}>
@@ -154,9 +162,12 @@ export default function Ledger() {
                     </div>
                 )
             })}
-    
+
             {allBets.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No bets yet.</p>}
         </div>
     )
-    
+
 }
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
+// default export is declared on the function above

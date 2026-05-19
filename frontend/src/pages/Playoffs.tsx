@@ -1,12 +1,13 @@
-// frontend/src/pages/Playoffs.tsx
-
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import axios from 'axios'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 interface PlayoffMatchup {
   id: string
   home_user_id: string
@@ -18,6 +19,7 @@ interface PlayoffMatchup {
   week: number
 }
 
+// ── STYLE CONSTANTS ────────────────────────────────────────────────────────────
 const ROUND_LABELS: Record<string, string> = {
   wildcard: 'Wild Card — Week 15',
   semifinal: 'Semifinals — Week 16',
@@ -42,6 +44,7 @@ const sectionTitle: React.CSSProperties = {
 }
 
 export default function Playoffs() {
+  // ── STATE ────────────────────────────────────────────────────────────────────
   const { session, user } = useAuth()
   const { activeLeague } = useLeague()
 
@@ -55,6 +58,7 @@ export default function Playoffs() {
   const [advanceWeek, setAdvanceWeek] = useState(15)
   const [scoreWeek, setScoreWeek] = useState(15)
 
+  // ── EFFECTS / FETCH ON MOUNT ──────────────────────────────────────────────────
   const headers = useMemo(
     () => ({ Authorization: `Bearer ${session?.access_token}` }),
     [session?.access_token]
@@ -78,6 +82,7 @@ export default function Playoffs() {
 
   useEffect(() => { fetchData() }, [activeLeague, session])
 
+  // ── HANDLERS ─────────────────────────────────────────────────────────────────
   const act = async (fn: () => Promise<any>) => {
     setError('')
     setSuccess('')
@@ -90,6 +95,7 @@ export default function Playoffs() {
     }
   }
 
+  // ── HELPERS ───────────────────────────────────────────────────────────────────
   const label = (uid: string) => uid === user?.id ? 'You' : uid.slice(0, 8)
 
   const rounds = ['wildcard', 'semifinal', 'championship', 'third_place']
@@ -97,6 +103,7 @@ export default function Playoffs() {
   if (!activeLeague) return <p style={{ color: 'var(--text-dim)' }}>Select a league from the sidebar.</p>
   if (loading) return <p>Loading playoffs...</p>
 
+  // ── JSX ────────────────────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: '900px', color: 'var(--text)' }}>
       <h1 style={{ marginBottom: '4px' }}>Playoffs</h1>
@@ -105,7 +112,7 @@ export default function Playoffs() {
       {error && <p style={{ color: 'var(--danger)', marginBottom: '12px' }}>{error}</p>}
       {success && <p style={{ color: 'var(--accent)', marginBottom: '12px' }}>{success}</p>}
 
-      {/* Bracket */}
+      {/* ── Bracket ── */}
       {matchups.length === 0 ? (
         <div style={card}>
           <p style={{ color: 'var(--text-dim)' }}>No playoff bracket yet.{isCommissioner ? ' Generate it below.' : ' Check back after the regular season.'}</p>
@@ -117,6 +124,7 @@ export default function Playoffs() {
           return (
             <div key={round} style={card}>
               <div style={sectionTitle}>{ROUND_LABELS[round]}</div>
+              {/* ── Matchup Rows ── */}
               {roundMatchups.map(m => (
                 <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
                   <div style={{ flex: 1 }}>
@@ -143,14 +151,14 @@ export default function Playoffs() {
         })
       )}
 
-      {/* Commissioner Controls */}
+      {/* ── Commissioner Controls ── */}
       {isCommissioner && (
         <div style={card}>
           <div style={sectionTitle}>Commissioner Controls</div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
 
-            {/* Settings */}
+            {/* ── League Settings ── */}
             <div>
               <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '10px' }}>League Settings</p>
               <label style={{ color: 'var(--text-dim)', fontSize: '12px' }}>Playoff Teams</label>
@@ -167,20 +175,23 @@ export default function Playoffs() {
                 <option value="money_won">Most Money Won</option>
                 <option value="head_to_head">Head to Head</option>
               </select>
+              {/* ── Save Settings Button ── */}
               <button onClick={() => act(() => axios.patch(`${API_URL}/leagues/${activeLeague.id}/playoffs/settings`, { playoff_teams: playoffTeams, tiebreaker }, { headers }))}
                 style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
                 Save Settings
               </button>
             </div>
 
-            {/* Actions */}
+            {/* ── Bracket Actions ── */}
             <div>
               <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '10px' }}>Bracket Actions</p>
+              {/* ── Generate Bracket Button ── */}
               <button onClick={() => act(() => axios.post(`${API_URL}/leagues/${activeLeague.id}/playoffs/bracket`, {}, { headers }))}
                 style={{ display: 'block', width: '100%', backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginBottom: '10px' }}>
                 Generate Bracket
               </button>
 
+              {/* ── Score Week ── */}
               <label style={{ color: 'var(--text-dim)', fontSize: '12px' }}>Score Week</label>
               <div style={{ display: 'flex', gap: '8px', marginTop: '4px', marginBottom: '10px' }}>
                 <select value={scoreWeek} onChange={e => setScoreWeek(Number(e.target.value))}
@@ -195,6 +206,7 @@ export default function Playoffs() {
                 </button>
               </div>
 
+              {/* ── Advance Round ── */}
               <label style={{ color: 'var(--text-dim)', fontSize: '12px' }}>Advance After Week</label>
               <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                 <select value={advanceWeek} onChange={e => setAdvanceWeek(Number(e.target.value))}
@@ -215,3 +227,6 @@ export default function Playoffs() {
     </div>
   )
 }
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
+// default export is declared on the function above

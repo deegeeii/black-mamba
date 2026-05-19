@@ -1,3 +1,4 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState, useEffect, useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import { useParams } from 'react-router-dom'
@@ -5,9 +6,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import axios from 'axios'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 const CURRENT_WEEK = 1
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 interface Matchup {
     id: string
     home_user_id: string
@@ -48,6 +51,7 @@ interface GameScore {
     clock: string
 }
 
+// ── STYLE CONSTANTS ────────────────────────────────────────────────────────────
 const ROUND_LABELS: Record<string, string> = {
     wildcard: 'Wild Card — Week 15',
     semifinal: 'Semifinals — Week 16',
@@ -74,6 +78,7 @@ const tab_style = (active: boolean): CSSProperties => ({
 })
 
 export default function Matchups() {
+    // ── STATE ──────────────────────────────────────────────────────────────────
     const { leagueId } = useParams<{ leagueId: string }>()
     const { session, user } = useAuth()
     const { getTeamName, activeLeague } = useLeague()
@@ -96,7 +101,7 @@ export default function Matchups() {
     const [scores, setScores] = useState<{ user_id: string; total_points: number }[]>([])
     const [scoresLoading, setScoresLoading] = useState(false)
 
-
+    // ── HELPERS ────────────────────────────────────────────────────────────────
     const isCommissioner = activeLeague?.commissioner_id === user?.id
 
     const headers = useMemo(
@@ -104,6 +109,7 @@ export default function Matchups() {
         [session?.access_token]
     )
 
+    // ── EFFECTS / FETCH ON MOUNT ───────────────────────────────────────────────
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -148,8 +154,9 @@ export default function Matchups() {
             .catch(() => {})
             .finally(() => setScoresLoading(false))
     }, [tab, week, leagueId, headers])
-    
 
+
+    // ── HANDLERS ──────────────────────────────────────────────────────────────
     const act = async (fn: () => Promise<any>) => {
         setError('')
         setSuccess('')
@@ -163,10 +170,12 @@ export default function Matchups() {
 
     if (loading) return <p>Loading matchups...</p>
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <div style={{ maxWidth: '800px' }}>
             <h1 style={{ marginBottom: '4px' }}>Matchups</h1>
 
+            {/* ── Tabs ── */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', marginBottom: '24px' }}>
                 <div style={tab_style(tab === 'season')} onClick={() => setTab('season')}>Season</div>
                 <div style={tab_style(tab === 'playoffs')} onClick={() => setTab('playoffs')}>Playoffs</div>
@@ -175,8 +184,10 @@ export default function Matchups() {
 
             </div>
 
+            {/* ── SEASON TAB ── */}
             {tab === 'season' && (
                 <>
+                    {/* ── Week Navigator ── */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
                         <button
                             onClick={() => setWeek(w => Math.max(1, w - 1))}
@@ -193,6 +204,7 @@ export default function Matchups() {
                         </button>
                     </div>
 
+                    {/* ── Matchup Cards ── */}
                     {matchups.length === 0 ? (
                         <p style={{ color: 'var(--text-dim)' }}>No matchups for week {week}.</p>
                     ) : matchups.map(m => {
@@ -227,6 +239,7 @@ export default function Matchups() {
                         )
                     })}
 
+                    {/* ── Standings Table ── */}
                     <h2 style={{ marginBottom: '12px', marginTop: '24px' }}>Standings</h2>
                     <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
@@ -255,11 +268,13 @@ export default function Matchups() {
                 </>
             )}
 
+            {/* ── PLAYOFFS TAB ── */}
             {tab === 'playoffs' && (
                 <>
                     {error && <p style={{ color: 'var(--danger)', marginBottom: '12px' }}>{error}</p>}
                     {success && <p style={{ color: 'var(--accent)', marginBottom: '12px' }}>{success}</p>}
 
+                    {/* ── Bracket ── */}
                     {playoffsLoading ? <p>Loading playoffs...</p> : playoffs.length === 0 ? (
                         <div style={card}>
                             <p style={{ color: 'var(--text-dim)' }}>
@@ -301,10 +316,12 @@ export default function Matchups() {
                         })
                     )}
 
+                    {/* ── Commissioner Controls ── */}
                     {isCommissioner && (
                         <div style={card}>
                             <div style={{ color: 'var(--accent)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '16px' }}>Commissioner Controls</div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                {/* ── Playoff Settings ── */}
                                 <div>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '10px' }}>Settings</p>
                                     <label style={{ color: 'var(--text-dim)', fontSize: '12px' }}>Playoff Teams</label>
@@ -334,6 +351,7 @@ export default function Matchups() {
                                         Save Settings
                                     </button>
                                 </div>
+                                {/* ── Bracket Actions ── */}
                                 <div>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '10px' }}>Bracket Actions</p>
                                     <button
@@ -384,8 +402,10 @@ export default function Matchups() {
                 </>
             )}
 
+            {/* ── LIVE TAB ── */}
             {tab === 'live' && (
                 <>
+                    {/* ── Live Game Cards ── */}
                     {gamesLoading ? <p>Loading...</p> : games.length === 0 ? (
                         <div style={card}>
                             <p style={{ color: 'var(--text-dim)' }}>No games in progress. Check back on game days.</p>
@@ -414,8 +434,11 @@ export default function Matchups() {
                     ))}
                 </>
             )}
+
+            {/* ── SCORES TAB ── */}
             {tab === 'scores' && (
                 <>
+                    {/* ── Week Navigator ── */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
                         <button
                             onClick={() => setWeek(w => Math.max(1, w - 1))}
@@ -431,6 +454,7 @@ export default function Matchups() {
                             ›
                         </button>
                     </div>
+                    {/* ── Score Leaderboard ── */}
                     {scoresLoading ? <p>Loading...</p> : scores.length === 0 ? (
                         <div style={card}>
                             <p style={{ color: 'var(--text-dim)' }}>No scores yet for week {week}. Sync scores first.</p>
@@ -454,3 +478,6 @@ export default function Matchups() {
         </div>
     )
 }
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
+// (default export declared on function above)

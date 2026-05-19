@@ -1,13 +1,16 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
 import axios from 'axios'
 import { supabase } from '../lib/supabase'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 
 const GIPHY_KEY = 'C0akdik55lotqYg8iWkJSbvUyCznltPb'
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 interface Message {
     id: string
     user_id: string | null
@@ -45,6 +48,7 @@ interface ActivityItem {
 
 
 export default function Chat() {
+    // ── STATE ──────────────────────────────────────────────────────────────────
     const { user, session } = useAuth()
     const { activeLeague, getTeamName } = useLeague()
     const [messages, setMessages] = useState<Message[]>([])
@@ -62,7 +66,7 @@ export default function Chat() {
     const [activity, setActivity] = useState<ActivityItem[]>([])
     const [activityLoading, setActivityLoading] = useState(false)
 
-
+    // ── EFFECTS / FETCH ON MOUNT / REALTIME SUBSCRIPTIONS ─────────────────────
     const headers = useMemo(
         () => ({ Authorization: `Bearer ${session?.access_token}` }),
         [session?.access_token]
@@ -93,10 +97,10 @@ export default function Chat() {
             setActivityLoading(false)
         }
     }, [activeLeague, session, headers])
-    
+
     useEffect(() => {
         if (tab === 'activity') fetchActivity()
-    }, [tab, fetchActivity])    
+    }, [tab, fetchActivity])
 
 
     useEffect(() => {
@@ -116,6 +120,7 @@ export default function Chat() {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
 
+    // ── HANDLERS ───────────────────────────────────────────────────────────────
     const searchGifs = async (q: string) => {
         if (!q.trim()) return
         setGifLoading(true)
@@ -225,6 +230,7 @@ export default function Chat() {
         }
     }
 
+    // ── HELPERS ────────────────────────────────────────────────────────────────
     const isImage = (msg: string) =>
         !!msg && (
             /\.(gif|png|jpe?g|webp)$/i.test(msg) ||
@@ -243,12 +249,13 @@ export default function Chat() {
 
     if (!activeLeague) return <p style={{ color: 'var(--text-dim)' }}>Select a league from the sidebar.</p>
 
+    // ── JSX ────────────────────────────────────────────────────────────────────
     return (
         <div style={{ maxWidth: '700px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 48px)' }}>
             <h1 style={{ marginBottom: '4px' }}>League Chat</h1>
             <p style={{ color: 'var(--text-dim)', marginBottom: '8px' }}>{activeLeague.name}</p>
-    
-            {/* Tabs */}
+
+            {/* ── Tabs ── */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '12px' }}>
                 {(['chat', 'activity'] as const).map(t => (
                     <button
@@ -270,8 +277,8 @@ export default function Chat() {
                     </button>
                 ))}
             </div>
-    
-            {/* GIF Picker Overlay — only in chat tab */}
+
+            {/* ── GIF Picker Overlay ── */}
             {tab === 'chat' && gifOpen && (
                 <div style={{
                     position: 'fixed',
@@ -332,6 +339,7 @@ export default function Chat() {
                         </button>
                     </div>
                     {gifLoading && <p style={{ color: 'var(--text-dim)', fontSize: '13px' }}>Searching...</p>}
+                    {/* ── GIF Grid ── */}
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -358,11 +366,11 @@ export default function Chat() {
                     </div>
                 </div>
             )}
-    
-            {/* Chat Tab */}
+
+            {/* ── Chat Tab ── */}
             {tab === 'chat' && (
                 <>
-                    {/* Message List */}
+                    {/* ── Message List ── */}
                     <div style={{
                         flex: 1,
                         overflowY: 'auto',
@@ -424,9 +432,10 @@ export default function Chat() {
                         ))}
                         <div ref={bottomRef} />
                     </div>
-    
-                    {/* Input Row */}
+
+                    {/* ── Input Row ── */}
                     <div style={{ display: 'flex', gap: '8px' }}>
+                        {/* ── GIF Button ── */}
                         <button
                             onClick={() => setGifOpen(o => !o)}
                             style={{
@@ -442,6 +451,7 @@ export default function Chat() {
                         >
                             GIF
                         </button>
+                        {/* ── Image Upload Button ── */}
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploading}
@@ -457,6 +467,7 @@ export default function Chat() {
                         >
                             {uploading ? '⏳' : '📎'}
                         </button>
+                        {/* ── Text Input ── */}
                         <input
                             value={input}
                             onChange={e => setInput(e.target.value)}
@@ -473,6 +484,7 @@ export default function Chat() {
                                 outline: 'none',
                             }}
                         />
+                        {/* ── Send Button ── */}
                         <button
                             onClick={sendMessage}
                             disabled={sending || !input.trim()}
@@ -489,6 +501,7 @@ export default function Chat() {
                         >
                             Send
                         </button>
+                        {/* ── Ask Bot Button ── */}
                         <button
                             onClick={triggerBot}
                             disabled={botLoading}
@@ -515,8 +528,8 @@ export default function Chat() {
                     </div>
                 </>
             )}
-    
-            {/* Activity Tab */}
+
+            {/* ── Activity Tab ── */}
             {tab === 'activity' && (
                 <div style={{
                     flex: 1,
@@ -536,6 +549,7 @@ export default function Chat() {
                             No roster moves yet.
                         </p>
                     )}
+                    {/* ── Activity List ── */}
                     {activity.map(item => (
                         <div
                             key={item.id}
@@ -578,5 +592,8 @@ export default function Chat() {
                 </div>
             )}
         </div>
-    )    
+    )
 }
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
+// default export is declared on the function above

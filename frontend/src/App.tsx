@@ -1,4 +1,4 @@
-
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { LeagueProvider } from './contexts/LeagueContext'
@@ -19,14 +19,16 @@ import Chat from './pages/Chat'
 import { ThemeProvider } from './contexts/ThemeContext'
 import ResetPassword from './pages/ResetPassword'
 import LeagueHome from './pages/LeagueHome'
+import StripeConnect from './pages/StripeConnect'
 
 
-
-
+// ── HELPERS ────────────────────────────────────────────────────────────────────
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex' }}>
+      {/* ── Sidebar ── */}
       <Sidebar />
+      {/* ── Page Content ── */}
       <div style={{
         marginLeft: '220px',
         flex: 1,
@@ -41,15 +43,21 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   )
 }
 
+// ── JSX / RENDER ───────────────────────────────────────────────────────────────
 export default function App() {
   return (
     <BrowserRouter>
+      {/* ── Context Providers ── */}
       <AuthProvider>
         <ThemeProvider>
           <LeagueProvider>
             <Routes>
+              {/* ── Public Routes ── */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<SignUp />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+
+              {/* ── Protected Routes ── */}
               <Route
                 path="/dashboard"
                 element={
@@ -130,8 +138,10 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/leagues/:leagueId/league-home" element={<ProtectedRoute><AppLayout><LeagueHome /></AppLayout></ProtectedRoute>} />
+              <Route path="/connect" element={<ProtectedRoute><AppLayout><StripeConnect /></AppLayout></ProtectedRoute>} />
+
+              {/* ── Fallback ── */}
               <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
           </LeagueProvider>

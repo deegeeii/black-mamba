@@ -1,12 +1,14 @@
 
-
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 interface Player {
   id: string
   name: string
@@ -33,6 +35,7 @@ interface DraftPick {
 }
 
 export default function DraftRoom() {
+  // ── STATE ────────────────────────────────────────────────────────────────────
   const { leagueId } = useParams<{ leagueId: string }>()
   const { session, user } = useAuth()
   const [players, setPlayers] = useState<Player[]>([])
@@ -48,6 +51,7 @@ export default function DraftRoom() {
     [session?.access_token]
   )
 
+  // ── HELPERS ──────────────────────────────────────────────────────────────────
   const fetchAll = async () => {
     try {
       const [playersRes, picksRes, sessionRes] = await Promise.allSettled([
@@ -72,10 +76,12 @@ export default function DraftRoom() {
     setSession_(sessionRes.status === 'fulfilled' ? sessionRes.value.data : null)
   }
 
+  // ── EFFECTS / FETCH ON MOUNT ──────────────────────────────────────────────────
   useEffect(() => {
     fetchAll()
   }, [leagueId, headers])
 
+  // ── HANDLERS ──────────────────────────────────────────────────────────────────
   const handleStartDraft = async () => {
     try {
       const res = await axios.post(`${API_URL}/draft/${leagueId}/start`, {}, { headers })
@@ -98,6 +104,7 @@ export default function DraftRoom() {
     }
   }
 
+  // ── HELPERS ──────────────────────────────────────────────────────────────────
   const pickedPlayerIds = useMemo(
     () => new Set(picks.map((p) => p.player_id)),
     [picks]
@@ -121,16 +128,19 @@ export default function DraftRoom() {
 
   if (loading) return <p>Loading draft room...</p>
 
+  // ── JSX ───────────────────────────────────────────────────────────────────────
   return (
     <div>
       <h1>Draft Room</h1>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
+      {/* ── Start Draft Button ── */}
       {!session_ && (
         <button onClick={handleStartDraft}>Start Draft</button>
       )}
 
+      {/* ── Session Status ── */}
       {session_ && (
         <div>
           <p>Status: <strong>{session_.status}</strong></p>
@@ -139,6 +149,7 @@ export default function DraftRoom() {
         </div>
       )}
 
+      {/* ── Draft Board ── */}
       <h2>Draft Board</h2>
       {picks.length === 0 ? (
         <p>No picks yet.</p>
@@ -150,8 +161,10 @@ export default function DraftRoom() {
         ))
       )}
 
+      {/* ── Available Players ── */}
       <h2>Available Players</h2>
       <div>
+        {/* ── Search + Filter Controls ── */}
         <input
           placeholder="Search players..."
           value={search}
@@ -167,6 +180,7 @@ export default function DraftRoom() {
         </select>
       </div>
 
+      {/* ── Player List ── */}
       {filteredPlayers.map((player) => (
         <div key={player.id}>
           <span>{player.name} — {player.position} — {player.nfl_team}</span>
@@ -178,3 +192,6 @@ export default function DraftRoom() {
     </div>
   )
 }
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+// (default export declared on function above)

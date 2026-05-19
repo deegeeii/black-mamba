@@ -1,7 +1,9 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { createContext, useContext, useEffect, useState } from "react";
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from "../lib/supabase";
 
+// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
 interface AuthContextType {
     user: User | null
     session: Session | null
@@ -9,6 +11,7 @@ interface AuthContextType {
     signOut: () => Promise<void>
 }
 
+// ── CONTEXT / PROVIDER SETUP ───────────────────────────────────────────────────
 const AuthContext = createContext<AuthContextType>({
     user: null,
     session: null,
@@ -17,10 +20,13 @@ const AuthContext = createContext<AuthContextType>({
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+
+    // ── STATE ───────────────────────────────────────────────────────────────────
     const [user, setUser] = useState<User | null>(null)
     const [session, setSession] = useState<Session | null>(null)
     const [loading, setLoading] = useState(true)
 
+    // ── EFFECTS / FETCH ON MOUNT ────────────────────────────────────────────────
     useEffect(() => {
         // Get the current session on load
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,11 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return () => subscription.unsubscribe()
     }, [])
-    
+
+    // ── HANDLERS ────────────────────────────────────────────────────────────────
     const signOut = async () => {
         await supabase.auth.signOut()
     }
 
+    // ── JSX / RENDER ────────────────────────────────────────────────────────────
     return (
         <AuthContext.Provider value={{ user, session, loading, signOut }}>
             {children}
@@ -51,4 +59,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 }
 
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
 export const useAuth = () => useContext(AuthContext)
