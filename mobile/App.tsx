@@ -2,7 +2,7 @@
 import 'react-native-url-polyfill/auto'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { ActivityIndicator, View } from 'react-native'
+import { ActivityIndicator, View, Platform } from 'react-native'
 import { AuthProvider, useAuth } from './src/contexts/AuthContext'
 import { ThemeProvider } from './src/contexts/ThemeContext'
 import { LeagueProvider } from './src/contexts/LeagueContext'
@@ -20,12 +20,41 @@ import TournamentDetailScreen from './src/screens/TournamentDetailScreen'
 import DraftScreen from './src/screens/DraftScreen'
 import LeagueHomeScreen from './src/screens/LeagueHomeScreen'
 import HeadlinesScreen from './src/screens/HeadlinesScreen'
+import * as Notifications from 'expo-notifications'
+import { supabase } from './src/lib/supabase'
+import { useEffect } from 'react'
 
 // ── NAVIGATOR ──────────────────────────────────────────────────────────────────
 const Stack = createNativeStackNavigator()
 
+async function registerForPushNotifications(userId: string) {
+    if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+        })
+    }
+    const { status } = await Notifications.requestPermissionsAsync()
+    if (status !== 'granted') return
+    const token = await Notifications.getExpoPushTokenAsync({
+        projectId: 'e784f0b9-88d8-4e40-8ce8-dd52df01b286',
+    })
+    await supabase
+        .from('profiles')
+        .update({ expo_push_token: token.data })
+        .eq('id', userId)
+}
+
+
 function RootNavigator() {
     const { session, loading, user } = useAuth()
+
+    useEffect(() => {
+        if (!user) return
+        registerForPushNotifications(user.id)
+    }, [user?.id])
+    
 
     if (loading) {
         return (

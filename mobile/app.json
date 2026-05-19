@@ -35,8 +35,20 @@
           "merchantIdentifier": "merchant.com.blackmamba",
           "enableGooglePay": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ffcc44"
+        }
       ]
     ],
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#ffcc44",
+      "androidMode": "default"
+    },
     "extra": {
       "eas": {
         "projectId": "e784f0b9-88d8-4e40-8ce8-dd52df01b286"
