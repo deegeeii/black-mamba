@@ -223,6 +223,20 @@ export default function Chat() {
         }
     }
 
+    const handleDelete = async (messageId: string) => {
+        if (!activeLeague) return
+        try {
+            await axios.delete(
+                `${API_URL}/leagues/${activeLeague.id}/chat/${messageId}`,
+                { headers }
+            )
+            setMessages(prev => prev.filter(m => m.id !== messageId))
+        } catch {
+            // silent
+        }
+    }
+    
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault()
@@ -397,13 +411,34 @@ export default function Chat() {
                                     alignItems: msg.user_id === user?.id && !msg.is_bot ? 'flex-end' : 'flex-start',
                                 }}
                             >
-                                <span style={{
-                                    fontSize: '11px',
-                                    color: msg.is_bot ? 'var(--warning)' : 'var(--text-dim)',
-                                    marginBottom: '4px',
-                                }}>
-                                    {label(msg)} · {formatTime(msg.created_at)}
-                                </span>
+                                {/* ── Message Label Row ── */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                    <span style={{
+                                        fontSize: '11px',
+                                        color: msg.is_bot ? 'var(--warning)' : 'var(--text-dim)',
+                                    }}>
+                                        {label(msg)} · {formatTime(msg.created_at)}
+                                    </span>
+                                    {msg.user_id === user?.id && !msg.is_bot && (
+                                        <button
+                                            onClick={() => handleDelete(msg.id)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--text-dim)',
+                                                cursor: 'pointer',
+                                                fontSize: '11px',
+                                                padding: '0',
+                                                opacity: 0.5,
+                                            }}
+                                            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                                            onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+                                {/* ── Message Bubble ── */}
                                 {isImage(msg.message ?? '') ? (
                                     <img
                                         src={msg.message ?? ''}
@@ -430,6 +465,7 @@ export default function Chat() {
                                 )}
                             </div>
                         ))}
+
                         <div ref={bottomRef} />
                     </div>
 

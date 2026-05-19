@@ -1,19 +1,23 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { darkTheme, lightTheme, Theme } from '../lib/theme'
 
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type ThemeContextType = {
     theme: Theme
     isDark: boolean
     toggleTheme: () => void
 }
 
+// ── CONTEXT ────────────────────────────────────────────────────────────────────
 const ThemeContext = createContext<ThemeContextType>({
     theme: darkTheme,
     isDark: true,
     toggleTheme: () => {},
 })
 
+// ── PROVIDER ───────────────────────────────────────────────────────────────────
 export function ThemeProvider({ children, userId }: { children: React.ReactNode, userId: string | null }) {
     const [isDark, setIsDark] = useState(true)
 
@@ -40,4 +44,5 @@ export function ThemeProvider({ children, userId }: { children: React.ReactNode,
     )
 }
 
+// ── HOOK ───────────────────────────────────────────────────────────────────────
 export const useTheme = () => useContext(ThemeContext)

@@ -1,11 +1,24 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
+import {
+    Text,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+} from 'react-native'
 import { supabase } from '../lib/supabase'
 import { darkTheme } from '../lib/theme'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const t = darkTheme
 
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function LoginScreen() {
+
+    // ── State ─────────────────────────────────────────────────────────────────
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -13,6 +26,7 @@ export default function LoginScreen() {
     const [resetMode, setResetMode] = useState(false)
     const [resetSent, setResetSent] = useState(false)
 
+    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleLogin = async () => {
         setLoading(true)
         setError('')
@@ -32,12 +46,18 @@ export default function LoginScreen() {
         setLoading(false)
     }
 
+    // ── Reset Sent State ──────────────────────────────────────────────────────
     if (resetSent) {
         return (
-            <KeyboardAvoidingView style={[styles.container, { backgroundColor: t.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <KeyboardAvoidingView
+                style={[styles.container, { backgroundColor: t.bg }]}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
                 <Text style={[styles.wordmark, { color: t.accent }]}>BLACK MAMBA</Text>
                 <Text style={[styles.subtitle, { color: t.textDim }]}>Fantasy Sports</Text>
-                <Text style={[styles.info, { color: t.text }]}>Check your email for a reset link. It will open in your browser to complete the reset.</Text>
+                <Text style={[styles.info, { color: t.text }]}>
+                    Check your email for a reset link. It will open in your browser to complete the reset.
+                </Text>
                 <TouchableOpacity onPress={() => { setResetMode(false); setResetSent(false) }}>
                     <Text style={[styles.link, { color: t.accent }]}>Back to Sign In</Text>
                 </TouchableOpacity>
@@ -45,8 +65,12 @@ export default function LoginScreen() {
         )
     }
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
-        <KeyboardAvoidingView style={[styles.container, { backgroundColor: t.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: t.bg }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
             <Text style={[styles.wordmark, { color: t.accent }]}>BLACK MAMBA</Text>
             <Text style={[styles.subtitle, { color: t.textDim }]}>Fantasy Sports</Text>
 
@@ -84,7 +108,10 @@ export default function LoginScreen() {
                 }
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.linkWrap} onPress={() => { setResetMode(!resetMode); setError('') }}>
+            <TouchableOpacity
+                style={styles.linkWrap}
+                onPress={() => { setResetMode(!resetMode); setError('') }}
+            >
                 <Text style={[styles.link, { color: t.accent }]}>
                     {resetMode ? 'Back to Sign In' : 'Forgot Password?'}
                 </Text>
@@ -93,6 +120,7 @@ export default function LoginScreen() {
     )
 }
 
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     container: {
         flex: 1,

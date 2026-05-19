@@ -1,3 +1,4 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState, useEffect } from 'react'
 import {
     View,
@@ -13,8 +14,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLeague } from '../contexts/LeagueContext'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
+const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE']
 
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type Tab = 'settings' | 'rosters' | 'history'
 
 interface Player {
@@ -45,32 +49,36 @@ interface Season {
     awards: Award[]
 }
 
-const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE']
-
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function LeagueHomeScreen() {
+
+    // ── Context ───────────────────────────────────────────────────────────────
     const { session, user } = useAuth()
     const { theme } = useTheme()
     const { activeLeague, members } = useLeague()
+
+    // ── State: General ────────────────────────────────────────────────────────
     const [tab, setTab] = useState<Tab>('settings')
 
-    // Team Settings
+    // ── State: Team Settings ──────────────────────────────────────────────────
     const [teamName, setTeamName] = useState('')
     const [avatarUrl, setAvatarUrl] = useState('')
     const [settingsLoading, setSettingsLoading] = useState(true)
     const [saving, setSaving] = useState(false)
 
-    // Rosters
+    // ── State: Rosters ────────────────────────────────────────────────────────
     const [rosters, setRosters] = useState<MemberRoster[]>([])
     const [rostersLoading, setRostersLoading] = useState(true)
     const [expanded, setExpanded] = useState<string | null>(null)
 
-    // History
+    // ── State: History ────────────────────────────────────────────────────────
     const [history, setHistory] = useState<Season[]>([])
     const [historyLoading, setHistoryLoading] = useState(true)
     const [newAwardName, setNewAwardName] = useState('')
     const [newAwardUser, setNewAwardUser] = useState('')
     const [newAwardSeason, setNewAwardSeason] = useState(2024)
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
     const isCommissioner = activeLeague?.commissioner_id === user?.id
 
     const headers = {
@@ -78,6 +86,7 @@ export default function LeagueHomeScreen() {
         'Content-Type': 'application/json',
     }
 
+    // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!session || !activeLeague) return
         Promise.allSettled([
@@ -110,6 +119,7 @@ export default function LeagueHomeScreen() {
     }
     useEffect(() => { fetchHistory() }, [session, activeLeague?.id])
 
+    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleSaveSettings = async () => {
         setSaving(true)
         try {
@@ -158,41 +168,36 @@ export default function LeagueHomeScreen() {
             POSITION_ORDER.indexOf(a.position) - POSITION_ORDER.indexOf(b.position)
         )
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <ScrollView
             style={{ flex: 1, backgroundColor: theme.bg }}
             contentContainerStyle={styles.content}
         >
+            {/* ── Page Header ── */}
             <Text style={[styles.title, { color: theme.accent }]}>League</Text>
-            <Text style={[styles.subtitle, { color: theme.textDim }]}>
-                {activeLeague?.name}
-            </Text>
+            <Text style={[styles.subtitle, { color: theme.textDim }]}>{activeLeague?.name}</Text>
 
-            {/* Tab Bar */}
+            {/* ── Tab Bar ── */}
             <View style={[styles.tabBar, { borderBottomColor: theme.border }]}>
                 {(['settings', 'rosters', 'history'] as Tab[]).map(t => (
                     <TouchableOpacity
                         key={t}
                         onPress={() => setTab(t)}
-                        style={[
-                            styles.tabBtn,
-                            { borderBottomColor: tab === t ? theme.accent : 'transparent' },
-                        ]}
+                        style={[styles.tabBtn, { borderBottomColor: tab === t ? theme.accent : 'transparent' }]}
                     >
-                        <Text
-                            style={{
-                                color: tab === t ? theme.accent : theme.textDim,
-                                fontWeight: tab === t ? 'bold' : 'normal',
-                                fontSize: 13,
-                            }}
-                        >
+                        <Text style={{
+                            color: tab === t ? theme.accent : theme.textDim,
+                            fontWeight: tab === t ? 'bold' : 'normal',
+                            fontSize: 13,
+                        }}>
                             {t === 'settings' ? 'Team Settings' : t === 'rosters' ? 'Rosters' : 'History'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            {/* ── TEAM SETTINGS ── */}
+            {/* ── Team Settings Tab ── */}
             {tab === 'settings' && (
                 settingsLoading
                     ? <Text style={{ color: theme.textDim, marginTop: 24 }}>Loading...</Text>
@@ -231,7 +236,7 @@ export default function LeagueHomeScreen() {
                     )
             )}
 
-            {/* ── ROSTERS ── */}
+            {/* ── Rosters Tab ── */}
             {tab === 'rosters' && (
                 rostersLoading
                     ? <Text style={{ color: theme.textDim, marginTop: 24 }}>Loading rosters...</Text>
@@ -271,7 +276,13 @@ export default function LeagueHomeScreen() {
                                                 if (players.length === 0) return null
                                                 return (
                                                     <View key={pos} style={{ marginBottom: 10 }}>
-                                                        <Text style={{ color: theme.textDim, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>
+                                                        <Text style={{
+                                                            color: theme.textDim,
+                                                            fontSize: 11,
+                                                            letterSpacing: 1,
+                                                            textTransform: 'uppercase',
+                                                            marginBottom: 4,
+                                                        }}>
                                                             {pos}
                                                         </Text>
                                                         {players.map(p => (
@@ -294,7 +305,7 @@ export default function LeagueHomeScreen() {
                     )
             )}
 
-            {/* ── HISTORY ── */}
+            {/* ── History Tab ── */}
             {tab === 'history' && (
                 historyLoading
                     ? <Text style={{ color: theme.textDim, marginTop: 24 }}>Loading history...</Text>
@@ -355,6 +366,7 @@ export default function LeagueHomeScreen() {
                                 </View>
                             ))}
 
+                            {/* ── Add Award (Commissioner Only) ── */}
                             {isCommissioner && (
                                 <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                                     <Text style={[styles.cardTitle, { color: theme.accent }]}>Add Award</Text>
@@ -373,15 +385,15 @@ export default function LeagueHomeScreen() {
                                         <TouchableOpacity
                                             key={m.user_id}
                                             onPress={() => setNewAwardUser(m.user_id)}
-                                            style={[
-                                                styles.memberBtn,
-                                                {
-                                                    borderColor: newAwardUser === m.user_id ? theme.accent : theme.border,
-                                                    backgroundColor: newAwardUser === m.user_id ? theme.bgDeep : 'transparent',
-                                                },
-                                            ]}
+                                            style={[styles.memberBtn, {
+                                                borderColor: newAwardUser === m.user_id ? theme.accent : theme.border,
+                                                backgroundColor: newAwardUser === m.user_id ? theme.bgDeep : 'transparent',
+                                            }]}
                                         >
-                                            <Text style={{ color: newAwardUser === m.user_id ? theme.accent : theme.text, fontSize: 13 }}>
+                                            <Text style={{
+                                                color: newAwardUser === m.user_id ? theme.accent : theme.text,
+                                                fontSize: 13,
+                                            }}>
                                                 {m.team_name}
                                             </Text>
                                         </TouchableOpacity>
@@ -402,6 +414,7 @@ export default function LeagueHomeScreen() {
     )
 }
 
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     content: {
         padding: 24,

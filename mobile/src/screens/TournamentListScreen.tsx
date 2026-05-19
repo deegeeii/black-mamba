@@ -1,13 +1,22 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native'
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    ActivityIndicator,
+    TouchableOpacity,
+} from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLeague } from '../contexts/LeagueContext'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
 
-
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type Tournament = {
     id: string
     name: string
@@ -20,17 +29,22 @@ type Tournament = {
     created_at: string
 }
 
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function TournamentListScreen() {
+
+    // ── Context ───────────────────────────────────────────────────────────────
     const navigation = useNavigation()
     const { session } = useAuth()
     const { theme } = useTheme()
     const { activeLeague } = useLeague()
 
+    // ── State ─────────────────────────────────────────────────────────────────
     const [tournaments, setTournaments] = useState<Tournament[]>([])
     const [loading, setLoading] = useState(true)
 
-    const headers = { Authorization: `Bearer ${session?.access_token}`}
+    const headers = { Authorization: `Bearer ${session?.access_token}` }
 
+    // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!activeLeague || !session) return
         fetch(`${API}/leagues/${activeLeague.id}/tournaments`, { headers })
@@ -39,14 +53,18 @@ export default function TournamentListScreen() {
             .catch(() => setLoading(false))
     }, [activeLeague?.id, session])
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
     const statusColor = (status: string) => {
         if (status === 'open') return theme.accent
         if (status === 'active') return theme.warning
         return theme.textDim
     }
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>
+
+            {/* ── Header ── */}
             <View style={[styles.header, { borderBottomColor: theme.borderSubtle }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
@@ -65,13 +83,14 @@ export default function TournamentListScreen() {
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}
                     renderItem={({ item }) => (
-                        <TouchableOpacity 
-                            key={item.id} 
+                        <TouchableOpacity
                             style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                             onPress={() => (navigation as any).navigate('TournamentDetail', { tournament: item })}
-                            >
+                        >
                             <View style={styles.cardTop}>
-                                <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
+                                <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
+                                    {item.name}
+                                </Text>
                                 <Text style={[styles.status, { color: statusColor(item.status) }]}>
                                     {item.status.toUpperCase()}
                                 </Text>
@@ -100,6 +119,7 @@ export default function TournamentListScreen() {
     )
 }
 
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
@@ -110,8 +130,14 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         borderBottomWidth: 1,
     },
-    title: { fontSize: 17, fontWeight: 'bold' },
-    list: { padding: 16, gap: 12 },
+    title: {
+        fontSize: 17,
+        fontWeight: 'bold',
+    },
+    list: {
+        padding: 16,
+        gap: 12,
+    },
     card: {
         borderRadius: 10,
         borderWidth: 1,
@@ -123,11 +149,35 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 4,
     },
-    name: { fontSize: 15, fontWeight: 'bold', flex: 1, marginRight: 8 },
-    status: { fontSize: 11, fontWeight: 'bold', letterSpacing: 1 },
-    sport: { fontSize: 12, marginBottom: 10 },
-    row: { flexDirection: 'row', gap: 16 },
-    meta: { fontSize: 12 },
-    prize: { fontSize: 12, fontWeight: 'bold' },
-    empty: { textAlign: 'center', marginTop: 60, fontSize: 14 },
+    name: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        flex: 1,
+        marginRight: 8,
+    },
+    status: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+    },
+    sport: {
+        fontSize: 12,
+        marginBottom: 10,
+    },
+    row: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    meta: {
+        fontSize: 12,
+    },
+    prize: {
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    empty: {
+        textAlign: 'center',
+        marginTop: 60,
+        fontSize: 14,
+    },
 })

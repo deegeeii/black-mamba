@@ -4,6 +4,7 @@ from typing import Optional
 from app.core.security import get_current_user_id as get_current_user
 from app.services.chat import get_messages, post_message, bot_post
 from app.core.supabase import supabase
+from app.services.chat import get_messages, post_message, bot_post, delete_message
 
 
 router = APIRouter(prefix="/leagues", tags=["chat"])
@@ -36,6 +37,15 @@ def send_message(league_id: str, body: MessageRequest, user_id: str = Depends(ge
     if err:
         return {"error": err}
     return msg
+
+@router.delete("/{league_id}/chat/{message_id}")
+def remove_message(league_id: str, message_id: str, user_id: str = Depends(get_current_user)):
+    result, err = delete_message(message_id, user_id)
+    if err:
+        from fastapi import HTTPException
+        raise HTTPException(400, err)
+    return result
+
 
 
 @router.post("/{league_id}/chat/bot")

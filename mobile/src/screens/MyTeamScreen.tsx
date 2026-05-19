@@ -1,14 +1,26 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useEffect, useState, useMemo } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native'
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    TouchableOpacity,
+    ActivityIndicator,
+    ScrollView,
+} from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLeague } from '../contexts/LeagueContext'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
 const CURRENT_WEEK = 1
 const SLOTS = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'BN']
+const POSITIONS = ['', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF']
 
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type Player = { player_id: string; name: string; position: string; nfl_team: string | null }
 type FreeAgent = { id: string; name: string; position: string; nfl_team: string | null }
 type Trade = {
@@ -20,40 +32,44 @@ type Trade = {
     status: string
     week: number
 }
-
 type Tab = 'roster' | 'free-agents' | 'trades' | 'draft'
 
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function MyTeamScreen() {
+
+    // ── Context ───────────────────────────────────────────────────────────────
     const navigation = useNavigation()
     const { session, user } = useAuth()
     const { theme } = useTheme()
     const { activeLeague } = useLeague()
 
+    // ── State: General ────────────────────────────────────────────────────────
     const [tab, setTab] = useState<Tab>('roster')
     const [loading, setLoading] = useState(true)
 
-    // Roster
+    // ── State: Roster ─────────────────────────────────────────────────────────
     const [roster, setRoster] = useState<Player[]>([])
     const [lineup, setLineup] = useState<Record<string, string>>({})
     const [dropping, setDropping] = useState<string | null>(null)
     const [lineupSaved, setLineupSaved] = useState(false)
     const [addError, setAddError] = useState('')
-
     const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
 
-    // Free Agents
+    // ── State: Free Agents ────────────────────────────────────────────────────
     const [freeAgents, setFreeAgents] = useState<FreeAgent[]>([])
     const [position, setPosition] = useState('')
 
-    // Trades
+    // ── State: Trades ─────────────────────────────────────────────────────────
     const [trades, setTrades] = useState<Trade[]>([])
     const [allPlayers, setAllPlayers] = useState<Record<string, FreeAgent>>({})
 
+    // ── Headers ───────────────────────────────────────────────────────────────
     const headers = useMemo(() => ({
         Authorization: `Bearer ${session?.access_token}`,
         'Content-Type': 'application/json',
     }), [session?.access_token])
 
+    // ── Fetch Helpers ─────────────────────────────────────────────────────────
     const fetchRoster = () =>
         fetch(`${API}/leagues/${activeLeague!.id}/roster`, { headers })
             .then(r => r.json()).then(d => setRoster(Array.isArray(d) ? d : []))
@@ -66,6 +82,7 @@ export default function MyTeamScreen() {
         fetch(`${API}/leagues/${activeLeague!.id}/trades`, { headers })
             .then(r => r.json()).then(d => setTrades(Array.isArray(d) ? d : []))
 
+    // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!activeLeague || !session) return
         Promise.allSettled([
@@ -94,9 +111,11 @@ export default function MyTeamScreen() {
 
     useEffect(() => { if (activeLeague && session) fetchFreeAgents() }, [position])
 
+    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleDrop = async (playerId: string) => {
         await fetch(`${API}/leagues/${activeLeague!.id}/roster/drop`, {
-            method: 'POST', headers,
+            method: 'POST',
+            headers,
             body: JSON.stringify({ player_id: playerId, week: CURRENT_WEEK }),
         })
         setDropping(null)
@@ -106,7 +125,8 @@ export default function MyTeamScreen() {
     const handleAdd = async (playerId: string) => {
         setAddError('')
         const res = await fetch(`${API}/leagues/${activeLeague!.id}/roster/add`, {
-            method: 'POST', headers,
+            method: 'POST',
+            headers,
             body: JSON.stringify({ player_id: playerId, drop_player_id: null, week: CURRENT_WEEK }),
         })
         const data = await res.json()
@@ -115,10 +135,10 @@ export default function MyTeamScreen() {
         fetchFreeAgents()
     }
 
-
     const handleRespondTrade = async (tradeId: string, action: string) => {
         await fetch(`${API}/leagues/${activeLeague!.id}/trades/${tradeId}`, {
-            method: 'PATCH', headers,
+            method: 'PATCH',
+            headers,
             body: JSON.stringify({ action }),
         })
         fetchTrades()
@@ -130,26 +150,26 @@ export default function MyTeamScreen() {
             Object.entries(lineup).filter(([_, id]) => id)
         )
         await fetch(`${API}/leagues/${activeLeague!.id}/lineup`, {
-            method: 'POST', headers,
+            method: 'POST',
+            headers,
             body: JSON.stringify({ week: CURRENT_WEEK, slots }),
         })
         setLineupSaved(true)
         setTimeout(() => setLineupSaved(false), 2000)
     }
-    
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
     const playerName = (id: string) => allPlayers[id]?.name || id.slice(0, 8)
+
     const eligibleForSlot = (slot: string) => {
         if (slot === 'FLEX') return roster.filter(p => ['RB', 'WR', 'TE'].includes(p.position))
         if (slot === 'BN') return roster
         return roster.filter(p => p.position === slot)
     }
-    
+
     const incoming = trades.filter(t => t.opponent_id === user?.id && t.status === 'pending')
     const outgoing = trades.filter(t => t.proposer_id === user?.id && t.status === 'pending')
     const history = trades.filter(t => t.status !== 'pending')
-
-    const POSITIONS = ['', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF']
 
     const tabStyle = (t: Tab) => ({
         flex: 1,
@@ -159,8 +179,11 @@ export default function MyTeamScreen() {
         borderBottomColor: tab === t ? theme.accent : 'transparent',
     })
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>
+
+            {/* ── Header ── */}
             <View style={[styles.header, { borderBottomColor: theme.borderSubtle }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
@@ -169,13 +192,18 @@ export default function MyTeamScreen() {
                 <View style={{ width: 60 }} />
             </View>
 
+            {/* ── Tab Bar ── */}
             <View style={[styles.tabs, { borderBottomColor: theme.borderSubtle }]}>
                 {(['roster', 'free-agents', 'trades', 'draft'] as Tab[]).map(t => (
                     <TouchableOpacity key={t} style={tabStyle(t)} onPress={() => {
                         if (t === 'draft') { navigation.navigate('Draft' as never); return }
                         setTab(t)
                     }}>
-                        <Text style={{ color: tab === t ? theme.accent : theme.textDim, fontSize: 13, fontWeight: tab === t ? 'bold' : 'normal' }}>
+                        <Text style={{
+                            color: tab === t ? theme.accent : theme.textDim,
+                            fontSize: 13,
+                            fontWeight: tab === t ? 'bold' : 'normal',
+                        }}>
                             {t === 'free-agents' ? 'Free Agents' : t.charAt(0).toUpperCase() + t.slice(1)}
                             {t === 'trades' && incoming.length > 0 ? ` (${incoming.length})` : ''}
                         </Text>
@@ -187,6 +215,7 @@ export default function MyTeamScreen() {
                 <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
             ) : (
                 <>
+                    {/* ── Roster Tab ── */}
                     {tab === 'roster' && (
                         <ScrollView contentContainerStyle={styles.list}>
                             <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>LINEUP — WEEK {CURRENT_WEEK}</Text>
@@ -194,7 +223,11 @@ export default function MyTeamScreen() {
                                 const playerId = lineup[slot]
                                 const player = roster.find(p => p.player_id === playerId)
                                 return (
-                                    <TouchableOpacity key={slot} onPress={() => setSelectedSlot(slot)} style={[styles.slotRow, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                                    <TouchableOpacity
+                                        key={slot}
+                                        onPress={() => setSelectedSlot(slot)}
+                                        style={[styles.slotRow, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+                                    >
                                         <Text style={[styles.slotLabel, { color: theme.accent }]}>{slot}</Text>
                                         <Text style={{ color: player ? theme.text : theme.textDim, flex: 1, fontSize: 14 }}>
                                             {player ? `${player.name} · ${player.position}` : 'Tap to set'}
@@ -214,53 +247,76 @@ export default function MyTeamScreen() {
                             </TouchableOpacity>
 
                             <Text style={[styles.sectionLabel, { color: theme.textMuted, marginTop: 24 }]}>STARTERS</Text>
-                            {roster.filter(p => Object.entries(lineup).some(([slot, id]) => id === p.player_id && slot !== 'BN')).map(p => (
-                                <View key={p.player_id} style={[styles.playerRow, { backgroundColor: theme.bgCard, borderColor: theme.accent }]}>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ color: theme.text, fontSize: 14, fontWeight: 'bold' }}>{p.name}</Text>
-                                        <Text style={{ color: theme.textDim, fontSize: 12 }}>{p.position} · {p.nfl_team || 'FA'}</Text>
+                            {roster
+                                .filter(p => Object.entries(lineup).some(([slot, id]) => id === p.player_id && slot !== 'BN'))
+                                .map(p => (
+                                    <View key={p.player_id} style={[styles.playerRow, { backgroundColor: theme.bgCard, borderColor: theme.accent }]}>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ color: theme.text, fontSize: 14, fontWeight: 'bold' }}>{p.name}</Text>
+                                            <Text style={{ color: theme.textDim, fontSize: 12 }}>{p.position} · {p.nfl_team || 'FA'}</Text>
+                                        </View>
                                     </View>
-                                </View>
-                            ))}
+                                ))}
 
                             <Text style={[styles.sectionLabel, { color: theme.textMuted, marginTop: 16 }]}>BENCH</Text>
-                            {roster.filter(p => !Object.entries(lineup).some(([slot, id]) => id === p.player_id && slot !== 'BN')).map(p => (
-                                <View key={p.player_id} style={[styles.playerRow, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ color: theme.text, fontSize: 14, fontWeight: 'bold' }}>{p.name}</Text>
-                                        <Text style={{ color: theme.textDim, fontSize: 12 }}>{p.position} · {p.nfl_team || 'FA'}</Text>
-                                    </View>
-                                    {dropping === p.player_id ? (
-                                        <View style={{ flexDirection: 'row', gap: 8 }}>
-                                            <TouchableOpacity onPress={() => handleDrop(p.player_id)} style={[styles.smallBtn, { backgroundColor: theme.danger }]}>
-                                                <Text style={{ color: '#fff', fontSize: 12 }}>Confirm</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => setDropping(null)} style={[styles.smallBtn, { backgroundColor: theme.bgCard, borderColor: theme.border, borderWidth: 1 }]}>
-                                                <Text style={{ color: theme.textMuted, fontSize: 12 }}>Cancel</Text>
-                                            </TouchableOpacity>
+                            {roster
+                                .filter(p => !Object.entries(lineup).some(([slot, id]) => id === p.player_id && slot !== 'BN'))
+                                .map(p => (
+                                    <View key={p.player_id} style={[styles.playerRow, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ color: theme.text, fontSize: 14, fontWeight: 'bold' }}>{p.name}</Text>
+                                            <Text style={{ color: theme.textDim, fontSize: 12 }}>{p.position} · {p.nfl_team || 'FA'}</Text>
                                         </View>
-                                    ) : (
-                                        <TouchableOpacity onPress={() => setDropping(p.player_id)} style={[styles.smallBtn, { borderColor: theme.danger, borderWidth: 1 }]}>
-                                            <Text style={{ color: theme.danger, fontSize: 12 }}>Drop</Text>
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                            ))}
-
+                                        {dropping === p.player_id ? (
+                                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                                <TouchableOpacity
+                                                    onPress={() => handleDrop(p.player_id)}
+                                                    style={[styles.smallBtn, { backgroundColor: theme.danger }]}
+                                                >
+                                                    <Text style={{ color: '#fff', fontSize: 12 }}>Confirm</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    onPress={() => setDropping(null)}
+                                                    style={[styles.smallBtn, { backgroundColor: theme.bgCard, borderColor: theme.border, borderWidth: 1 }]}
+                                                >
+                                                    <Text style={{ color: theme.textMuted, fontSize: 12 }}>Cancel</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        ) : (
+                                            <TouchableOpacity
+                                                onPress={() => setDropping(p.player_id)}
+                                                style={[styles.smallBtn, { borderColor: theme.danger, borderWidth: 1 }]}
+                                            >
+                                                <Text style={{ color: theme.danger, fontSize: 12 }}>Drop</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                ))}
                         </ScrollView>
                     )}
 
+                    {/* ── Free Agents Tab ── */}
                     {tab === 'free-agents' && (
                         <View style={{ flex: 1 }}>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                style={styles.filterRow}
+                                contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}
+                            >
                                 {addError ? <Text style={{ color: theme.danger, padding: 16, fontSize: 13 }}>{addError}</Text> : null}
                                 {POSITIONS.map(pos => (
                                     <TouchableOpacity
                                         key={pos}
-                                        style={[styles.filterBtn, { backgroundColor: position === pos ? theme.accent : theme.bgCard, borderColor: position === pos ? theme.accent : theme.border }]}
+                                        style={[styles.filterBtn, {
+                                            backgroundColor: position === pos ? theme.accent : theme.bgCard,
+                                            borderColor: position === pos ? theme.accent : theme.border,
+                                        }]}
                                         onPress={() => setPosition(pos)}
                                     >
-                                        <Text style={{ color: position === pos ? '#000' : theme.textMuted, fontSize: 12 }}>{pos || 'ALL'}</Text>
+                                        <Text style={{ color: position === pos ? '#000' : theme.textMuted, fontSize: 12 }}>
+                                            {pos || 'ALL'}
+                                        </Text>
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
@@ -274,7 +330,10 @@ export default function MyTeamScreen() {
                                             <Text style={{ color: theme.text, fontSize: 14, fontWeight: 'bold' }}>{item.name}</Text>
                                             <Text style={{ color: theme.textDim, fontSize: 12 }}>{item.position} · {item.nfl_team || 'FA'}</Text>
                                         </View>
-                                        <TouchableOpacity onPress={() => handleAdd(item.id)} style={[styles.smallBtn, { backgroundColor: theme.accent }]}>
+                                        <TouchableOpacity
+                                            onPress={() => handleAdd(item.id)}
+                                            style={[styles.smallBtn, { backgroundColor: theme.accent }]}
+                                        >
                                             <Text style={{ color: '#000', fontSize: 12, fontWeight: 'bold' }}>Add</Text>
                                         </TouchableOpacity>
                                     </View>
@@ -283,6 +342,7 @@ export default function MyTeamScreen() {
                         </View>
                     )}
 
+                    {/* ── Trades Tab ── */}
                     {tab === 'trades' && (
                         <ScrollView contentContainerStyle={styles.list}>
                             {incoming.length > 0 && (
@@ -298,10 +358,16 @@ export default function MyTeamScreen() {
                                                 They want: {t.request_player_ids.map(playerName).join(', ')}
                                             </Text>
                                             <View style={{ flexDirection: 'row', gap: 8 }}>
-                                                <TouchableOpacity onPress={() => handleRespondTrade(t.id, 'accept')} style={[styles.smallBtn, { backgroundColor: theme.accent, flex: 1 }]}>
+                                                <TouchableOpacity
+                                                    onPress={() => handleRespondTrade(t.id, 'accept')}
+                                                    style={[styles.smallBtn, { backgroundColor: theme.accent, flex: 1 }]}
+                                                >
                                                     <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>Accept</Text>
                                                 </TouchableOpacity>
-                                                <TouchableOpacity onPress={() => handleRespondTrade(t.id, 'reject')} style={[styles.smallBtn, { borderColor: theme.danger, borderWidth: 1, flex: 1 }]}>
+                                                <TouchableOpacity
+                                                    onPress={() => handleRespondTrade(t.id, 'reject')}
+                                                    style={[styles.smallBtn, { borderColor: theme.danger, borderWidth: 1, flex: 1 }]}
+                                                >
                                                     <Text style={{ color: theme.danger, fontSize: 13 }}>Reject</Text>
                                                 </TouchableOpacity>
                                             </View>
@@ -322,7 +388,10 @@ export default function MyTeamScreen() {
                                             <Text style={{ color: theme.text, fontSize: 13, marginBottom: 12 }}>
                                                 Requesting: {t.request_player_ids.map(playerName).join(', ')}
                                             </Text>
-                                            <TouchableOpacity onPress={() => handleRespondTrade(t.id, 'cancel')} style={[styles.smallBtn, { borderColor: theme.border, borderWidth: 1 }]}>
+                                            <TouchableOpacity
+                                                onPress={() => handleRespondTrade(t.id, 'cancel')}
+                                                style={[styles.smallBtn, { borderColor: theme.border, borderWidth: 1 }]}
+                                            >
                                                 <Text style={{ color: theme.textMuted, fontSize: 13 }}>Cancel</Text>
                                             </TouchableOpacity>
                                         </View>
@@ -344,16 +413,27 @@ export default function MyTeamScreen() {
                             )}
 
                             {incoming.length === 0 && outgoing.length === 0 && history.length === 0 && (
-                                <Text style={{ color: theme.textDim, textAlign: 'center', marginTop: 40, fontSize: 14 }}>No trades yet</Text>
+                                <Text style={{ color: theme.textDim, textAlign: 'center', marginTop: 40, fontSize: 14 }}>
+                                    No trades yet
+                                </Text>
                             )}
                         </ScrollView>
                     )}
                 </>
             )}
+
+            {/* ── Slot Picker Sheet ── */}
             {selectedSlot && (
                 <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }]}>
                     <View style={{ backgroundColor: theme.bgCard, borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '70%' }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.borderSubtle }}>
+                        <View style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: 16,
+                            borderBottomWidth: 1,
+                            borderBottomColor: theme.borderSubtle,
+                        }}>
                             <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 16 }}>Set {selectedSlot}</Text>
                             <TouchableOpacity onPress={() => setSelectedSlot(null)}>
                                 <Text style={{ color: theme.textDim }}>Cancel</Text>
@@ -365,7 +445,10 @@ export default function MyTeamScreen() {
                             contentContainerStyle={{ padding: 12, gap: 8 }}
                             renderItem={({ item }) => (
                                 <TouchableOpacity
-                                    style={[styles.playerRow, { backgroundColor: lineup[selectedSlot] === item.player_id ? theme.accentDark : theme.bg, borderColor: lineup[selectedSlot] === item.player_id ? theme.accent : theme.border }]}
+                                    style={[styles.playerRow, {
+                                        backgroundColor: lineup[selectedSlot] === item.player_id ? theme.accentDark : theme.bg,
+                                        borderColor: lineup[selectedSlot] === item.player_id ? theme.accent : theme.border,
+                                    }]}
                                     onPress={() => {
                                         setLineup(prev => ({ ...prev, [selectedSlot]: item.player_id }))
                                         setSelectedSlot(null)
@@ -389,6 +472,7 @@ export default function MyTeamScreen() {
     )
 }
 
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
@@ -399,13 +483,24 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         borderBottomWidth: 1,
     },
-    title: { fontSize: 17, fontWeight: 'bold' },
+    title: {
+        fontSize: 17,
+        fontWeight: 'bold',
+    },
     tabs: {
         flexDirection: 'row',
         borderBottomWidth: 1,
     },
-    list: { padding: 16, gap: 8 },
-    sectionLabel: { fontSize: 11, letterSpacing: 1, marginBottom: 8, marginTop: 4 },
+    list: {
+        padding: 16,
+        gap: 8,
+    },
+    sectionLabel: {
+        fontSize: 11,
+        letterSpacing: 1,
+        marginBottom: 8,
+        marginTop: 4,
+    },
     slotRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -414,7 +509,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         gap: 12,
     },
-    slotLabel: { width: 40, fontSize: 12, fontWeight: 'bold' },
+    slotLabel: {
+        width: 40,
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
     saveBtn: {
         padding: 14,
         borderRadius: 8,
@@ -435,7 +534,9 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         alignItems: 'center',
     },
-    filterRow: { paddingVertical: 12 },
+    filterRow: {
+        paddingVertical: 12,
+    },
     filterBtn: {
         paddingHorizontal: 14,
         paddingVertical: 8,

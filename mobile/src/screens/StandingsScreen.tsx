@@ -1,29 +1,43 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native'
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    ActivityIndicator,
+    TouchableOpacity,
+} from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLeague } from '../contexts/LeagueContext'
 
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type Standing = {
     user_id: string
-    
     wins: number
     losses: number
     points_for: number
 }
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
 
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function StandingsScreen() {
+
+    // ── Context ───────────────────────────────────────────────────────────────
     const navigation = useNavigation()
     const { session } = useAuth()
     const { theme } = useTheme()
     const { activeLeague, getTeamName } = useLeague()
 
+    // ── State ─────────────────────────────────────────────────────────────────
     const [standings, setStandings] = useState<Standing[]>([])
     const [loading, setLoading] = useState(true)
 
+    // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!activeLeague || !session) return
         fetch(`${API}/leagues/${activeLeague.id}/standings`, {
@@ -34,8 +48,11 @@ export default function StandingsScreen() {
             .catch(() => setLoading(false))
     }, [activeLeague?.id, session])
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>
+
+            {/* ── Header ── */}
             <View style={[styles.header, { borderBottomColor: theme.borderSubtle }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
@@ -65,7 +82,7 @@ export default function StandingsScreen() {
                                 {index + 1}
                             </Text>
                             <Text style={[styles.teamName, { color: theme.text }]} numberOfLines={1}>
-                            {getTeamName(item.user_id)}
+                                {getTeamName(item.user_id)}
                             </Text>
                             <Text style={[styles.record, { color: theme.textMuted }]}>
                                 {item.wins}-{item.losses}
@@ -81,6 +98,7 @@ export default function StandingsScreen() {
     )
 }
 
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',

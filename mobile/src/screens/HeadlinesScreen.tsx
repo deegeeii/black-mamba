@@ -1,3 +1,4 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react'
 import {
     View,
@@ -11,20 +12,28 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import { useTheme } from '../contexts/ThemeContext'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
 
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type Headline = {
     headline: string
     description: string
     link: string
 }
 
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function HeadlinesScreen() {
+
+    // ── Context ───────────────────────────────────────────────────────────────
     const navigation = useNavigation()
     const { theme } = useTheme()
+
+    // ── State ─────────────────────────────────────────────────────────────────
     const [headlines, setHeadlines] = useState<Headline[]>([])
     const [loading, setLoading] = useState(true)
 
+    // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
         fetch(`${API}/headlines`)
             .then(r => r.json())
@@ -35,8 +44,11 @@ export default function HeadlinesScreen() {
             .catch(() => setLoading(false))
     }, [])
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>
+
+            {/* ── Header ── */}
             <View style={[styles.header, { borderBottomColor: theme.borderSubtle }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
@@ -79,6 +91,7 @@ export default function HeadlinesScreen() {
     )
 }
 
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
@@ -89,8 +102,14 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         borderBottomWidth: 1,
     },
-    title: { fontSize: 17, fontWeight: 'bold' },
-    list: { padding: 16, gap: 12 },
+    title: {
+        fontSize: 17,
+        fontWeight: 'bold',
+    },
+    list: {
+        padding: 16,
+        gap: 12,
+    },
     card: {
         borderWidth: 1,
         borderRadius: 10,
@@ -110,5 +129,9 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'bold',
     },
-    empty: { textAlign: 'center', marginTop: 60, fontSize: 14 },
+    empty: {
+        textAlign: 'center',
+        marginTop: 60,
+        fontSize: 14,
+    },
 })

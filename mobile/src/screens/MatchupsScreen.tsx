@@ -1,13 +1,29 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native'
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    ActivityIndicator,
+    TouchableOpacity,
+} from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLeague } from '../contexts/LeagueContext'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
 const CURRENT_WEEK = 1
 
+const ROUND_LABELS: Record<string, string> = {
+    wildcard: 'Wild Card',
+    semifinal: 'Semifinal',
+    championship: 'Championship',
+}
+
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type Matchup = {
     id: string
     home_user_id: string
@@ -30,25 +46,28 @@ type PlayoffMatchup = {
 }
 
 type GameScore = {
-    home_team: string; home_name: string; home_score: string
-    away_team: string; away_name: string; away_score: string
-    status: string; completed: boolean; period: number; clock: string
+    home_team: string
+    home_name: string
+    home_score: string
+    away_team: string
+    away_name: string
+    away_score: string
+    status: string
+    completed: boolean
+    period: number
+    clock: string
 }
 
-
-const ROUND_LABELS: Record<string, string> = {
-    wildcard: 'Wild Card',
-    semifinal: 'Semifinal',
-    championship: 'Championship',
-}
-
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function MatchupsScreen() {
+
+    // ── Context ───────────────────────────────────────────────────────────────
     const navigation = useNavigation()
     const { session, user } = useAuth()
     const { theme } = useTheme()
     const { activeLeague, getTeamName } = useLeague()
-    
 
+    // ── State ─────────────────────────────────────────────────────────────────
     const [tab, setTab] = useState<'matchups' | 'playoffs' | 'live' | 'scores'>('matchups')
     const [matchups, setMatchups] = useState<Matchup[]>([])
     const [playoffs, setPlayoffs] = useState<PlayoffMatchup[]>([])
@@ -60,9 +79,9 @@ export default function MatchupsScreen() {
     const [scores, setScores] = useState<{ user_id: string; total_points: number }[]>([])
     const [scoresLoading, setScoresLoading] = useState(false)
 
-
     const headers = { Authorization: `Bearer ${session?.access_token}` }
 
+    // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!activeLeague || !session) return
         setLoading(true)
@@ -104,9 +123,8 @@ export default function MatchupsScreen() {
             })
             .catch(() => setScoresLoading(false))
     }, [tab, week, activeLeague?.id, session])
-    
-    
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
     const isMyMatchup = (m: Matchup | PlayoffMatchup) =>
         m.home_user_id === user?.id || m.away_user_id === user?.id
 
@@ -119,8 +137,11 @@ export default function MatchupsScreen() {
 
     const roundOrder = ['wildcard', 'semifinal', 'championship']
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>
+
+            {/* ── Header ── */}
             <View style={[styles.header, { borderBottomColor: theme.borderSubtle }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
@@ -129,6 +150,7 @@ export default function MatchupsScreen() {
                 <View style={{ width: 60 }} />
             </View>
 
+            {/* ── Tab Bar ── */}
             <View style={[styles.tabRow, { borderBottomColor: theme.borderSubtle }]}>
                 {(['matchups', 'playoffs', 'live', 'scores'] as const).map(t => (
                     <TouchableOpacity
@@ -136,13 +158,18 @@ export default function MatchupsScreen() {
                         style={[styles.tab, tab === t && { borderBottomColor: theme.accent, borderBottomWidth: 2 }]}
                         onPress={() => setTab(t)}
                     >
-                        <Text style={{ color: tab === t ? theme.accent : theme.textDim, fontWeight: tab === t ? 'bold' : 'normal', fontSize: 14 }}>
+                        <Text style={{
+                            color: tab === t ? theme.accent : theme.textDim,
+                            fontWeight: tab === t ? 'bold' : 'normal',
+                            fontSize: 14,
+                        }}>
                             {t === 'matchups' ? 'Season' : t === 'playoffs' ? 'Playoffs' : t === 'live' ? 'Live' : 'Scores'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
+            {/* ── Season Tab ── */}
             {tab === 'matchups' ? (
                 <>
                     <View style={styles.weekRow}>
@@ -174,10 +201,15 @@ export default function MatchupsScreen() {
                                         borderColor: isMine ? theme.accent : theme.border,
                                         borderWidth: isMine ? 1.5 : 1,
                                     }]}>
-                                        {isMine && <Text style={[styles.myTag, { color: theme.accent }]}>YOUR MATCHUP</Text>}
+                                        {isMine && (
+                                            <Text style={[styles.myTag, { color: theme.accent }]}>YOUR MATCHUP</Text>
+                                        )}
                                         <View style={styles.matchRow}>
                                             <View style={styles.teamCol}>
-                                                <Text style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]} numberOfLines={1}>
+                                                <Text
+                                                    style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]}
+                                                    numberOfLines={1}
+                                                >
                                                     {getTeamName(item.home_user_id)}
                                                 </Text>
                                                 <Text style={[styles.score, { color: homeWon ? theme.accent : theme.textMuted }]}>
@@ -186,7 +218,10 @@ export default function MatchupsScreen() {
                                             </View>
                                             <Text style={[styles.vs, { color: theme.textDim }]}>vs</Text>
                                             <View style={[styles.teamCol, styles.teamColRight]}>
-                                                <Text style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]} numberOfLines={1}>
+                                                <Text
+                                                    style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]}
+                                                    numberOfLines={1}
+                                                >
                                                     {getTeamName(item.away_user_id)}
                                                 </Text>
                                                 <Text style={[styles.score, { color: awayWon ? theme.accent : theme.textMuted }]}>
@@ -203,7 +238,9 @@ export default function MatchupsScreen() {
                         />
                     )}
                 </>
+
             ) : tab === 'playoffs' ? (
+                // ── Playoffs Tab ──
                 playoffsLoading ? (
                     <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
                 ) : playoffs.length === 0 ? (
@@ -229,10 +266,15 @@ export default function MatchupsScreen() {
                                             borderWidth: isMine ? 1.5 : 1,
                                             marginBottom: 10,
                                         }]}>
-                                            {isMine && <Text style={[styles.myTag, { color: theme.accent }]}>YOUR MATCHUP</Text>}
+                                            {isMine && (
+                                                <Text style={[styles.myTag, { color: theme.accent }]}>YOUR MATCHUP</Text>
+                                            )}
                                             <View style={styles.matchRow}>
                                                 <View style={styles.teamCol}>
-                                                    <Text style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]} numberOfLines={1}>
+                                                    <Text
+                                                        style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]}
+                                                        numberOfLines={1}
+                                                    >
                                                         {getTeamName(m.home_user_id)}
                                                     </Text>
                                                     <Text style={[styles.score, { color: homeWon ? theme.accent : theme.textMuted }]}>
@@ -241,7 +283,10 @@ export default function MatchupsScreen() {
                                                 </View>
                                                 <Text style={[styles.vs, { color: theme.textDim }]}>vs</Text>
                                                 <View style={[styles.teamCol, styles.teamColRight]}>
-                                                    <Text style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]} numberOfLines={1}>
+                                                    <Text
+                                                        style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]}
+                                                        numberOfLines={1}
+                                                    >
                                                         {getTeamName(m.away_user_id)}
                                                     </Text>
                                                     <Text style={[styles.score, { color: awayWon ? theme.accent : theme.textMuted }]}>
@@ -261,7 +306,9 @@ export default function MatchupsScreen() {
                         )}
                     />
                 )
+
             ) : tab === 'live' ? (
+                // ── Live Tab ──
                 gamesLoading ? (
                     <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
                 ) : games.length === 0 ? (
@@ -280,7 +327,12 @@ export default function MatchupsScreen() {
                                         <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 26 }}>{g.away_score}</Text>
                                     </View>
                                     <View style={{ alignItems: 'center', paddingHorizontal: 12 }}>
-                                        <Text style={{ color: g.completed ? theme.textDim : theme.accent, fontSize: 11, fontWeight: 'bold', letterSpacing: 1 }}>
+                                        <Text style={{
+                                            color: g.completed ? theme.textDim : theme.accent,
+                                            fontSize: 11,
+                                            fontWeight: 'bold',
+                                            letterSpacing: 1,
+                                        }}>
                                             {g.completed ? 'FINAL' : g.status === 'Scheduled' ? g.status : `Q${g.period} ${g.clock}`}
                                         </Text>
                                         <Text style={{ color: theme.textDim, fontSize: 11, marginTop: 4 }}>@</Text>
@@ -295,7 +347,9 @@ export default function MatchupsScreen() {
                         )}
                     />
                 )
+
             ) : (
+                // ── Scores Tab ──
                 scoresLoading ? (
                     <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
                 ) : scores.length === 0 ? (
@@ -316,11 +370,19 @@ export default function MatchupsScreen() {
                             }]}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                                     <Text style={{ color: theme.textDim, fontSize: 13, width: 20 }}>{i + 1}</Text>
-                                    <Text style={{ color: s.user_id === user?.id ? theme.accent : theme.text, fontWeight: s.user_id === user?.id ? 'bold' : 'normal', fontSize: 14 }}>
+                                    <Text style={{
+                                        color: s.user_id === user?.id ? theme.accent : theme.text,
+                                        fontWeight: s.user_id === user?.id ? 'bold' : 'normal',
+                                        fontSize: 14,
+                                    }}>
                                         {getTeamName(s.user_id)}
                                     </Text>
                                 </View>
-                                <Text style={{ color: s.user_id === user?.id ? theme.accent : theme.text, fontWeight: 'bold', fontSize: 22 }}>
+                                <Text style={{
+                                    color: s.user_id === user?.id ? theme.accent : theme.text,
+                                    fontWeight: 'bold',
+                                    fontSize: 22,
+                                }}>
                                     {s.total_points.toFixed(1)}
                                 </Text>
                             </View>
@@ -332,7 +394,7 @@ export default function MatchupsScreen() {
     )
 }
 
-
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
@@ -343,7 +405,10 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         borderBottomWidth: 1,
     },
-    title: { fontSize: 17, fontWeight: 'bold' },
+    title: {
+        fontSize: 17,
+        fontWeight: 'bold',
+    },
     tabRow: {
         flexDirection: 'row',
         borderBottomWidth: 1,
@@ -359,7 +424,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: 16,
     },
-    list: { padding: 16, gap: 12 },
+    list: {
+        padding: 16,
+        gap: 12,
+    },
     roundLabel: {
         fontSize: 11,
         fontWeight: 'bold',
@@ -367,14 +435,47 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         marginBottom: 8,
     },
-    card: { borderRadius: 10, padding: 16 },
-    myTag: { fontSize: 10, fontWeight: 'bold', letterSpacing: 1, marginBottom: 8 },
-    matchRow: { flexDirection: 'row', alignItems: 'center' },
-    teamCol: { flex: 1 },
-    teamColRight: { alignItems: 'flex-end' },
-    teamName: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
-    score: { fontSize: 22, fontWeight: 'bold' },
-    vs: { fontSize: 12, paddingHorizontal: 12 },
-    status: { fontSize: 11, marginTop: 10, textAlign: 'center' },
-    empty: { textAlign: 'center', marginTop: 60, fontSize: 14 },
+    card: {
+        borderRadius: 10,
+        padding: 16,
+    },
+    myTag: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+        marginBottom: 8,
+    },
+    matchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    teamCol: {
+        flex: 1,
+    },
+    teamColRight: {
+        alignItems: 'flex-end',
+    },
+    teamName: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    score: {
+        fontSize: 22,
+        fontWeight: 'bold',
+    },
+    vs: {
+        fontSize: 12,
+        paddingHorizontal: 12,
+    },
+    status: {
+        fontSize: 11,
+        marginTop: 10,
+        textAlign: 'center',
+    },
+    empty: {
+        textAlign: 'center',
+        marginTop: 60,
+        fontSize: 14,
+    },
 })

@@ -1,3 +1,4 @@
+// ── DARK THEME ─────────────────────────────────────────────────────────────────
 export const darkTheme = {
     bg: '#0a0a0a',
     bgDeep: '#050505',
@@ -14,6 +15,7 @@ export const darkTheme = {
     warning: '#ffcc44',
 }
 
+// ── LIGHT THEME ────────────────────────────────────────────────────────────────
 export const lightTheme = {
     bg: '#f5f5f5',
     bgDeep: '#ebebeb',
@@ -30,4 +32,5 @@ export const lightTheme = {
     warning: '#cc9900',
 }
 
+// ── TYPE ───────────────────────────────────────────────────────────────────────
 export type Theme = typeof darkTheme

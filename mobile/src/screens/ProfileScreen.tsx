@@ -1,26 +1,60 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Switch, ActivityIndicator } from 'react-native'
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    TextInput,
+    ScrollView,
+    Switch,
+    ActivityIndicator,
+    Linking,
+    Alert,
+} from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLeague } from '../contexts/LeagueContext'
 import { supabase } from '../lib/supabase'
 
+const API = process.env.EXPO_PUBLIC_API_URL
+
+
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function ProfileScreen() {
+
+    // ── Context ───────────────────────────────────────────────────────────────
     const navigation = useNavigation()
-    const { user, signOut } = useAuth()
+    const { user, signOut, session } = useAuth()
     const { theme, isDark, toggleTheme } = useTheme()
     const { leagues, activeLeague, setActiveLeague } = useLeague()
 
+    // ── State ─────────────────────────────────────────────────────────────────
     const [username, setUsername] = useState('')
     const [teamName, setTeamName] = useState('')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
+    const [payoutStatus, setPayoutStatus] = useState<{
+        has_account: boolean
+        account_id?: string
+        onboarding_complete?: boolean
+        ready_to_receive_payments?: boolean
+    } | null>(null)
+    const [payoutName, setPayoutName] = useState('')
+    const [payoutEmail, setPayoutEmail] = useState('')
+    const [payoutBusy, setPayoutBusy] = useState(false)
+    
 
+    // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!user) return
-        supabase.from('profiles').select('username, team_name').eq('id', user.id).single()
+        supabase
+            .from('profiles')
+            .select('username, team_name')
+            .eq('id', user.id)
+            .single()
             .then(({ data }) => {
                 if (data) {
                     setUsername(data.username || '')
@@ -30,23 +64,96 @@ export default function ProfileScreen() {
             })
     }, [user?.id])
 
+    useEffect(() => {
+        if (!session) return
+        fetch(`${API}/connect/accounts/status`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+            .then(r => r.json())
+            .then(setPayoutStatus)
+            .catch(() => setPayoutStatus({ has_account: false }))
+    }, [session?.access_token])
+    
+
+    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleSave = async () => {
         if (!user) return
         setSaving(true)
-        const { error } = await supabase.from('profiles').update({ username, team_name: teamName }).eq('id', user.id)
+        const { error } = await supabase
+            .from('profiles')
+            .update({ username, team_name: teamName })
+            .eq('id', user.id)
         if (error) console.log('save error:', error.message)
         setSaving(false)
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
-        const { data: { session: sbSession } } = await supabase.auth.getSession()
-        console.log('supabase session uid:', sbSession?.user?.id)
-        console.log('auth user id:', user?.id)
+    }
 
+    const handleCreatePayout = () => {
+        if (!payoutName.trim() || !payoutEmail.trim()) return
+        Alert.alert(
+            'Set Up Real Money Payouts',
+            'This connects your account to Stripe for real-money payouts. Stripe requires identity verification. Continue?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Continue', onPress: async () => {
+                        setPayoutBusy(true)
+                        try {
+                            const res = await fetch(`${API}/connect/accounts`, {
+                                method: 'POST',
+                                headers: {
+                                    Authorization: `Bearer ${session?.access_token}`,
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ display_name: payoutName, contact_email: payoutEmail }),
+                            })
+                            if (!res.ok) { Alert.alert('Error', 'Could not create account'); return }
+                            const status = await fetch(`${API}/connect/accounts/status`, {
+                                headers: { Authorization: `Bearer ${session?.access_token}` },
+                            })
+                            setPayoutStatus(await status.json())
+                        } catch { Alert.alert('Error', 'Network error') }
+                        finally { setPayoutBusy(false) }
+                    },
+                },
+            ]
+        )
+    }
+    
+    const handleOnboard = () => {
+        Alert.alert(
+            'Open Stripe Verification',
+            "You'll be taken to Stripe in your browser to complete identity verification for payouts.",
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Open', onPress: async () => {
+                        setPayoutBusy(true)
+                        try {
+                            const res = await fetch(`${API}/connect/accounts/onboard`, {
+                                method: 'POST',
+                                headers: { Authorization: `Bearer ${session?.access_token}` },
+                            })
+                            const data = await res.json()
+                            if (data.url) await Linking.openURL(data.url)
+                            else Alert.alert('Error', data.detail || 'No onboarding URL')
+                        } catch { Alert.alert('Error', 'Network error') }
+                        finally { setPayoutBusy(false) }
+                    },
+                },
+            ]
+        )
     }
     
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
-        <ScrollView style={{ flex: 1, backgroundColor: theme.bg }} contentContainerStyle={styles.content}>
+        <ScrollView
+            style={{ flex: 1, backgroundColor: theme.bg }}
+            contentContainerStyle={styles.content}
+        >
+            {/* ── Header ── */}
             <View style={[styles.header, { borderBottomColor: theme.borderSubtle }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
@@ -61,6 +168,7 @@ export default function ProfileScreen() {
                 <>
                     <Text style={[styles.email, { color: theme.textDim }]}>{user?.email}</Text>
 
+                    {/* ── Username ── */}
                     <Text style={[styles.label, { color: theme.textMuted }]}>USERNAME</Text>
                     <TextInput
                         style={[styles.input, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border }]}
@@ -71,6 +179,7 @@ export default function ProfileScreen() {
                         autoCapitalize="none"
                     />
 
+                    {/* ── Team Name ── */}
                     <Text style={[styles.label, { color: theme.textMuted }]}>TEAM NAME</Text>
                     <TextInput
                         style={[styles.input, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border }]}
@@ -80,6 +189,7 @@ export default function ProfileScreen() {
                         placeholderTextColor={theme.textDim}
                     />
 
+                    {/* ── Save Button ── */}
                     <TouchableOpacity
                         style={[styles.saveBtn, { backgroundColor: saved ? theme.accentDark : theme.accent }]}
                         onPress={handleSave}
@@ -94,6 +204,7 @@ export default function ProfileScreen() {
                         )}
                     </TouchableOpacity>
 
+                    {/* ── Appearance ── */}
                     <View style={[styles.section, { borderTopColor: theme.borderSubtle }]}>
                         <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>APPEARANCE</Text>
                         <View style={styles.row}>
@@ -107,6 +218,7 @@ export default function ProfileScreen() {
                         </View>
                     </View>
 
+                    {/* ── League Switcher ── */}
                     <View style={[styles.section, { borderTopColor: theme.borderSubtle }]}>
                         <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>LEAGUE</Text>
                         {leagues.map(l => (
@@ -123,7 +235,77 @@ export default function ProfileScreen() {
                         ))}
                     </View>
 
-                    <TouchableOpacity style={[styles.signOutBtn, { borderColor: theme.danger }]} onPress={signOut}>
+                    {/* ── Payouts ── */}
+                    <View style={[styles.section, { borderTopColor: theme.borderSubtle }]}>
+                        <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>PAYOUTS</Text>
+                        {payoutStatus === null ? (
+                            <ActivityIndicator color={theme.accent} style={{ marginVertical: 8 }} />
+                        ) : !payoutStatus.has_account ? (
+                            <>
+                                <Text style={{ color: theme.textDim, fontSize: 13, marginBottom: 16, lineHeight: 18 }}>
+                                    Connect a Stripe account to receive bet winnings automatically.
+                                </Text>
+                                <TextInput
+                                    style={[styles.payoutInput, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border }]}
+                                    value={payoutName}
+                                    onChangeText={setPayoutName}
+                                    placeholder="Display name"
+                                    placeholderTextColor={theme.textDim}
+                                />
+                                <TextInput
+                                    style={[styles.payoutInput, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border, marginTop: 10 }]}
+                                    value={payoutEmail}
+                                    onChangeText={setPayoutEmail}
+                                    placeholder="Email for Stripe"
+                                    placeholderTextColor={theme.textDim}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                />
+                                <TouchableOpacity
+                                    style={[styles.payoutBtn, { backgroundColor: theme.accent, marginTop: 14, opacity: payoutBusy ? 0.6 : 1 }]}
+                                    onPress={handleCreatePayout}
+                                    disabled={payoutBusy}
+                                >
+                                    <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 14 }}>
+                                        {payoutBusy ? 'Creating...' : 'Create Payout Account'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <>
+                                <View style={styles.row}>
+                                    <Text style={{ color: theme.text, fontSize: 14 }}>Onboarding</Text>
+                                    <Text style={{ color: payoutStatus.onboarding_complete ? theme.accent : theme.warning, fontSize: 13, fontWeight: 'bold' }}>
+                                        {payoutStatus.onboarding_complete ? '✓ Complete' : '⚠ Incomplete'}
+                                    </Text>
+                                </View>
+                                <View style={styles.row}>
+                                    <Text style={{ color: theme.text, fontSize: 14 }}>Payouts</Text>
+                                    <Text style={{ color: payoutStatus.ready_to_receive_payments ? theme.accent : theme.textDim, fontSize: 13, fontWeight: 'bold' }}>
+                                        {payoutStatus.ready_to_receive_payments ? '✓ Active' : '⏳ Pending'}
+                                    </Text>
+                                </View>
+                                {!payoutStatus.onboarding_complete && (
+                                    <TouchableOpacity
+                                        style={[styles.payoutBtn, { backgroundColor: theme.accent, marginTop: 8, opacity: payoutBusy ? 0.6 : 1 }]}
+                                        onPress={handleOnboard}
+                                        disabled={payoutBusy}
+                                    >
+                                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 14 }}>
+                                            {payoutBusy ? 'Opening...' : 'Complete Verification'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
+                            </>
+                        )}
+                    </View>
+
+
+                    {/* ── Sign Out ── */}
+                    <TouchableOpacity
+                        style={[styles.signOutBtn, { borderColor: theme.danger }]}
+                        onPress={signOut}
+                    >
                         <Text style={{ color: theme.danger, fontSize: 14 }}>Sign Out</Text>
                     </TouchableOpacity>
                 </>
@@ -132,6 +314,7 @@ export default function ProfileScreen() {
     )
 }
 
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     content: {
         paddingBottom: 60,
@@ -168,6 +351,17 @@ const styles = StyleSheet.create({
         fontSize: 15,
         marginHorizontal: 24,
     },
+    payoutInput: {
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 14,
+    },
+    payoutBtn: {
+        padding: 14,
+        borderRadius: 8,
+        alignItems: 'center',
+    },    
     saveBtn: {
         margin: 24,
         padding: 16,

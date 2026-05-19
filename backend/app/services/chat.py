@@ -112,3 +112,14 @@ Respond in character:"""
         "bot_trigger": trigger
     }).execute()
     return res.data[0] if res.data else None, None
+
+
+def delete_message(message_id: str, user_id: str):
+    res = supabase.table("league_messages").select("user_id, is_bot").eq("id", message_id).execute()
+    if not res.data:
+        return None, "Message not found"
+    msg = res.data[0]
+    if msg["is_bot"] or msg["user_id"] != user_id:
+        return None, "You can only delete your own messages"
+    supabase.table("league_messages").delete().eq("id", message_id).execute()
+    return {"deleted": True}, None

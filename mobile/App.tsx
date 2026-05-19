@@ -1,16 +1,17 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import 'react-native-url-polyfill/auto'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { ActivityIndicator, View } from 'react-native'
 import { AuthProvider, useAuth } from './src/contexts/AuthContext'
 import { ThemeProvider } from './src/contexts/ThemeContext'
+import { LeagueProvider } from './src/contexts/LeagueContext'
+import { StripeProvider } from '@stripe/stripe-react-native'
 import LoginScreen from './src/screens/LoginScreen'
 import DashboardScreen from './src/screens/DashboardScreen'
 import StandingsScreen from './src/screens/StandingsScreen'
-import { LeagueProvider } from './src/contexts/LeagueContext'
 import MatchupsScreen from './src/screens/MatchupsScreen'
 import ProfileScreen from './src/screens/ProfileScreen'
-import { StripeProvider } from '@stripe/stripe-react-native'
 import BetsScreen from './src/screens/BetsScreen'
 import ChatScreen from './src/screens/ChatScreen'
 import MyTeamScreen from './src/screens/MyTeamScreen'
@@ -20,8 +21,7 @@ import DraftScreen from './src/screens/DraftScreen'
 import LeagueHomeScreen from './src/screens/LeagueHomeScreen'
 import HeadlinesScreen from './src/screens/HeadlinesScreen'
 
-
-
+// ── NAVIGATOR ──────────────────────────────────────────────────────────────────
 const Stack = createNativeStackNavigator()
 
 function RootNavigator() {
@@ -53,7 +53,6 @@ function RootNavigator() {
                             <Stack.Screen name="Draft" component={DraftScreen} />
                             <Stack.Screen name="LeagueHome" component={LeagueHomeScreen} />
                             <Stack.Screen name="Headlines" component={HeadlinesScreen} />
-
                         </>
                     ) : (
                         <Stack.Screen name="Login" component={LoginScreen} />
@@ -64,9 +63,10 @@ function RootNavigator() {
     )
 }
 
+// ── ROOT APP ───────────────────────────────────────────────────────────────────
 export default function App() {
     return (
-        <StripeProvider 
+        <StripeProvider
             publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
             merchantIdentifier="merchant.com.blackmambe"
         >

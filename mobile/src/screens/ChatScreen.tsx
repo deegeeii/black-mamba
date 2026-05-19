@@ -1,8 +1,18 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useEffect, useState, useRef, useCallback } from 'react'
 import {
-    View, Text, StyleSheet, FlatList, TextInput,
-    TouchableOpacity, KeyboardAvoidingView, Platform,
-    ActivityIndicator, Image, Modal, ScrollView,
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    TextInput,
+    TouchableOpacity,
+    KeyboardAvoidingView,
+    Platform,
+    ActivityIndicator,
+    Image,
+    Modal,
+    ScrollView,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
@@ -11,9 +21,10 @@ import { useLeague } from '../contexts/LeagueContext'
 import { supabase } from '../lib/supabase'
 import * as ImagePicker from 'expo-image-picker'
 
-
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
 
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type Message = {
     id: string
     user_id: string | null
@@ -35,6 +46,7 @@ type ActivityItem = {
     created_at: string
 }
 
+// ── HELPERS ────────────────────────────────────────────────────────────────────
 const isImage = (msg: string | null) => {
     if (!msg) return false
     return (
@@ -45,13 +57,16 @@ const isImage = (msg: string | null) => {
     )
 }
 
-
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function ChatScreen() {
+
+    // ── Context ───────────────────────────────────────────────────────────────
     const navigation = useNavigation()
     const { session, user } = useAuth()
     const { theme } = useTheme()
     const { activeLeague, getTeamName } = useLeague()
 
+    // ── State ─────────────────────────────────────────────────────────────────
     const [tab, setTab] = useState<'chat' | 'activity'>('chat')
     const [messages, setMessages] = useState<Message[]>([])
     const [activity, setActivity] = useState<ActivityItem[]>([])
@@ -74,6 +89,7 @@ export default function ChatScreen() {
         'Content-Type': 'application/json',
     }
 
+    // ── Fetch Helpers ─────────────────────────────────────────────────────────
     const fetchMessages = useCallback(() => {
         if (!activeLeague || !session) return
         fetch(`${API}/leagues/${activeLeague.id}/chat`, { headers })
@@ -99,6 +115,7 @@ export default function ChatScreen() {
         }
     }, [activeLeague?.id, session?.access_token])
 
+    // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => { fetchMessages() }, [fetchMessages])
 
     useEffect(() => {
@@ -121,6 +138,7 @@ export default function ChatScreen() {
         return () => { supabase.removeChannel(channel) }
     }, [activeLeague?.id])
 
+    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleSend = async () => {
         if (!text.trim() || !activeLeague || sending) return
         setSending(true)
@@ -173,7 +191,7 @@ export default function ChatScreen() {
             setGifLoading(false)
         }
     }
-    
+
     const sendGif = async (url: string) => {
         if (!activeLeague) return
         setGifOpen(false)
@@ -190,7 +208,7 @@ export default function ChatScreen() {
             // silent
         }
     }
-    
+
     const handleImageUpload = async () => {
         if (!activeLeague) return
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -229,18 +247,19 @@ export default function ChatScreen() {
             setUploading(false)
         }
     }
-    
-    
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
     const formatTime = (ts: string) =>
         new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <KeyboardAvoidingView
             style={{ flex: 1, backgroundColor: theme.bg }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={0}
         >
+            {/* ── Header ── */}
             <View style={[styles.header, { borderBottomColor: theme.borderSubtle }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
@@ -249,16 +268,13 @@ export default function ChatScreen() {
                 <View style={{ width: 60 }} />
             </View>
 
-            {/* Tabs */}
+            {/* ── Tab Bar ── */}
             <View style={[styles.tabBar, { borderBottomColor: theme.border }]}>
                 {(['chat', 'activity'] as const).map(t => (
                     <TouchableOpacity
                         key={t}
                         onPress={() => setTab(t)}
-                        style={[
-                            styles.tabBtn,
-                            { borderBottomColor: tab === t ? theme.accent : 'transparent' },
-                        ]}
+                        style={[styles.tabBtn, { borderBottomColor: tab === t ? theme.accent : 'transparent' }]}
                     >
                         <Text style={{
                             color: tab === t ? theme.accent : theme.textDim,
@@ -271,6 +287,7 @@ export default function ChatScreen() {
                 ))}
             </View>
 
+            {/* ── Chat Tab ── */}
             {tab === 'chat' && (
                 <>
                     {loading ? (
@@ -332,7 +349,7 @@ export default function ChatScreen() {
                         />
                     )}
 
-                    {/* Tray */}
+                    {/* ── Media Tray ── */}
                     {trayOpen && (
                         <View style={[styles.tray, { backgroundColor: theme.bgCard, borderTopColor: theme.border }]}>
                             <TouchableOpacity
@@ -362,10 +379,13 @@ export default function ChatScreen() {
                         </View>
                     )}
 
-                    {/* Input Row */}
+                    {/* ── Input Row ── */}
                     <View style={[styles.inputRow, { backgroundColor: theme.bgDeep, borderTopColor: theme.borderSubtle }]}>
                         <TouchableOpacity
-                            style={[styles.plusBtn, { backgroundColor: trayOpen ? theme.accent : theme.bgCard, borderColor: theme.border }]}
+                            style={[styles.plusBtn, {
+                                backgroundColor: trayOpen ? theme.accent : theme.bgCard,
+                                borderColor: theme.border,
+                            }]}
                             onPress={() => setTrayOpen(o => !o)}
                         >
                             <Text style={{ color: trayOpen ? '#000' : theme.textDim, fontSize: 20, lineHeight: 24 }}>
@@ -390,7 +410,7 @@ export default function ChatScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* GIF Modal */}
+                    {/* ── GIF Modal ── */}
                     <Modal visible={gifOpen} animationType="slide" transparent>
                         <KeyboardAvoidingView
                             style={styles.modalBackdrop}
@@ -414,9 +434,7 @@ export default function ChatScreen() {
                                     >
                                         <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>Go</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={() => { setGifOpen(false); setGifQuery(''); setGifs([]) }}
-                                    >
+                                    <TouchableOpacity onPress={() => { setGifOpen(false); setGifQuery(''); setGifs([]) }}>
                                         <Text style={{ color: theme.textDim, fontSize: 22, lineHeight: 36 }}>×</Text>
                                     </TouchableOpacity>
                                 </View>
@@ -424,7 +442,11 @@ export default function ChatScreen() {
                                 <ScrollView contentContainerStyle={styles.gifGrid}>
                                     {gifs.map(g => (
                                         <TouchableOpacity key={g.id} onPress={() => sendGif(g.url)} style={styles.gifThumb}>
-                                            <Image source={{ uri: g.preview }} style={{ width: '100%', height: 80, borderRadius: 6 }} resizeMode="cover" />
+                                            <Image
+                                                source={{ uri: g.preview }}
+                                                style={{ width: '100%', height: 80, borderRadius: 6 }}
+                                                resizeMode="cover"
+                                            />
                                         </TouchableOpacity>
                                     ))}
                                 </ScrollView>
@@ -434,6 +456,7 @@ export default function ChatScreen() {
                 </>
             )}
 
+            {/* ── Activity Tab ── */}
             {tab === 'activity' && (
                 <View style={{ flex: 1 }}>
                     {activityLoading ? (
@@ -480,6 +503,7 @@ export default function ChatScreen() {
     )
 }
 
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
@@ -490,7 +514,10 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         borderBottomWidth: 1,
     },
-    title: { fontSize: 17, fontWeight: 'bold' },
+    title: {
+        fontSize: 17,
+        fontWeight: 'bold',
+    },
     tabBar: {
         flexDirection: 'row',
         borderBottomWidth: 1,
@@ -501,14 +528,43 @@ const styles = StyleSheet.create({
         borderBottomWidth: 2,
         marginBottom: -1,
     },
-    list: { padding: 16, gap: 8 },
-    msgRow: { alignItems: 'flex-start', maxWidth: '80%' },
-    msgRowMe: { alignSelf: 'flex-end', alignItems: 'flex-end' },
-    senderName: { fontSize: 11, marginBottom: 3, paddingLeft: 4 },
-    bubble: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10 },
-    imageMsg: { width: 200, height: 150, borderRadius: 12 },
-    time: { fontSize: 10, marginTop: 3, paddingHorizontal: 4 },
-    botRow: { alignItems: 'center', marginVertical: 4 },
+    list: {
+        padding: 16,
+        gap: 8,
+    },
+    msgRow: {
+        alignItems: 'flex-start',
+        maxWidth: '80%',
+    },
+    msgRowMe: {
+        alignSelf: 'flex-end',
+        alignItems: 'flex-end',
+    },
+    senderName: {
+        fontSize: 11,
+        marginBottom: 3,
+        paddingLeft: 4,
+    },
+    bubble: {
+        borderRadius: 16,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+    },
+    imageMsg: {
+        width: 200,
+        height: 150,
+        borderRadius: 12,
+        backgroundColor: '#222',
+    },
+    time: {
+        fontSize: 10,
+        marginTop: 3,
+        paddingHorizontal: 4,
+    },
+    botRow: {
+        alignItems: 'center',
+        marginVertical: 4,
+    },
     botBubble: {
         backgroundColor: '#1f1800',
         borderRadius: 10,
@@ -517,9 +573,21 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ffcc44',
     },
-    botName: { color: '#ffcc44', fontSize: 11, fontWeight: 'bold', marginBottom: 4 },
-    botText: { color: '#ffcc44', fontSize: 13 },
-    botTime: { color: '#a08800', fontSize: 10, marginTop: 4 },
+    botName: {
+        color: '#ffcc44',
+        fontSize: 11,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    botText: {
+        color: '#ffcc44',
+        fontSize: 13,
+    },
+    botTime: {
+        color: '#a08800',
+        fontSize: 10,
+        marginTop: 4,
+    },
     inputRow: {
         flexDirection: 'row',
         padding: 12,
@@ -559,6 +627,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    sendBtn: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     modalBackdrop: {
         flex: 1,
         justifyContent: 'flex-end',
@@ -592,18 +667,8 @@ const styles = StyleSheet.create({
     gifThumb: {
         width: '31%',
     },
-
-        sendBtn: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
     activityRow: {
         paddingVertical: 12,
         borderBottomWidth: 1,
     },
-    imageMsg: { width: 200, height: 150, borderRadius: 12, backgroundColor: '#222' },
-
 })

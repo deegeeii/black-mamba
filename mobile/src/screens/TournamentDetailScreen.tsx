@@ -1,12 +1,23 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert } from 'react-native'
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    ActivityIndicator,
+    TouchableOpacity,
+    Alert,
+} from 'react-native'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useLeague } from '../contexts/LeagueContext'
 
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
 
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type Matchup = {
     id: string
     round: number
@@ -17,7 +28,6 @@ type Matchup = {
     winner_user_id: string | null
 }
 
-
 type Entity = {
     id: string
     name: string
@@ -26,8 +36,10 @@ type Entity = {
     picked_by: string | null
 }
 
-
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function TournamentDetailScreen() {
+
+    // ── Context ───────────────────────────────────────────────────────────────
     const navigation = useNavigation()
     const route = useRoute<any>()
     const { tournament } = route.params
@@ -35,6 +47,7 @@ export default function TournamentDetailScreen() {
     const { theme } = useTheme()
     const { getTeamName } = useLeague()
 
+    // ── State ─────────────────────────────────────────────────────────────────
     const [matchups, setMatchups] = useState<Matchup[]>([])
     const [loading, setLoading] = useState(true)
     const [joining, setJoining] = useState(false)
@@ -45,9 +58,9 @@ export default function TournamentDetailScreen() {
     const [tournamentStatus, setTournamentStatus] = useState(tournament.status)
     const [members, setMembers] = useState<{ user_id: string; draft_team_name: string | null }[]>([])
 
-
     const headers = { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' }
 
+    // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
         Promise.allSettled([
             fetch(`${API}/leagues/tournaments/${tournament.id}/matchups`, { headers }).then(r => r.json()),
@@ -59,10 +72,9 @@ export default function TournamentDetailScreen() {
             if (membersRes.status === 'fulfilled') setMembers(Array.isArray(membersRes.value) ? membersRes.value : [])
             setLoading(false)
         }).catch(() => setLoading(false))
-        
     }, [tournament.id])
-    
 
+    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleJoin = async () => {
         setJoining(true)
         try {
@@ -87,23 +99,19 @@ export default function TournamentDetailScreen() {
         } catch {}
     }
 
-    const label = (userId: string | null) => {
-        if (!userId) return 'BYE'
-        const member = members.find(m => m.user_id === userId)
-        return member?.draft_team_name || getTeamName(userId)
-    }
-    
-    
     const handleGenerateDraft = async () => {
         setGeneratingDraft(true)
         await fetch(`${API}/leagues/tournaments/${tournament.id}/draft/generate`, { method: 'POST', headers })
         setGeneratingDraft(false)
         fetchEntities()
     }
-    
+
     const handlePick = async (entityId: string) => {
         setPicking(entityId)
-        const res = await fetch(`${API}/leagues/tournaments/${tournament.id}/draft/pick/${entityId}`, { method: 'POST', headers })
+        const res = await fetch(
+            `${API}/leagues/tournaments/${tournament.id}/draft/pick/${entityId}`,
+            { method: 'POST', headers }
+        )
         if (!res.ok) {
             const data = await res.json()
             Alert.alert('Error', data.detail || 'Pick failed')
@@ -111,11 +119,18 @@ export default function TournamentDetailScreen() {
         setPicking(null)
         fetchEntities()
     }
-    
+
     const handleCloseDraft = async () => {
         await fetch(`${API}/leagues/tournaments/${tournament.id}/draft/close`, { method: 'POST', headers })
         setTournamentStatus('active')
-    }    
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const label = (userId: string | null) => {
+        if (!userId) return 'BYE'
+        const member = members.find(m => m.user_id === userId)
+        return member?.draft_team_name || getTeamName(userId)
+    }
 
     const byRound = matchups.reduce<Record<number, Matchup[]>>((acc, m) => {
         if (!acc[m.round]) acc[m.round] = []
@@ -123,7 +138,7 @@ export default function TournamentDetailScreen() {
         return acc
     }, {})
     const rounds = Object.keys(byRound).map(Number).sort((a, b) => a - b)
-    
+
     const standings = (() => {
         const map: Record<string, { wins: number; points: number }> = {}
         matchups.forEach(m => {
@@ -137,42 +152,65 @@ export default function TournamentDetailScreen() {
             .map(([userId, stats]) => ({ userId, ...stats }))
             .sort((a, b) => b.wins - a.wins || b.points - a.points)
     })()
-    
+
+    // ── JSX ───────────────────────────────────────────────────────────────────
     return (
         <View style={{ flex: 1, backgroundColor: theme.bg }}>
+
+            {/* ── Header ── */}
             <View style={[styles.header, { borderBottomColor: theme.borderSubtle }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>{tournament.name}</Text>
+                <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
+                    {tournament.name}
+                </Text>
                 <View style={{ width: 60 }} />
             </View>
-    
+
+            {/* ── Meta / Join ── */}
             <View style={[styles.meta, { borderBottomColor: theme.borderSubtle }]}>
-                <Text style={[styles.sport, { color: theme.textDim }]}>{tournament.theme || tournament.name}</Text>
+                <Text style={[styles.sport, { color: theme.textDim }]}>
+                    {tournament.theme || tournament.name}
+                </Text>
                 {tournamentStatus === 'open' && (
-                    <TouchableOpacity style={[styles.joinBtn, { backgroundColor: theme.accent }]} onPress={handleJoin} disabled={joining}>
-                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>{joining ? 'Joining...' : 'Join'}</Text>
+                    <TouchableOpacity
+                        style={[styles.joinBtn, { backgroundColor: theme.accent }]}
+                        onPress={handleJoin}
+                        disabled={joining}
+                    >
+                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>
+                            {joining ? 'Joining...' : 'Join'}
+                        </Text>
                     </TouchableOpacity>
                 )}
             </View>
-    
+
+            {/* ── Tab Bar ── */}
             <View style={[styles.tabBar, { borderBottomColor: theme.borderSubtle }]}>
                 {(['h2h', 'myteam', 'standings', 'draft'] as const).map(t => (
-                    <TouchableOpacity key={t} onPress={() => setTab(t)}
-                        style={[styles.tabBarBtn, { borderBottomColor: tab === t ? theme.accent : 'transparent' }]}>
-                        <Text style={{ color: tab === t ? theme.accent : theme.textDim, fontSize: 12, fontWeight: tab === t ? 'bold' : 'normal' }}>
+                    <TouchableOpacity
+                        key={t}
+                        onPress={() => setTab(t)}
+                        style={[styles.tabBarBtn, { borderBottomColor: tab === t ? theme.accent : 'transparent' }]}
+                    >
+                        <Text style={{
+                            color: tab === t ? theme.accent : theme.textDim,
+                            fontSize: 12,
+                            fontWeight: tab === t ? 'bold' : 'normal',
+                        }}>
                             {t === 'h2h' ? 'Head to Head' : t === 'myteam' ? 'My Team' : t === 'standings' ? 'Standings' : 'Draft Room'}
                         </Text>
                     </TouchableOpacity>
                 ))}
             </View>
-    
+
             {loading ? (
                 <ActivityIndicator color={theme.accent} style={{ marginTop: 40 }} />
             ) : (
                 <ScrollView contentContainerStyle={styles.list}>
-    
+
+                    {/* ── H2H Tab ── */}
                     {tab === 'h2h' && (
                         matchups.length === 0
                             ? <Text style={[styles.empty, { color: theme.textDim }]}>Bracket not generated yet</Text>
@@ -183,11 +221,14 @@ export default function TournamentDetailScreen() {
                                         const homeWon = m.winner_user_id === m.home_user_id
                                         const awayWon = m.winner_user_id === m.away_user_id
                                         return (
-                                            <View key={m.id} style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                                            <View
+                                                key={m.id}
+                                                style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
+                                            >
                                                 <View style={styles.matchRow}>
                                                     <View style={styles.teamCol}>
                                                         <Text style={[styles.teamName, { color: homeWon ? theme.accent : theme.text }]}>
-                                                        {label(m.home_user_id)}
+                                                            {label(m.home_user_id)}
                                                         </Text>
                                                         <Text style={[styles.score, { color: homeWon ? theme.accent : theme.textMuted }]}>
                                                             {m.home_points?.toFixed(1) ?? '—'}
@@ -196,7 +237,7 @@ export default function TournamentDetailScreen() {
                                                     <Text style={[styles.vs, { color: theme.textDim }]}>vs</Text>
                                                     <View style={[styles.teamCol, styles.teamColRight]}>
                                                         <Text style={[styles.teamName, { color: awayWon ? theme.accent : theme.text }]}>
-                                                        {m.away_user_id ? label(m.away_user_id) : 'BYE'}
+                                                            {m.away_user_id ? label(m.away_user_id) : 'BYE'}
                                                         </Text>
                                                         <Text style={[styles.score, { color: awayWon ? theme.accent : theme.textMuted }]}>
                                                             {m.away_points?.toFixed(1) ?? '—'}
@@ -209,37 +250,57 @@ export default function TournamentDetailScreen() {
                                 </View>
                             ))
                     )}
-    
+
+                    {/* ── My Team Tab ── */}
                     {tab === 'myteam' && (() => {
                         const myPicks = entities.filter(e => e.picked_by === user?.id)
                         return myPicks.length === 0
                             ? <Text style={[styles.empty, { color: theme.textDim }]}>You haven't picked anyone yet.</Text>
                             : myPicks.map(e => (
-                                <View key={e.id} style={[styles.entityCard, { backgroundColor: theme.bgCard, borderColor: theme.accent }]}>
+                                <View
+                                    key={e.id}
+                                    style={[styles.entityCard, { backgroundColor: theme.bgCard, borderColor: theme.accent }]}
+                                >
                                     <View style={{ flex: 1 }}>
                                         <Text style={[styles.entityName, { color: theme.text }]}>{e.name}</Text>
-                                        <Text style={{ color: theme.textDim, fontSize: 11, textTransform: 'capitalize' }}>{e.entity_type}</Text>
+                                        <Text style={{ color: theme.textDim, fontSize: 11, textTransform: 'capitalize' }}>
+                                            {e.entity_type}
+                                        </Text>
                                     </View>
-                                    <Text style={[styles.entityPrice, { color: theme.accent }]}>${e.price.toLocaleString()}</Text>
+                                    <Text style={[styles.entityPrice, { color: theme.accent }]}>
+                                        ${e.price.toLocaleString()}
+                                    </Text>
                                 </View>
                             ))
                     })()}
-    
+
+                    {/* ── Standings Tab ── */}
                     {tab === 'standings' && (
                         standings.length === 0
                             ? <Text style={[styles.empty, { color: theme.textDim }]}>No standings yet</Text>
                             : standings.map((s, i) => (
-                                <View key={s.userId} style={[styles.card, { backgroundColor: theme.bgCard, borderColor: s.userId === user?.id ? theme.accent : theme.border, flexDirection: 'row', alignItems: 'center' }]}>
-                                    <Text style={{ color: theme.textDim, fontSize: 16, fontWeight: 'bold', width: 32 }}>{i + 1}</Text>
+                                <View
+                                    key={s.userId}
+                                    style={[styles.card, {
+                                        backgroundColor: theme.bgCard,
+                                        borderColor: s.userId === user?.id ? theme.accent : theme.border,
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                    }]}
+                                >
+                                    <Text style={{ color: theme.textDim, fontSize: 16, fontWeight: 'bold', width: 32 }}>
+                                        {i + 1}
+                                    </Text>
                                     <Text style={{ color: s.userId === user?.id ? theme.accent : theme.text, flex: 1, fontWeight: 'bold' }}>
-                                    {label(s.userId)}
+                                        {label(s.userId)}
                                     </Text>
                                     <Text style={{ color: theme.text, marginRight: 16 }}>{s.wins}W</Text>
                                     <Text style={{ color: theme.textDim, fontSize: 13 }}>{s.points.toFixed(1)} pts</Text>
                                 </View>
                             ))
                     )}
-    
+
+                    {/* ── Draft Tab ── */}
                     {tab === 'draft' && (() => {
                         const myPicks = entities.filter(e => e.picked_by === user?.id)
                         const spent = myPicks.reduce((s, e) => s + e.price, 0)
@@ -251,21 +312,29 @@ export default function TournamentDetailScreen() {
                                 <View style={styles.draftHeader}>
                                     <Text style={[styles.roundLabel, { color: theme.textMuted }]}>DRAFT POOL</Text>
                                     {isDrafting && entities.length === 0 && (
-                                        <TouchableOpacity onPress={handleGenerateDraft} disabled={generatingDraft}
-                                            style={[styles.genBtn, { backgroundColor: generatingDraft ? theme.border : theme.accent }]}>
+                                        <TouchableOpacity
+                                            onPress={handleGenerateDraft}
+                                            disabled={generatingDraft}
+                                            style={[styles.genBtn, { backgroundColor: generatingDraft ? theme.border : theme.accent }]}
+                                        >
                                             <Text style={{ color: generatingDraft ? theme.textDim : '#000', fontWeight: 'bold', fontSize: 12 }}>
                                                 {generatingDraft ? 'Generating...' : 'Generate Pool'}
                                             </Text>
                                         </TouchableOpacity>
                                     )}
                                     {isDrafting && entities.length > 0 && (
-                                        <TouchableOpacity onPress={handleCloseDraft} style={[styles.genBtn, { backgroundColor: theme.danger }]}>
+                                        <TouchableOpacity
+                                            onPress={handleCloseDraft}
+                                            style={[styles.genBtn, { backgroundColor: theme.danger }]}
+                                        >
                                             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Close Draft</Text>
                                         </TouchableOpacity>
                                     )}
                                 </View>
+
                                 {entities.length > 0 && (
                                     <>
+                                        {/* ── Budget Bar ── */}
                                         <View style={[styles.budgetBar, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                                             {[
                                                 { label: 'BUDGET', value: `$${budget.toLocaleString()}`, color: theme.text },
@@ -279,20 +348,39 @@ export default function TournamentDetailScreen() {
                                                 </View>
                                             ))}
                                         </View>
+
+                                        {/* ── Entity List ── */}
                                         {entities.map(e => (
-                                            <View key={e.id} style={[styles.entityCard, { backgroundColor: theme.bgCard, borderColor: e.picked_by === user?.id ? theme.accent : theme.border }]}>
+                                            <View
+                                                key={e.id}
+                                                style={[styles.entityCard, {
+                                                    backgroundColor: theme.bgCard,
+                                                    borderColor: e.picked_by === user?.id ? theme.accent : theme.border,
+                                                }]}
+                                            >
                                                 <View style={{ flex: 1 }}>
                                                     <Text style={[styles.entityName, { color: theme.text }]}>{e.name}</Text>
-                                                    <Text style={{ color: theme.textDim, fontSize: 11, textTransform: 'capitalize' }}>{e.entity_type}</Text>
+                                                    <Text style={{ color: theme.textDim, fontSize: 11, textTransform: 'capitalize' }}>
+                                                        {e.entity_type}
+                                                    </Text>
                                                 </View>
-                                                <Text style={[styles.entityPrice, { color: theme.accent }]}>${e.price.toLocaleString()}</Text>
+                                                <Text style={[styles.entityPrice, { color: theme.accent }]}>
+                                                    ${e.price.toLocaleString()}
+                                                </Text>
                                                 {e.picked_by ? (
-                                                    <Text style={{ color: e.picked_by === user?.id ? theme.accent : theme.textDim, fontSize: 12, marginLeft: 12 }}>
+                                                    <Text style={{
+                                                        color: e.picked_by === user?.id ? theme.accent : theme.textDim,
+                                                        fontSize: 12,
+                                                        marginLeft: 12,
+                                                    }}>
                                                         {e.picked_by === user?.id ? 'Yours' : 'Taken'}
                                                     </Text>
                                                 ) : isDrafting ? (
-                                                    <TouchableOpacity onPress={() => handlePick(e.id)} disabled={picking === e.id}
-                                                        style={[styles.pickBtn, { backgroundColor: theme.accent, opacity: picking === e.id ? 0.5 : 1 }]}>
+                                                    <TouchableOpacity
+                                                        onPress={() => handlePick(e.id)}
+                                                        disabled={picking === e.id}
+                                                        style={[styles.pickBtn, { backgroundColor: theme.accent, opacity: picking === e.id ? 0.5 : 1 }]}
+                                                    >
                                                         <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 12 }}>
                                                             {picking === e.id ? '...' : 'Pick'}
                                                         </Text>
@@ -307,38 +395,148 @@ export default function TournamentDetailScreen() {
                             </>
                         )
                     })()}
-    
+
                 </ScrollView>
             )}
         </View>
-    )    
+    )
 }
 
+// ── STYLES ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16, borderBottomWidth: 1 },
-    title: { fontSize: 17, fontWeight: 'bold', flex: 1, textAlign: 'center' },
-    meta: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 12, gap: 12, borderBottomWidth: 1 },
-    sport: { fontSize: 13, flex: 1 },
-    joinBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-    tabBar: { flexDirection: 'row', borderBottomWidth: 1 },
-    tabBarBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderBottomWidth: 2 },
-    list: { padding: 16, gap: 12, paddingBottom: 40 },
-    roundLabel: { fontSize: 11, fontWeight: 'bold', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 },
-    card: { borderRadius: 10, borderWidth: 1, padding: 16, marginBottom: 10 },
-    matchRow: { flexDirection: 'row', alignItems: 'center' },
-    teamCol: { flex: 1 },
-    teamColRight: { alignItems: 'flex-end' },
-    teamName: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
-    score: { fontSize: 22, fontWeight: 'bold' },
-    vs: { fontSize: 12, paddingHorizontal: 12 },
-    empty: { textAlign: 'center', marginTop: 60, fontSize: 14 },
-    draftHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    genBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
-    budgetBar: { flexDirection: 'row', justifyContent: 'space-around', borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 12 },
-    budgetItem: { alignItems: 'center', gap: 4 },
-    entityCard: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, padding: 14, marginBottom: 8 },
-    entityName: { fontSize: 14, fontWeight: 'bold', marginBottom: 2 },
-    entityPrice: { fontWeight: 'bold', fontSize: 14, marginLeft: 12 },
-    pickBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 16, marginLeft: 12 },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 24,
+        paddingTop: 60,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+    },
+    title: {
+        fontSize: 17,
+        fontWeight: 'bold',
+        flex: 1,
+        textAlign: 'center',
+    },
+    meta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        gap: 12,
+        borderBottomWidth: 1,
+    },
+    sport: {
+        fontSize: 13,
+        flex: 1,
+    },
+    joinBtn: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
+    tabBar: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+    },
+    tabBarBtn: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 2,
+    },
+    list: {
+        padding: 16,
+        gap: 12,
+        paddingBottom: 40,
+    },
+    roundLabel: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        letterSpacing: 1.5,
+        textTransform: 'uppercase',
+        marginBottom: 8,
+    },
+    card: {
+        borderRadius: 10,
+        borderWidth: 1,
+        padding: 16,
+        marginBottom: 10,
+    },
+    matchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    teamCol: {
+        flex: 1,
+    },
+    teamColRight: {
+        alignItems: 'flex-end',
+    },
+    teamName: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    score: {
+        fontSize: 22,
+        fontWeight: 'bold',
+    },
+    vs: {
+        fontSize: 12,
+        paddingHorizontal: 12,
+    },
+    empty: {
+        textAlign: 'center',
+        marginTop: 60,
+        fontSize: 14,
+    },
+    draftHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    genBtn: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
+    budgetBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 12,
+    },
+    budgetItem: {
+        alignItems: 'center',
+        gap: 4,
+    },
+    entityCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 14,
+        marginBottom: 8,
+    },
+    entityName: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 2,
+    },
+    entityPrice: {
+        fontWeight: 'bold',
+        fontSize: 14,
+        marginLeft: 12,
+    },
+    pickBtn: {
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 16,
+        marginLeft: 12,
+    },
 })
-

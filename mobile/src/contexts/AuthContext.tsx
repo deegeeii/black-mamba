@@ -1,7 +1,9 @@
+// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { createContext, useContext, useEffect, useState } from 'react'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
+// ── TYPES ──────────────────────────────────────────────────────────────────────
 type AuthContextType = {
     user: User | null
     session: Session | null
@@ -9,6 +11,7 @@ type AuthContextType = {
     signOut: () => Promise<void>
 }
 
+// ── CONTEXT ────────────────────────────────────────────────────────────────────
 const AuthContext = createContext<AuthContextType>({
     user: null,
     session: null,
@@ -16,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
     signOut: async () => {},
 })
 
+// ── PROVIDER ───────────────────────────────────────────────────────────────────
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [session, setSession] = useState<Session | null>(null)
@@ -47,4 +51,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     )
 }
 
+// ── HOOK ───────────────────────────────────────────────────────────────────────
 export const useAuth = () => useContext(AuthContext)
