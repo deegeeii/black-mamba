@@ -1,10 +1,13 @@
 
 // ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { CSSProperties } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { useLeague } from '../contexts/LeagueContext'
 import axios from 'axios'
+
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
@@ -72,6 +75,13 @@ export default function Profile() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [message, setMessage] = useState('')
+    const navigate = useNavigate()
+    const { refreshLeagues } = useLeague()
+    const [joinCode, setJoinCode] = useState('')
+    const [joinTeamName, setJoinTeamName] = useState('')
+    const [joinLoading, setJoinLoading] = useState(false)
+    const [joinError, setJoinError] = useState('')
+
 
     const [payoutStatus, setPayoutStatus] = useState<{ has_account: boolean; account_id?: string; ready_to_receive_payments?: boolean; onboarding_complete?: boolean; requirements_status?: string | null } | null>(null)
     const [payoutDisplayName, setPayoutDisplayName] = useState('')
@@ -165,6 +175,39 @@ export default function Profile() {
         }
     }
 
+    const handleJoinLeague = async () => {
+        if (!joinCode.trim() || !joinTeamName.trim()) {
+            setJoinError('Please enter both an invite code and a team name.')
+            return
+        }
+        setJoinError('')
+        setJoinLoading(true)
+        try {
+            const res = await fetch(`${API_URL}/leagues/join`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${session?.access_token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    invite_code: joinCode.trim().toUpperCase(),
+                    team_name: joinTeamName.trim(),
+                }),
+            })
+            const data = await res.json()
+            if (!res.ok) { setJoinError(data.detail || 'Invalid invite code'); return }
+            await refreshLeagues()
+            setJoinCode('')
+            setJoinTeamName('')
+            navigate('/dashboard')
+        } catch {
+            setJoinError('Network error')
+        } finally {
+            setJoinLoading(false)
+        }
+    }
+
+
     if (loading) return <p>Loading profile...</p>
 
     // ── JSX ───────────────────────────────────────────────────────────────────
@@ -202,6 +245,48 @@ export default function Profile() {
                         {theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
                     </button>
                 </div>
+            </div>
+
+            {/* ── Join League ── */}
+            <div style={sectionStyle}>
+                <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Join a League</h3>
+                <div style={{ marginBottom: '12px' }}>
+                    <label style={labelStyle}>INVITE CODE</label>
+                    <input
+                        style={{ ...inputStyle, color: 'var(--accent)', letterSpacing: '3px', fontWeight: 'bold' }}
+                        value={joinCode}
+                        onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                        placeholder="e.g. WP26RL7Z"
+                    />
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                    <label style={labelStyle}>YOUR TEAM NAME</label>
+                    <input
+                        style={inputStyle}
+                        value={joinTeamName}
+                        onChange={e => setJoinTeamName(e.target.value)}
+                        placeholder="e.g. Blitz Krieg"
+                    />
+                </div>
+                {joinError && <p style={{ color: 'var(--danger)', fontSize: '13px', marginBottom: '12px' }}>{joinError}</p>}
+                <button
+                    type="button"
+                    onClick={handleJoinLeague}
+                    disabled={joinLoading}
+                    style={{
+                        backgroundColor: 'var(--accent)',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: 'var(--radius)',
+                        padding: '10px 20px',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        cursor: joinLoading ? 'not-allowed' : 'pointer',
+                        opacity: joinLoading ? 0.6 : 1,
+                    }}
+                >
+                    {joinLoading ? 'Joining...' : 'Join League'}
+                </button>
             </div>
 
             <form onSubmit={handleSave}>

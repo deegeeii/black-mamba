@@ -50,7 +50,16 @@ async function registerForPushNotifications(userId: string) {
 }
 
 function AuthenticatedStack() {
-    const { leagues } = useLeague()
+    const { leagues, leaguesLoaded } = useLeague()
+
+    if (!leaguesLoaded) {
+        return (
+            <View style={{ flex: 1, backgroundColor: '#0a0a0a', alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator color="#00cc66" />
+            </View>
+        )
+    }
+
     const initialRoute = leagues.length === 0 ? 'Onboarding' : 'Dashboard'
 
     return (
@@ -76,6 +85,7 @@ function AuthenticatedStack() {
         </Stack.Navigator>
     )
 }
+
 
 
 

@@ -22,7 +22,9 @@ type LeagueContextType = {
     members: Member[]
     getTeamName: (userId: string | null) => string
     refreshLeagues: () => void
+    leaguesLoaded: boolean
 }
+
 
 // ── CONTEXT ────────────────────────────────────────────────────────────────────
 const LeagueContext = createContext<LeagueContextType>({
@@ -32,6 +34,8 @@ const LeagueContext = createContext<LeagueContextType>({
     members: [],
     getTeamName: () => 'Unknown',
     refreshLeagues: () => {},
+    leaguesLoaded: false,
+
 })
 
 // ── PROVIDER ───────────────────────────────────────────────────────────────────
@@ -39,6 +43,8 @@ export function LeagueProvider({ children, userId }: { children: React.ReactNode
     const [leagues, setLeagues] = useState<League[]>([])
     const [activeLeague, setActiveLeague] = useState<League | null>(null)
     const [members, setMembers] = useState<Member[]>([])
+    const [leaguesLoaded, setLeaguesLoaded] = useState(false)
+
 
     // ── Effects ────────────────────────────────────────────────────────────────
     const refreshLeagues = useCallback(() => {
@@ -50,6 +56,7 @@ export function LeagueProvider({ children, userId }: { children: React.ReactNode
             .then(({ data }) => {
                 const list = (data || []).map((r: any) => r.leagues).filter(Boolean)
                 setLeagues(list)
+                setLeaguesLoaded(true)
                 if (list.length > 0 && !activeLeague) setActiveLeague(list[0])
             })
     }, [userId])
@@ -76,7 +83,7 @@ export function LeagueProvider({ children, userId }: { children: React.ReactNode
     }, [members])
 
     return (
-        <LeagueContext.Provider value={{ leagues, activeLeague, setActiveLeague, members, getTeamName, refreshLeagues }}>
+        <LeagueContext.Provider value={{ leagues, activeLeague, setActiveLeague, members, getTeamName, refreshLeagues, leaguesLoaded }}>
             {children}
         </LeagueContext.Provider>
     )

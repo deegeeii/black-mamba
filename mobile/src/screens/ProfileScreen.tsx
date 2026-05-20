@@ -28,7 +28,7 @@ export default function ProfileScreen() {
     const navigation = useNavigation()
     const { user, signOut, session } = useAuth()
     const { theme, isDark, toggleTheme } = useTheme()
-    const { leagues, activeLeague, setActiveLeague } = useLeague()
+    const { leagues, activeLeague, setActiveLeague, refreshLeagues } = useLeague()
 
     // ── State ─────────────────────────────────────────────────────────────────
     const [username, setUsername] = useState('')
@@ -45,7 +45,11 @@ export default function ProfileScreen() {
     const [payoutName, setPayoutName] = useState('')
     const [payoutEmail, setPayoutEmail] = useState('')
     const [payoutBusy, setPayoutBusy] = useState(false)
-    
+    const [joinCode, setJoinCode] = useState('')
+    const [joinTeamName, setJoinTeamName] = useState('')
+    const [joinLoading, setJoinLoading] = useState(false)
+    const [joinError, setJoinError] = useState('')
+
 
     // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -145,6 +149,39 @@ export default function ProfileScreen() {
             ]
         )
     }
+
+    const handleJoinLeague = async () => {
+        if (!joinCode.trim() || !joinTeamName.trim()) {
+            setJoinError('Please enter both an invite code and a team name.')
+            return
+        }
+        setJoinError('')
+        setJoinLoading(true)
+        try {
+            const res = await fetch(`${API}/leagues/join`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${session?.access_token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    invite_code: joinCode.trim().toUpperCase(),
+                    team_name: joinTeamName.trim(),
+                }),
+            })
+            const data = await res.json()
+            if (!res.ok) { setJoinError(data.detail || 'Invalid invite code'); return }
+            await refreshLeagues()
+            setJoinCode('')
+            setJoinTeamName('')
+            Alert.alert('Success', `You joined ${data.name}!`)
+        } catch {
+            setJoinError('Network error')
+        } finally {
+            setJoinLoading(false)
+        }
+    }
+
     
 
     // ── JSX ───────────────────────────────────────────────────────────────────
@@ -216,6 +253,39 @@ export default function ProfileScreen() {
                                 thumbColor={isDark ? theme.accent : theme.textMuted}
                             />
                         </View>
+                    </View>
+
+                    {/* ── Join League ── */}
+                    <View style={[styles.section, { borderTopColor: theme.borderSubtle }]}>
+                        <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>JOIN A LEAGUE</Text>
+                        <TextInput
+                            style={[styles.input, { backgroundColor: theme.bgCard, color: theme.accent, borderColor: theme.border, marginHorizontal: 0, letterSpacing: 2 }]}
+                            value={joinCode}
+                            onChangeText={v => setJoinCode(v.toUpperCase())}
+                            placeholder="Invite code"
+                            placeholderTextColor={theme.textDim}
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                        />
+                        <TextInput
+                            style={[styles.input, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border, marginHorizontal: 0, marginTop: 10 }]}
+                            value={joinTeamName}
+                            onChangeText={setJoinTeamName}
+                            placeholder="Your team name"
+                            placeholderTextColor={theme.textDim}
+                        />
+                        {joinError ? (
+                            <Text style={{ color: theme.danger, fontSize: 13, marginTop: 8 }}>{joinError}</Text>
+                        ) : null}
+                        <TouchableOpacity
+                            style={[styles.saveBtn, { backgroundColor: theme.accent, margin: 0, marginTop: 14, opacity: joinLoading ? 0.6 : 1 }]}
+                            onPress={handleJoinLeague}
+                            disabled={joinLoading}
+                        >
+                            <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 14 }}>
+                                {joinLoading ? 'Joining...' : 'Join League'}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
 
                     {/* ── League Switcher ── */}
