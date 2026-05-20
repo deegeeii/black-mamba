@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { ActivityIndicator, View, Platform } from 'react-native'
 import { AuthProvider, useAuth } from './src/contexts/AuthContext'
 import { ThemeProvider } from './src/contexts/ThemeContext'
-import { LeagueProvider } from './src/contexts/LeagueContext'
+import { LeagueProvider, useLeague } from './src/contexts/LeagueContext'
 import { StripeProvider } from '@stripe/stripe-react-native'
 import LoginScreen from './src/screens/LoginScreen'
 import DashboardScreen from './src/screens/DashboardScreen'
@@ -20,6 +20,9 @@ import TournamentDetailScreen from './src/screens/TournamentDetailScreen'
 import DraftScreen from './src/screens/DraftScreen'
 import LeagueHomeScreen from './src/screens/LeagueHomeScreen'
 import HeadlinesScreen from './src/screens/HeadlinesScreen'
+import OnboardingScreen from './src/screens/OnboardingScreen'
+import CreateLeagueScreen from './src/screens/CreateLeagueScreen'
+import JoinLeagueScreen from './src/screens/JoinLeagueScreen'
 import * as Notifications from 'expo-notifications'
 import { supabase } from './src/lib/supabase'
 import { useEffect } from 'react'
@@ -46,6 +49,35 @@ async function registerForPushNotifications(userId: string) {
         .eq('id', userId)
 }
 
+function AuthenticatedStack() {
+    const { leagues } = useLeague()
+    const initialRoute = leagues.length === 0 ? 'Onboarding' : 'Dashboard'
+
+    return (
+        <Stack.Navigator
+            screenOptions={{ headerShown: false }}
+            initialRouteName={initialRoute}
+        >
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="CreateLeague" component={CreateLeagueScreen} />
+            <Stack.Screen name="JoinLeague" component={JoinLeagueScreen} />
+            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="Standings" component={StandingsScreen} />
+            <Stack.Screen name="Matchups" component={MatchupsScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="Bets" component={BetsScreen} />
+            <Stack.Screen name="Chat" component={ChatScreen} />
+            <Stack.Screen name="MyTeam" component={MyTeamScreen} />
+            <Stack.Screen name="Arena" component={TournamentListScreen} />
+            <Stack.Screen name="TournamentDetail" component={TournamentDetailScreen} />
+            <Stack.Screen name="Draft" component={DraftScreen} />
+            <Stack.Screen name="LeagueHome" component={LeagueHomeScreen} />
+            <Stack.Screen name="Headlines" component={HeadlinesScreen} />
+        </Stack.Navigator>
+    )
+}
+
+
 
 function RootNavigator() {
     const { session, loading, user } = useAuth()
@@ -67,30 +99,18 @@ function RootNavigator() {
     return (
         <LeagueProvider userId={user?.id ?? null}>
             <ThemeProvider userId={user?.id ?? null}>
-                <Stack.Navigator screenOptions={{ headerShown: false }}>
-                    {session ? (
-                        <>
-                            <Stack.Screen name="Dashboard" component={DashboardScreen} />
-                            <Stack.Screen name="Standings" component={StandingsScreen} />
-                            <Stack.Screen name="Matchups" component={MatchupsScreen} />
-                            <Stack.Screen name="Profile" component={ProfileScreen} />
-                            <Stack.Screen name="Bets" component={BetsScreen} />
-                            <Stack.Screen name="Chat" component={ChatScreen} />
-                            <Stack.Screen name="MyTeam" component={MyTeamScreen} />
-                            <Stack.Screen name="Arena" component={TournamentListScreen} />
-                            <Stack.Screen name="TournamentDetail" component={TournamentDetailScreen} />
-                            <Stack.Screen name="Draft" component={DraftScreen} />
-                            <Stack.Screen name="LeagueHome" component={LeagueHomeScreen} />
-                            <Stack.Screen name="Headlines" component={HeadlinesScreen} />
-                        </>
-                    ) : (
+                {session ? (
+                    <AuthenticatedStack />
+                ) : (
+                    <Stack.Navigator screenOptions={{ headerShown: false }}>
                         <Stack.Screen name="Login" component={LoginScreen} />
-                    )}
-                </Stack.Navigator>
+                    </Stack.Navigator>
+                )}
             </ThemeProvider>
         </LeagueProvider>
     )
 }
+    
 
 // ── ROOT APP ───────────────────────────────────────────────────────────────────
 export default function App() {

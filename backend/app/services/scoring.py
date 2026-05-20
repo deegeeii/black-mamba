@@ -3,7 +3,7 @@ from app.core.supabase import supabase
 CURRENT_SEASON = 2024
 
 def calculate_points(stats: dict, scoring_type: str) -> float:
-    ppr = {"standard": 0, "standard_plus": 0.5, "dynasty": 1}.get(scoring_type, 0)
+    ppr = {"standard": 0.5, "standard_plus": 1.0, "dynasty": 1.0}.get(scoring_type, 0)
     return round(
         (stats.get("passing_yards") or 0) * 0.04
         + (stats.get("passing_tds") or 0) * 4
