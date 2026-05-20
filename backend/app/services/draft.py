@@ -14,8 +14,8 @@ def get_draft_session(league_id: str):
 
 
 def start_draft(league_id: str, commissioner_id: str):
-    # Verify the user is the commisioner
-    league = supabase.table("leagues").select("commissioner_id").eq("id", league_id).execute()
+    # Verify the user is the commissioner
+    league = supabase.table("leagues").select("commissioner_id, scoring_type").eq("id", league_id).execute()
     if not league.data or league.data[0]["commissioner_id"] != commissioner_id:
         return None, "Only the commissioner can start the draft"
 
@@ -27,24 +27,45 @@ def start_draft(league_id: str, commissioner_id: str):
     # Check if a session already exists
     existing = supabase.table("draft_sessions").select("id").eq("league_id", league_id).execute()
     if existing.data:
-        # Update to active
         res = (
             supabase.table("draft_sessions")
             .update({"status": "active", "draft_order": user_ids, "current_pick": 1})
             .eq("league_id", league_id)
             .execute()
         )
-        return res.data[0], None
-    
-     # Create new session
-    res = supabase.table("draft_sessions").insert({
-        "league_id": league_id,
-        "status": "active",
-        "draft_order": user_ids,
-        "current_pick": 1,
-        "total_rounds": 15,
-    }).execute()
-    return res.data[0], None
+        session = res.data[0]
+    else:
+        res = supabase.table("draft_sessions").insert({
+            "league_id": league_id,
+            "status": "active",
+            "draft_order": user_ids,
+            "current_pick": 1,
+            "total_rounds": 15,
+        }).execute()
+        session = res.data[0]
+
+    # Pre-insert keeper picks for dynasty leagues
+    if league.data[0].get("scoring_type") == "dynasty":
+        from app.services.keeper import CURRENT_SEASON
+        keepers = (
+            supabase.table("keeper_selections")
+            .select("user_id, player_id, cost_round")
+            .eq("league_id", league_id)
+            .eq("season", CURRENT_SEASON)
+            .execute()
+        )
+        for k in (keepers.data or []):
+            supabase.table("draft_picks").upsert({
+                "draft_session_id": session["id"],
+                "league_id": league_id,
+                "user_id": k["user_id"],
+                "player_id": k["player_id"],
+                "round": k["cost_round"],
+                "pick_number": 0,
+            }, on_conflict="draft_session_id,player_id").execute()
+
+    return session, None
+
 
     
 

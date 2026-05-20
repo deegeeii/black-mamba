@@ -57,7 +57,7 @@ export default function MyTeam() {
   const { leagueId } = useParams<{ leagueId: string }>()
   const { session, user } = useAuth()
   const { getTeamName, activeLeague } = useLeague()
-  const [tab, setTab] = useState<'roster' | 'free-agents' | 'trades'>('roster')
+  const [tab, setTab] = useState<'roster' | 'free-agents' | 'trades' | 'keepers'>('roster')
 
   // Roster state
   const [roster, setRoster] = useState<RosterPlayer[]>([])
@@ -82,6 +82,12 @@ export default function MyTeam() {
   const [opponentRoster, setOpponentRoster] = useState<FreeAgent[]>([])
   const [offerIds, setOfferIds] = useState<string[]>([])
   const [requestIds, setRequestIds] = useState<string[]>([])
+
+  // Keepers state
+  const [keepers, setKeepers] = useState<{ player_id: string; cost_round: number }[]>([])
+  const [keeperMax, setKeeperMax] = useState(2)
+  const [keeperLoading, setKeeperLoading] = useState(false)
+  
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -124,7 +130,10 @@ export default function MyTeam() {
       axios.get(`${API_URL}/leagues/${leagueId}/trades`, { headers }),
       axios.get(`${API_URL}/leagues/${leagueId}/members`, { headers }),
       axios.get(`${API_URL}/draft/players`, { headers }),
-    ]).then(([r, l, sc, fa, t, m, p]) => {
+      activeLeague?.scoring_type === 'dynasty'
+      ? axios.get(`${API_URL}/leagues/${leagueId}/keepers`, { headers })
+      : Promise.resolve({ data: [] }),
+    ]).then(([r, l, sc, fa, t, m, p, k]) => {
       if (r.status === 'fulfilled') setRoster(r.value.data)
       if (l.status === 'fulfilled') {
         const slots: Record<string, string> = {}
@@ -136,9 +145,13 @@ export default function MyTeam() {
       if (t.status === 'fulfilled') setTrades(t.value.data)
       if (m.status === 'fulfilled') setMembers(m.value.data.filter((x: { user_id: string }) => x.user_id !== user?.id))
       if (p.status === 'fulfilled') {
-        const map: Record<string, FreeAgent> = {}
-        p.value.data.forEach((pl: FreeAgent) => { map[pl.id] = pl })
-        setAllPlayers(map)
+          const map: Record<string, FreeAgent> = {}
+          p.value.data.forEach((pl: FreeAgent) => { map[pl.id] = pl })
+          setAllPlayers(map)
+        }
+      if (k.status === 'fulfilled') {
+        setKeepers(k.value.data)
+        setKeeperMax(2)
       }
       setLoading(false)
     })
@@ -216,6 +229,35 @@ export default function MyTeam() {
     } catch (e: any) { setError(e.response?.data?.detail || 'Action failed') }
   }
 
+  const handleDeclareKeeper = async (playerId: string) => {
+    setKeeperLoading(true)
+    try {
+      const res = await axios.post(
+        `${API_URL}/leagues/${leagueId}/keepers`,
+        { player_id: playerId },
+        { headers }
+      )
+      setKeepers(prev => [...prev, res.data])
+    } catch (e: any) {
+      setError(e.response?.data?.detail || 'Failed to declare keeper')
+    } finally {
+      setKeeperLoading(false)
+    }
+  }
+
+  const handleRemoveKeeper = async (playerId: string) => {
+    setKeeperLoading(true)
+    try {
+      await axios.delete(`${API_URL}/leagues/${leagueId}/keepers/${playerId}`, { headers })
+      setKeepers(prev => prev.filter(k => k.player_id !== playerId))
+    } catch {
+      setError('Failed to remove keeper')
+    } finally {
+      setKeeperLoading(false)
+    }
+  }
+
+
   // ── HELPERS ────────────────────────────────────────────────────────────────
   const playerName = (id: string) => allPlayers[id]?.name || id.slice(0, 8)
   const incoming = trades.filter(t => t.opponent_id === user?.id && t.status === 'pending')
@@ -246,7 +288,12 @@ export default function MyTeam() {
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '24px' }}>
         <button style={tabStyle('roster')} onClick={() => setTab('roster')}>Roster</button>
         <button style={tabStyle('free-agents')} onClick={() => setTab('free-agents')}>Free Agents</button>
+        
         <button style={tabStyle('trades')} onClick={() => setTab('trades')}>Trades</button>
+        {activeLeague?.scoring_type === 'dynasty' && (
+          <button style={tabStyle('keepers')} onClick={() => setTab('keepers')}>Keepers</button>
+        )}
+
       </div>
 
       {error && <p style={{ color: 'var(--danger)', marginBottom: '12px' }}>{error}</p>}
@@ -461,9 +508,109 @@ export default function MyTeam() {
           )}
         </>
       )}
+
+      {/* ── KEEPERS TAB ── */}
+      {tab === 'keepers' && (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ marginBottom: '4px' }}>Keepers</h2>
+              <p style={{ color: 'var(--text-dim)', fontSize: '13px' }}>
+                {keepers.length}/{keeperMax} keepers declared
+              </p>
+            </div>
+          </div>
+
+          <div style={card}>
+            <div style={sectionTitle}>Your Roster — Select Keepers</div>
+            {roster.length === 0 && <p style={{ color: 'var(--text-dim)' }}>No players on your roster.</p>}
+            {roster.map((p, i) => {
+              const kept = keepers.find(k => k.player_id === p.player_id)
+              return (
+                <div
+                  key={p.player_id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 0',
+                    borderBottom: i < roster.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                  }}
+                >
+                  <div>
+                    <span style={{ color: 'var(--text)', fontWeight: 500 }}>{p.name}</span>
+                    <span style={{ color: 'var(--text-dim)', fontSize: '13px', marginLeft: '10px' }}>
+                      {p.position} · {p.nfl_team || '—'}
+                    </span>
+                    {kept && (
+                      <span style={{
+                        marginLeft: '10px',
+                        fontSize: '11px',
+                        border: '1px solid var(--accent)',
+                        borderRadius: '10px',
+                        padding: '2px 8px',
+                        color: 'var(--accent)',
+                      }}>
+                        Rd {kept.cost_round} cost
+                      </span>
+                    )}
+                  </div>
+                  {kept ? (
+                    <button
+                      onClick={() => handleRemoveKeeper(p.player_id)}
+                      disabled={keeperLoading}
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: 'var(--danger)',
+                        border: '1px solid var(--danger)',
+                        borderRadius: 'var(--radius)',
+                        padding: '4px 12px',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleDeclareKeeper(p.player_id)}
+                      disabled={keeperLoading || keepers.length >= keeperMax}
+                      style={{
+                        backgroundColor: keepers.length >= keeperMax ? 'var(--border)' : 'var(--accent)',
+                        color: keepers.length >= keeperMax ? 'var(--text-dim)' : '#000',
+                        border: 'none',
+                        borderRadius: 'var(--radius)',
+                        padding: '4px 12px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: keepers.length >= keeperMax ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      Keep
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {keepers.length > 0 && (
+            <div style={card}>
+              <div style={sectionTitle}>Declared Keepers</div>
+              {keepers.map(k => {
+                const player = roster.find(p => p.player_id === k.player_id)
+                return (
+                  <div key={k.player_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: '14px' }}>
+                    <span>{player?.name || k.player_id}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Round {k.cost_round} pick cost</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
 
-// ── EXPORT ─────────────────────────────────────────────────────────────────────
-// (default export declared on function above)

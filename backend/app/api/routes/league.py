@@ -295,3 +295,26 @@ def import_espn_history(
         "high_scorer_name": high_scorer_name,
         "high_scorer_points": high_scorer_points,
     }
+
+
+# ── KEEPERS ────────────────────────────────────────────────────────────────────
+from app.services.keeper import get_league_keepers, declare_keeper, remove_keeper
+
+class KeeperDeclare(BaseModel):
+    player_id: str
+
+@router.get("/{league_id}/keepers")
+def fetch_keepers(league_id: str, user_id: str = Depends(get_current_user_id)):
+    return get_league_keepers(league_id)
+
+@router.post("/{league_id}/keepers")
+def add_keeper(league_id: str, data: KeeperDeclare, user_id: str = Depends(get_current_user_id)):
+    result, error = declare_keeper(league_id, user_id, data.player_id)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    return result
+
+@router.delete("/{league_id}/keepers/{player_id}")
+def delete_keeper(league_id: str, player_id: str, user_id: str = Depends(get_current_user_id)):
+    remove_keeper(league_id, user_id, player_id)
+    return {"ok": True}
