@@ -1,175 +1,243 @@
 
 // ── IMPORTS ────────────────────────────────────────────────────────────────────
-import { useState, useEffect } from "react";
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import axios from 'axios'
+import { useLeague } from '../contexts/LeagueContext'
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
-const API_URL = import.meta.env.VITE_API_URL
-
-// ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
-interface League {
-    id: string
-    name: string
-    commissioner_id: string
-    scoring_type: string
-    max_teams: number
-    invite_code: string
-    created_at: string
+const SCORING_LABELS: Record<string, string> = {
+    standard: '0.5 PPR',
+    standard_plus: '1 PPR · Superflex',
+    dynasty: '1 PPR · Dynasty',
 }
 
+// ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function Leagues() {
-    // ── STATE ──────────────────────────────────────────────────────────────────
-    const { session } = useAuth()
-    const [leagues, setLeagues] = useState<League[]>([])
-    const [loading, setLoading] = useState(true)
-    const [showCreate, setShowCreate] = useState(false)
-    const [showJoin, setShowJoin] = useState(false)
 
-    // Create form state
-    const [name, setName] = useState('')
-    const [scoringType, setScoringType] = useState('standard')
-    const [maxTeams, setMaxTeams] = useState(12)
-    const [teamName, setTeamName] = useState('')
+    // ── Context ───────────────────────────────────────────────────────────────
+    const navigate = useNavigate()
+    const { user } = useAuth()
+    const { leagues, setActiveLeague } = useLeague()
 
-    // Join form status
-    const [inviteCode, setInviteCode] = useState('')
-    const [joinTeamName, setJoinTeamName] = useState('')
+    // ── State ─────────────────────────────────────────────────────────────────
+    const [copied, setCopied] = useState<string | null>(null)
 
-    const [error, setError] = useState('')
-
-    const headers = { Authorization: `Bearer ${session?.access_token}` }
-
-    // ── EFFECTS / FETCH ON MOUNT ───────────────────────────────────────────────
-    useEffect(() => {
-        axios
-            .get(`${API_URL}/leagues/`, { headers })
-            .then((res) => setLeagues(res.data))
-            .finally(() => setLoading(false))
-    }, [])
-
-    // ── HANDLERS ──────────────────────────────────────────────────────────────
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setError('')
-        try {
-            const res = await axios.post(
-                `${API_URL}/leagues/`,
-                { name, scoring_type: scoringType, max_teams: maxTeams, team_name: teamName },
-                { headers }
-            )
-            setLeagues([...leagues, res.data])
-            setShowCreate(false)
-            setName('')
-            setTeamName('')
-        } catch {
-            setError('Failed to create league.')
-        }
+    // ── Handlers ──────────────────────────────────────────────────────────────
+    const handleCopy = (code: string) => {
+        navigator.clipboard.writeText(code)
+        setCopied(code)
+        setTimeout(() => setCopied(null), 2000)
     }
 
-    const handleJoin = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setError('')
-        try {
-          const res = await axios.post(
-            `${API_URL}/leagues/join`,
-            { invite_code: inviteCode, team_name: joinTeamName },
-            { headers }
-          )
-          setLeagues([...leagues, res.data])
-          setShowJoin(false)
-          setInviteCode('')
-          setJoinTeamName('')
-        } catch {
-          setError('Invalid invite code or already a member.')
-        }
-      }
-
-      if (loading) return <p>Loading leagues...</p>
+    const handleGoToLeague = (league: any) => {
+        setActiveLeague(league)
+        navigate(`/leagues/${league.id}/league-home`)
+    }
 
     // ── JSX ───────────────────────────────────────────────────────────────────
     return (
-        <div>
-            <h1>My Leagues</h1>
+        <div style={{ maxWidth: '720px', color: 'var(--text)' }}>
 
-            {/* ── Action Buttons ── */}
-            <button onClick={() => { setShowCreate(true); setShowJoin(false) }}>
-                Create League
-            </button>
-            <button onClick={() => {setShowJoin(true); setShowCreate(false)} }>
-                Join League
-            </button>
+            {/* ── Header ── */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '28px',
+            }}>
+                <div>
+                    <h1 style={{ marginBottom: '4px' }}>My Leagues</h1>
+                    <p style={{ color: 'var(--text-dim)', fontSize: '14px' }}>
+                        {leagues.length} {leagues.length === 1 ? 'league' : 'leagues'}
+                    </p>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                        onClick={() => navigate('/join-league')}
+                        style={{
+                            backgroundColor: 'var(--bg-card)',
+                            color: 'var(--text)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius)',
+                            padding: '10px 18px',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        Join League
+                    </button>
+                    <button
+                        onClick={() => navigate('/create-league')}
+                        style={{
+                            backgroundColor: 'var(--accent)',
+                            color: '#000',
+                            border: 'none',
+                            borderRadius: 'var(--radius)',
+                            padding: '10px 18px',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        + Create League
+                    </button>
+                </div>
+            </div>
 
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {/* ── Empty State ── */}
+            {leagues.length === 0 && (
+                <div style={{
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    padding: '48px',
+                    textAlign: 'center',
+                }}>
+                    <p style={{ fontSize: '32px', marginBottom: '12px' }}>🏈</p>
+                    <h2 style={{ marginBottom: '8px' }}>No leagues yet</h2>
+                    <p style={{ color: 'var(--text-dim)', fontSize: '14px', marginBottom: '24px' }}>
+                        Create a new league or join one with an invite code.
+                    </p>
+                    <button
+                        onClick={() => navigate('/create-league')}
+                        style={{
+                            backgroundColor: 'var(--accent)',
+                            color: '#000',
+                            border: 'none',
+                            borderRadius: 'var(--radius)',
+                            padding: '12px 24px',
+                            fontWeight: 'bold',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        Create a League
+                    </button>
+                </div>
+            )}
 
-            {/* ── Create League Form ── */}
-            {showCreate && (
-        <form onSubmit={handleCreate}>
-          <h2>Create a League</h2>
-          <div>
-            <label>League Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} required />
-          </div>
-          <div>
-            <label>Your Team Name</label>
-            <input value={teamName} onChange={(e) => setTeamName(e.target.value)} required />
-          </div>
-          <div>
-            <label>Scoring Type</label>
-            <select value={scoringType} onChange={(e) => setScoringType(e.target.value)}>
-              <option value="standard">Standard (ESPN)</option>
-              <option value="standard_plus">Standard+</option>
-              <option value="dynasty">Dynasty</option>
-            </select>
-          </div>
-          <div>
-            <label>Max Teams</label>
-            <input
-              type="number"
-              value={maxTeams}
-              onChange={(e) => setMaxTeams(Number(e.target.value))}
-              min={2}
-              max={20}
-            />
-          </div>
-          <button type="submit">Create</button>
-          <button type="button" onClick={() => setShowCreate(false)}>Cancel</button>
-        </form>
-      )}
+            {/* ── League Cards ── */}
+            {leagues.map((league: any) => {
+                const isCommissioner = league.commissioner_id === user?.id
+                return (
+                    <div
+                        key={league.id}
+                        style={{
+                            backgroundColor: 'var(--bg-card)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius)',
+                            padding: '20px 24px',
+                            marginBottom: '14px',
+                        }}
+                    >
+                        {/* ── League Name + Badge ── */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            marginBottom: '14px',
+                        }}>
+                            <div>
+                                <h2 style={{ fontSize: '18px', marginBottom: '6px' }}>{league.name}</h2>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span style={{
+                                        fontSize: '11px',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '10px',
+                                        padding: '3px 10px',
+                                        color: 'var(--text-muted)',
+                                    }}>
+                                        {SCORING_LABELS[league.scoring_type] || league.scoring_type}
+                                    </span>
+                                    {league.max_teams && (
+                                        <span style={{
+                                            fontSize: '11px',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: '10px',
+                                            padding: '3px 10px',
+                                            color: 'var(--text-muted)',
+                                        }}>
+                                            {league.max_teams} teams
+                                        </span>
+                                    )}
+                                    {isCommissioner && (
+                                        <span style={{
+                                            fontSize: '11px',
+                                            border: '1px solid var(--accent)',
+                                            borderRadius: '10px',
+                                            padding: '3px 10px',
+                                            color: 'var(--accent)',
+                                        }}>
+                                            Commissioner
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => handleGoToLeague(league)}
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    color: 'var(--accent)',
+                                    border: '1px solid var(--accent)',
+                                    borderRadius: 'var(--radius)',
+                                    padding: '8px 16px',
+                                    fontSize: '13px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                Open →
+                            </button>
+                        </div>
 
-      {/* ── Join League Form ── */}
-      {showJoin && (
-        <form onSubmit={handleJoin}>
-          <h2>Join a League</h2>
-          <div>
-            <label>Invite Code</label>
-            <input value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} required />
-          </div>
-          <div>
-            <label>Your Team Name</label>
-            <input value={joinTeamName} onChange={(e) => setJoinTeamName(e.target.value)} required />
-          </div>
-          <button type="submit">Join</button>
-          <button type="button" onClick={() => setShowJoin(false)}>Cancel</button>
-        </form>
-      )}
+                        {/* ── Invite Code ── */}
+                        {league.invite_code && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                backgroundColor: 'var(--bg)',
+                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '8px',
+                                padding: '10px 14px',
+                            }}>
+                                <div>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '10px', letterSpacing: '1px' }}>INVITE CODE</span>
+                                    <p style={{
+                                        color: 'var(--accent)',
+                                        fontWeight: 'bold',
+                                        fontSize: '18px',
+                                        letterSpacing: '4px',
+                                        margin: '2px 0 0 0',
+                                    }}>
+                                        {league.invite_code}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => handleCopy(league.invite_code)}
+                                    style={{
+                                        backgroundColor: copied === league.invite_code ? 'var(--accent)' : 'var(--bg-card)',
+                                        color: copied === league.invite_code ? '#000' : 'var(--text-muted)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '6px',
+                                        padding: '6px 14px',
+                                        fontSize: '12px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s',
+                                    }}
+                                >
+                                    {copied === league.invite_code ? 'Copied ✓' : 'Copy'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )
+            })}
 
-      {/* ── League List ── */}
-      {leagues.length === 0 ? (
-        <p>You're not in any leagues yet.</p>
-      ) : (
-        leagues.map((league) => (
-          <div key={league.id}>
-            <h3>{league.name}</h3>
-            <p>Scoring: {league.scoring_type}</p>
-            <p>Max Teams: {league.max_teams}</p>
-            <p>Invite Code: <strong>{league.invite_code}</strong></p>
-          </div>
-        ))
-      )}
-    </div>
-  )
+        </div>
+    )
 }
-
-// ── EXPORT ─────────────────────────────────────────────────────────────────────
-// (default export declared on function above)
