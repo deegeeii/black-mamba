@@ -31,7 +31,8 @@ type Trade = {
     status: string
     week: number
 }
-type Tab = 'roster' | 'free-agents' | 'trades' | 'draft'
+
+type Tab = 'roster' | 'free-agents' | 'trades' | 'draft' | 'keepers'
 
 // ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function MyTeamScreen() {
@@ -62,6 +63,11 @@ export default function MyTeamScreen() {
     const [trades, setTrades] = useState<Trade[]>([])
     const [allPlayers, setAllPlayers] = useState<Record<string, FreeAgent>>({})
 
+    // ── State: Keepers ────────────────────────────────────────────────────────
+    const [keepers, setKeepers] = useState<{ player_id: string; cost_round: number }[]>([])
+    const [keeperMax] = useState(2)
+    const [keeperLoading, setKeeperLoading] = useState(false)
+    
     // ── Headers ───────────────────────────────────────────────────────────────
     const headers = useMemo(() => ({
         Authorization: `Bearer ${session?.access_token}`,
@@ -90,7 +96,10 @@ export default function MyTeamScreen() {
             fetch(`${API}/leagues/${activeLeague.id}/free-agents`, { headers }).then(r => r.json()),
             fetch(`${API}/leagues/${activeLeague.id}/trades`, { headers }).then(r => r.json()),
             fetch(`${API}/draft/players`, { headers }).then(r => r.json()),
-        ]).then(([r, l, fa, t, p]) => {
+            activeLeague?.scoring_type === 'dynasty'
+            ? fetch(`${API}/leagues/${activeLeague.id}/keepers`, { headers }).then(r => r.json())
+            : Promise.resolve([]),
+        ]).then(([r, l, fa, t, p, k]) => {
             if (r.status === 'fulfilled') setRoster(r.value)
             if (l.status === 'fulfilled') {
                 const slots: Record<string, string> = {}
@@ -104,6 +113,7 @@ export default function MyTeamScreen() {
                 p.value.forEach((pl: FreeAgent) => { map[pl.id] = pl })
                 setAllPlayers(map)
             }
+            if (k.status === 'fulfilled' && Array.isArray(k.value)) setKeepers(k.value)
             setLoading(false)
         })
     }, [activeLeague?.id, session])
@@ -157,6 +167,36 @@ export default function MyTeamScreen() {
         setTimeout(() => setLineupSaved(false), 2000)
     }
 
+    const handleDeclareKeeper = async (playerId: string) => {
+        setKeeperLoading(true)
+        try {
+            const res = await fetch(`${API}/leagues/${activeLeague!.id}/keepers`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ player_id: playerId }),
+            })
+            const data = await res.json()
+            if (!res.ok) { setAddError(data.detail || 'Failed to declare keeper'); return }
+            setKeepers(prev => [...prev, data])
+        } finally {
+            setKeeperLoading(false)
+        }
+    }
+
+    const handleRemoveKeeper = async (playerId: string) => {
+        setKeeperLoading(true)
+        try {
+            await fetch(`${API}/leagues/${activeLeague!.id}/keepers/${playerId}`, {
+                method: 'DELETE',
+                headers,
+            })
+            setKeepers(prev => prev.filter(k => k.player_id !== playerId))
+        } finally {
+            setKeeperLoading(false)
+        }
+    }
+
+
     // ── Helpers ───────────────────────────────────────────────────────────────
     const playerName = (id: string) => allPlayers[id]?.name || id.slice(0, 8)
 
@@ -201,7 +241,7 @@ export default function MyTeamScreen() {
 
             {/* ── Tab Bar ── */}
             <View style={[styles.tabs, { borderBottomColor: theme.borderSubtle }]}>
-                {(['roster', 'free-agents', 'trades', 'draft'] as Tab[]).map(t => (
+            {(['roster', 'free-agents', 'trades', ...(activeLeague?.scoring_type === 'dynasty' ? ['keepers'] : []), 'draft'] as Tab[]).map(t => (
                     <TouchableOpacity key={t} style={tabStyle(t)} onPress={() => {
                         if (t === 'draft') { navigation.navigate('Draft' as never); return }
                         setTab(t)
@@ -424,6 +464,56 @@ export default function MyTeamScreen() {
                                     No trades yet
                                 </Text>
                             )}
+                        </ScrollView>
+                    )}
+                    {/* ── Keepers Tab ── */}
+                    {tab === 'keepers' && (
+                        <ScrollView contentContainerStyle={styles.list}>
+                            <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>
+                                KEEPERS — {keepers.length}/{keeperMax} DECLARED
+                            </Text>
+                            {roster.map(p => {
+                                const kept = keepers.find(k => k.player_id === p.player_id)
+                                return (
+                                    <View key={p.player_id} style={[styles.playerRow, {
+                                        backgroundColor: theme.bgCard,
+                                        borderColor: kept ? theme.accent : theme.border,
+                                    }]}>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ color: theme.text, fontSize: 14, fontWeight: 'bold' }}>{p.name}</Text>
+                                            <Text style={{ color: theme.textDim, fontSize: 12 }}>
+                                                {p.position} · {p.nfl_team || 'FA'}
+                                                {kept ? `  ·  Rd ${kept.cost_round} cost` : ''}
+                                            </Text>
+                                        </View>
+                                        {kept ? (
+                                            <TouchableOpacity
+                                                onPress={() => handleRemoveKeeper(p.player_id)}
+                                                disabled={keeperLoading}
+                                                style={[styles.smallBtn, { borderColor: theme.danger, borderWidth: 1 }]}
+                                            >
+                                                <Text style={{ color: theme.danger, fontSize: 12 }}>Remove</Text>
+                                            </TouchableOpacity>
+                                        ) : (
+                                            <TouchableOpacity
+                                                onPress={() => handleDeclareKeeper(p.player_id)}
+                                                disabled={keeperLoading || keepers.length >= keeperMax}
+                                                style={[styles.smallBtn, {
+                                                    backgroundColor: keepers.length >= keeperMax ? theme.border : theme.accent,
+                                                }]}
+                                            >
+                                                <Text style={{
+                                                    color: keepers.length >= keeperMax ? theme.textMuted : '#000',
+                                                    fontSize: 12,
+                                                    fontWeight: 'bold',
+                                                }}>
+                                                    Keep
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                )
+                            })}
                         </ScrollView>
                     )}
                 </>
