@@ -62,6 +62,13 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     useEffect(() => { refreshLeagues() }, [session?.access_token])
 
     useEffect(() => {
+        setLeagues([])
+        setActiveLeague(null)
+        setMembers([])
+    }, [session?.user?.id])
+
+
+    useEffect(() => {
         if (!session?.access_token || !activeLeague) return
         const headers = { Authorization: `Bearer ${session.access_token}` }
         axios.get(`${API_URL}/leagues/${activeLeague.id}/members`, { headers }).then(res => {

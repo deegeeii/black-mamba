@@ -2,9 +2,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { useLeague } from '../contexts/LeagueContext'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
@@ -22,6 +22,18 @@ export default function DashboardScreen() {
     const [ledger, setLedger] = useState<{ won: number; lost: number; balance: number } | null>(null)
     const [pendingTrades, setPendingTrades] = useState(0)
     const [openBets, setOpenBets] = useState(0)
+    const [username, setUsername] = useState<string | null>(null)
+
+    useFocusEffect(useCallback(() => {
+        if (!session) return
+        fetch(`${API}/profile/`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+        })
+            .then(r => r.json())
+            .then(d => setUsername(d.username || null))
+            .catch(() => {})
+    }, [session]))
+
 
     // ── Effects ───────────────────────────────────────────────────────────────
     useEffect(() => {
@@ -78,7 +90,7 @@ export default function DashboardScreen() {
 
             {/* ── Welcome ── */}
             <Text style={[styles.welcome, { color: theme.textMuted }]}>Hey there</Text>
-            <Text style={[styles.email, { color: theme.text }]}>{user?.email}</Text>
+            <Text style={[styles.email, { color: theme.text }]}>{username || user?.email}</Text>
 
             {/* ── Card Grid ── */}
             <View style={styles.cardRow}>

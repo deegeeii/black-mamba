@@ -27,6 +27,11 @@ def create_league(user_id: str, data: LeagueCreate):
         "team_name": data.team_name,
     }).execute()
 
+    supabase.table("profiles").update({
+        "team_name": data.team_name,
+    }).eq("id", user_id).execute()
+
+
     return league.data[0]
 
 
@@ -70,5 +75,9 @@ def join_league(user_id: str, data: JoinLeague):
         "user_id": user_id,
         "team_name": data.team_name,
     }).execute()
+
+    supabase.table("profiles").update({
+        "team_name": data.team_name,
+    }).eq("id", user_id).execute()
 
     return league.data
