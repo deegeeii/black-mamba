@@ -25,6 +25,7 @@ interface LeagueContextType {
     setActiveLeague: (league: League) => void
     members: Member[]
     getTeamName: (userId: string | null) => string
+    refreshLeagues: () => void
 }
 
 // ── CONTEXT / PROVIDER SETUP ───────────────────────────────────────────────────
@@ -34,6 +35,7 @@ const LeagueContext = createContext<LeagueContextType>({
     setActiveLeague: () => {},
     members: [],
     getTeamName: () => 'Unknown',
+    refreshLeagues: () => {},
 })
 
 export function LeagueProvider({ children }: { children: ReactNode }) {
@@ -44,8 +46,8 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     const [activeLeague, setActiveLeague] = useState<League | null>(null)
     const [members, setMembers] = useState<Member[]>([])
 
-    // ── EFFECTS / FETCH ON MOUNT ────────────────────────────────────────────────
-    useEffect(() => {
+    // ── EFFECTS / FETCH ─────────────────────────────────────────────────────────
+    const refreshLeagues = useCallback(() => {
         if (!session?.access_token) return
         const headers = { Authorization: `Bearer ${session.access_token}` }
         axios.get(`${API_URL}/leagues/`, { headers }).then(res => {
@@ -55,6 +57,8 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
             }
         })
     }, [session?.access_token])
+
+    useEffect(() => { refreshLeagues() }, [session?.access_token])
 
     useEffect(() => {
         if (!session?.access_token || !activeLeague) return
@@ -73,7 +77,7 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
 
     // ── JSX / RENDER ────────────────────────────────────────────────────────────
     return (
-        <LeagueContext.Provider value={{ leagues, activeLeague, setActiveLeague, members, getTeamName }}>
+        <LeagueContext.Provider value={{ leagues, activeLeague, setActiveLeague, members, getTeamName, refreshLeagues }}>
             {children}
         </LeagueContext.Provider>
     )

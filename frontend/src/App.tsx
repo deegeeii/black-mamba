@@ -20,6 +20,9 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import ResetPassword from './pages/ResetPassword'
 import LeagueHome from './pages/LeagueHome'
 import StripeConnect from './pages/StripeConnect'
+import Onboarding from './pages/Onboarding'
+import CreateLeague from './pages/CreateLeague'
+import JoinLeague from './pages/JoinLeague'
 
 
 // ── HELPERS ────────────────────────────────────────────────────────────────────
@@ -56,6 +59,32 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+
+              {/* ── Onboarding Routes (protected, no sidebar) ── */}
+              <Route
+                path="/onboarding"
+                element={
+                  <ProtectedRoute>
+                    <Onboarding />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/create-league"
+                element={
+                  <ProtectedRoute>
+                    <CreateLeague />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/join-league"
+                element={
+                  <ProtectedRoute>
+                    <JoinLeague />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* ── Protected Routes ── */}
               <Route
@@ -125,9 +154,9 @@ export default function App() {
               <Route
                 path="/ledger"
                 element={
-                    <ProtectedRoute>
-                        <AppLayout><Ledger /></AppLayout>
-                    </ProtectedRoute>
+                  <ProtectedRoute>
+                    <AppLayout><Ledger /></AppLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
@@ -138,8 +167,22 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/leagues/:leagueId/league-home" element={<ProtectedRoute><AppLayout><LeagueHome /></AppLayout></ProtectedRoute>} />
-              <Route path="/connect" element={<ProtectedRoute><AppLayout><StripeConnect /></AppLayout></ProtectedRoute>} />
+              <Route
+                path="/leagues/:leagueId/league-home"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout><LeagueHome /></AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/connect"
+                element={
+                  <ProtectedRoute>
+                    <AppLayout><StripeConnect /></AppLayout>
+                  </ProtectedRoute>
+                }
+              />
 
               {/* ── Fallback ── */}
               <Route path="*" element={<Navigate to="/login" replace />} />

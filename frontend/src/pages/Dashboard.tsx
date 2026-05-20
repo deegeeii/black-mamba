@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
@@ -73,8 +74,9 @@ const cardTitle: React.CSSProperties = {
 export default function Dashboard() {
 
   // ── STATE ───────────────────────────────────────────────────────────────────
+  const navigate = useNavigate()
   const { user, session } = useAuth()
-  const { activeLeague, getTeamName } = useLeague()
+  const { activeLeague, leagues, getTeamName } = useLeague()
 
   const [headlines, setHeadlines] = useState<Headline[]>([])
   const [standings, setStandings] = useState<Standing[]>([])
@@ -115,6 +117,16 @@ export default function Dashboard() {
     })
   }, [activeLeague?.id, session, headers])
 
+    // Redirect new users with no leagues to onboarding
+    useEffect(() => {
+      if (!session) return
+      const timer = setTimeout(() => {
+        if (leagues.length === 0) navigate('/onboarding')
+      }, 800)
+      return () => clearTimeout(timer)
+    }, [session, leagues.length])
+  
+
   // ── HELPERS ───────────────────────────────────────────────────────────────
   const label = (userId: string) => getTeamName(userId)
 
@@ -125,7 +137,7 @@ export default function Dashboard() {
   const recentBets = bets.slice(0, 3)
   const topStandings = standings.slice(0, 3)
 
-  if (!activeLeague) return <p style={{ color: 'var(--text-dim)' }}>Select a league from the sidebar.</p>
+  if (!activeLeague) return <p style={{ color: 'var(--text-dim)' }}>Loading...</p>
   if (loading) return <p>Loading dashboard...</p>
 
   // ── JSX ───────────────────────────────────────────────────────────────────
