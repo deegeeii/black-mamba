@@ -2,7 +2,7 @@
 // ── IMPORTS ────────────────────────────────────────────────────────────────────
 // ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ export default function SignUp() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
-  const navigate = useNavigate()
+  
 
   // ── HANDLERS ─────────────────────────────────────────────────────────────────
   const handleSignUp = async (e: React.FormEvent) => {
