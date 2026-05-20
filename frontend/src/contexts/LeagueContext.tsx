@@ -12,6 +12,7 @@ interface League {
     id: string
     name: string
     commissioner_id?: string
+    scoring_type?: string
 }
 
 interface Member {

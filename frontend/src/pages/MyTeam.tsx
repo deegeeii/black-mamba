@@ -10,7 +10,6 @@ import { useLeague } from '../contexts/LeagueContext'
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
 const CURRENT_WEEK = 1
-const SLOTS = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'BN']
 const POSITIONS = ['', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF']
 
 // ── INTERFACES / TYPES ─────────────────────────────────────────────────────────
@@ -57,7 +56,7 @@ export default function MyTeam() {
   // ── STATE ──────────────────────────────────────────────────────────────────
   const { leagueId } = useParams<{ leagueId: string }>()
   const { session, user } = useAuth()
-  const { getTeamName } = useLeague()
+  const { getTeamName, activeLeague } = useLeague()
   const [tab, setTab] = useState<'roster' | 'free-agents' | 'trades'>('roster')
 
   // Roster state
@@ -91,6 +90,14 @@ export default function MyTeam() {
     () => ({ Authorization: `Bearer ${session?.access_token}` }),
     [session?.access_token]
   )
+
+  const slots = useMemo(() => {
+    const base = ['QB', 'RB', 'WR', 'TE', 'FLEX']
+    if (activeLeague?.scoring_type === 'standard_plus') base.push('SFLEX')
+    base.push('K', 'BN')
+    return base
+  }, [activeLeague?.scoring_type])
+
 
   // ── HELPERS ────────────────────────────────────────────────────────────────
   const fetchRoster = () =>
@@ -259,7 +266,7 @@ export default function MyTeam() {
                 </tr>
               </thead>
               <tbody>
-                {SLOTS.map(slot => (
+                {slots.map(slot => (
                   <tr key={slot} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                     <td style={{ padding: '12px 16px', color: 'var(--accent)', fontWeight: 'bold', fontSize: '12px', letterSpacing: '1px' }}>{slot}</td>
                     <td style={{ padding: '12px 16px' }}>
