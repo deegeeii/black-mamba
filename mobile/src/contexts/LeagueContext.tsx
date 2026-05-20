@@ -7,6 +7,7 @@ type League = {
     id: string
     name: string
     commissioner_id: string
+    scoring_type: string
 }
 
 type Member = {
@@ -44,7 +45,7 @@ export function LeagueProvider({ children, userId }: { children: React.ReactNode
         if (!userId) return
         supabase
             .from('league_members')
-            .select('league_id, leagues(id, name, commissioner_id)')
+            .select('league_id, leagues(id, name, commissioner_id, scoring_type)')
             .eq('user_id', userId)
             .then(({ data }) => {
                 const list = (data || []).map((r: any) => r.leagues).filter(Boolean)

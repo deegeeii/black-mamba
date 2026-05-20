@@ -17,7 +17,6 @@ import { useLeague } from '../contexts/LeagueContext'
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API = process.env.EXPO_PUBLIC_API_URL
 const CURRENT_WEEK = 1
-const SLOTS = ['QB', 'RB', 'WR', 'TE', 'FLEX', 'K', 'BN']
 const POSITIONS = ['', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF']
 
 // ── TYPES ──────────────────────────────────────────────────────────────────────
@@ -163,9 +162,17 @@ export default function MyTeamScreen() {
 
     const eligibleForSlot = (slot: string) => {
         if (slot === 'FLEX') return roster.filter(p => ['RB', 'WR', 'TE'].includes(p.position))
+        if (slot === 'SFLEX') return roster.filter(p => ['QB', 'RB', 'WR', 'TE'].includes(p.position))
         if (slot === 'BN') return roster
         return roster.filter(p => p.position === slot)
     }
+
+    const slots = useMemo(() => {
+        const base = ['QB', 'RB', 'WR', 'TE', 'FLEX']
+        if (activeLeague?.scoring_type === 'standard_plus') base.push('SFLEX')
+        base.push('K', 'BN')
+        return base
+    }, [activeLeague?.scoring_type])
 
     const incoming = trades.filter(t => t.opponent_id === user?.id && t.status === 'pending')
     const outgoing = trades.filter(t => t.proposer_id === user?.id && t.status === 'pending')
@@ -219,7 +226,7 @@ export default function MyTeamScreen() {
                     {tab === 'roster' && (
                         <ScrollView contentContainerStyle={styles.list}>
                             <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>LINEUP — WEEK {CURRENT_WEEK}</Text>
-                            {SLOTS.map(slot => {
+                            {slots.map(slot => {
                                 const playerId = lineup[slot]
                                 const player = roster.find(p => p.player_id === playerId)
                                 return (
