@@ -147,7 +147,7 @@ export default function DraftScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.text }]}>Draft</Text>
+                <Text style={[styles.title, { color: theme.textHeading }]}>Draft</Text>
                 <View style={{ width: 60 }} />
             </View>
 
@@ -160,11 +160,11 @@ export default function DraftScreen() {
                         <View style={styles.startBox}>
                             <Text style={[styles.statusText, { color: theme.textDim }]}>Draft has not started yet</Text>
                             <TouchableOpacity
-                                style={[styles.startBtn, { backgroundColor: theme.accent }]}
+                                style={[styles.startBtn, { backgroundColor: theme.accentSec }]}
                                 onPress={handleStart}
                                 disabled={starting}
                             >
-                                <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 15 }}>
+                                <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 15 }}>
                                     {starting ? 'Starting...' : 'Start Draft'}
                                 </Text>
                             </TouchableOpacity>
@@ -234,11 +234,11 @@ export default function DraftScreen() {
                                         </View>
                                         {isMyTurn && (
                                             <TouchableOpacity
-                                                style={[styles.pickBtn, { backgroundColor: theme.accent }]}
+                                                style={[styles.pickBtn, { backgroundColor: theme.accentSec }]}
                                                 onPress={() => handlePick(item)}
                                                 disabled={picking}
                                             >
-                                                <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>
+                                                <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 13 }}>
                                                     {picking ? '...' : 'Draft'}
                                                 </Text>
                                             </TouchableOpacity>
@@ -302,6 +302,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
     },
     title: {
+        fontFamily: 'Georgia',
         fontSize: 17,
         fontWeight: 'bold',
     },

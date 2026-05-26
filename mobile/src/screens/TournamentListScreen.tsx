@@ -69,7 +69,7 @@ export default function TournamentListScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.text }]}>Arena</Text>
+                <Text style={[styles.title, { color: theme.textHeading }]}>Arena</Text>
                 <View style={{ width: 60 }} />
             </View>
 
@@ -131,6 +131,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
     },
     title: {
+        fontFamily: 'Georgia',
         fontSize: 17,
         fontWeight: 'bold',
     },

@@ -162,7 +162,7 @@ export default function TournamentDetailScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
+                <Text style={[styles.title, { color: theme.textHeading }]} numberOfLines={1}>
                     {tournament.name}
                 </Text>
                 <View style={{ width: 60 }} />
@@ -175,11 +175,11 @@ export default function TournamentDetailScreen() {
                 </Text>
                 {tournamentStatus === 'open' && (
                     <TouchableOpacity
-                        style={[styles.joinBtn, { backgroundColor: theme.accent }]}
+                        style={[styles.joinBtn, { backgroundColor: theme.accentSec }]}
                         onPress={handleJoin}
                         disabled={joining}
                     >
-                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>
+                        <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 13 }}>
                             {joining ? 'Joining...' : 'Join'}
                         </Text>
                     </TouchableOpacity>
@@ -315,9 +315,9 @@ export default function TournamentDetailScreen() {
                                         <TouchableOpacity
                                             onPress={handleGenerateDraft}
                                             disabled={generatingDraft}
-                                            style={[styles.genBtn, { backgroundColor: generatingDraft ? theme.border : theme.accent }]}
+                                            style={[styles.genBtn, { backgroundColor: generatingDraft ? theme.border : theme.accentSec }]}
                                         >
-                                            <Text style={{ color: generatingDraft ? theme.textDim : '#000', fontWeight: 'bold', fontSize: 12 }}>
+                                            <Text style={{ color: generatingDraft ? theme.textDim : theme.btnText, fontWeight: 'bold', fontSize: 12 }}>
                                                 {generatingDraft ? 'Generating...' : 'Generate Pool'}
                                             </Text>
                                         </TouchableOpacity>
@@ -379,9 +379,9 @@ export default function TournamentDetailScreen() {
                                                     <TouchableOpacity
                                                         onPress={() => handlePick(e.id)}
                                                         disabled={picking === e.id}
-                                                        style={[styles.pickBtn, { backgroundColor: theme.accent, opacity: picking === e.id ? 0.5 : 1 }]}
+                                                        style={[styles.pickBtn, { backgroundColor: theme.accentSec, opacity: picking === e.id ? 0.5 : 1 }]}
                                                     >
-                                                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 12 }}>
+                                                        <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 12 }}>
                                                             {picking === e.id ? '...' : 'Pick'}
                                                         </Text>
                                                     </TouchableOpacity>
@@ -414,6 +414,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
     },
     title: {
+        fontFamily: 'Georgia',
         fontSize: 17,
         fontWeight: 'bold',
         flex: 1,

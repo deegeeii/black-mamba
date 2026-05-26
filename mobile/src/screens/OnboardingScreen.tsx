@@ -26,11 +26,11 @@ export default function OnboardingScreen() {
 
             {/* ── Options ── */}
             <TouchableOpacity
-                style={[styles.primaryBtn, { backgroundColor: theme.accent }]}
+                style={[styles.primaryBtn, { backgroundColor: theme.accentSec }]}
                 onPress={() => navigation.navigate('CreateLeague')}
             >
-                <Text style={styles.primaryBtnText}>Create a League</Text>
-                <Text style={styles.primaryBtnSub}>You'll be the commissioner</Text>
+                <Text style={[styles.primaryBtnText, { color: theme.btnText }]}>Create a League</Text>
+                <Text style={[styles.primaryBtnSub, { color: theme.btnText, opacity: 0.7 }]}>You'll be the commissioner</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

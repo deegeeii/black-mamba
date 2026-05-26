@@ -175,7 +175,7 @@ export default function LeagueHomeScreen() {
             contentContainerStyle={styles.content}
         >
             {/* ── Page Header ── */}
-            <Text style={[styles.title, { color: theme.accent }]}>League</Text>
+            <Text style={[styles.title, { color: theme.textHeading }]}>League</Text>
             <Text style={[styles.subtitle, { color: theme.textDim }]}>{activeLeague?.name}</Text>
 
             {/* ── Tab Bar ── */}
@@ -203,7 +203,7 @@ export default function LeagueHomeScreen() {
                     ? <Text style={{ color: theme.textDim, marginTop: 24 }}>Loading...</Text>
                     : (
                         <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
-                            <Text style={[styles.cardTitle, { color: theme.accent }]}>Team Identity</Text>
+                            <Text style={[styles.cardTitle, { color: theme.textHeading }]}>Team Identity</Text>
 
                             <Text style={[styles.label, { color: theme.textDim }]}>Team Name</Text>
                             <TextInput
@@ -226,9 +226,9 @@ export default function LeagueHomeScreen() {
                             <TouchableOpacity
                                 onPress={handleSaveSettings}
                                 disabled={saving}
-                                style={[styles.btn, { backgroundColor: theme.accent }]}
+                                style={[styles.btn, { backgroundColor: theme.accentSec }]}
                             >
-                                <Text style={styles.btnText}>
+                                <Text style={[styles.btnText, { color: theme.btnText }]}>
                                     {saving ? 'Saving...' : 'Save Team Settings'}
                                 </Text>
                             </TouchableOpacity>
@@ -324,7 +324,7 @@ export default function LeagueHomeScreen() {
                                     key={season.season}
                                     style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                                 >
-                                    <Text style={[styles.cardTitle, { color: theme.accent }]}>
+                                    <Text style={[styles.cardTitle, { color: theme.textHeading }]}>
                                         {season.season} Season
                                     </Text>
                                     <View style={styles.historyGrid}>
@@ -369,7 +369,7 @@ export default function LeagueHomeScreen() {
                             {/* ── Add Award (Commissioner Only) ── */}
                             {isCommissioner && (
                                 <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
-                                    <Text style={[styles.cardTitle, { color: theme.accent }]}>Add Award</Text>
+                                    <Text style={[styles.cardTitle, { color: theme.textHeading }]}>Add Award</Text>
 
                                     <Text style={[styles.label, { color: theme.textDim }]}>Award Name</Text>
                                     <TextInput
@@ -401,9 +401,9 @@ export default function LeagueHomeScreen() {
 
                                     <TouchableOpacity
                                         onPress={handleAddAward}
-                                        style={[styles.btn, { backgroundColor: theme.accent, marginTop: 16 }]}
+                                        style={[styles.btn, { backgroundColor: theme.accentSec, marginTop: 16 }]}
                                     >
-                                        <Text style={styles.btnText}>Add Award</Text>
+                                        <Text style={[styles.btnText, { color: theme.btnText }]}>Add Award</Text>
                                     </TouchableOpacity>
                                 </View>
                             )}

@@ -110,13 +110,13 @@ export default function JoinLeagueScreen() {
 
                 {/* ── Join Button ── */}
                 <TouchableOpacity
-                    style={[styles.btn, { backgroundColor: theme.accent, opacity: loading ? 0.6 : 1 }]}
+                    style={[styles.btn, { backgroundColor: theme.accentSec, opacity: loading ? 0.6 : 1 }]}
                     onPress={handleJoin}
                     disabled={loading}
                 >
                     {loading
-                        ? <ActivityIndicator color="#000" />
-                        : <Text style={styles.btnText}>Join League</Text>
+                        ? <ActivityIndicator color={theme.btnText} />
+                        : <Text style={[styles.btnText, { color: theme.btnText }]}>Join League</Text>
                     }
                 </TouchableOpacity>
 

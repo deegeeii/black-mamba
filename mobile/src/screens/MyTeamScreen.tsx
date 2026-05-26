@@ -235,7 +235,7 @@ export default function MyTeamScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.text }]}>My Team</Text>
+                <Text style={[styles.title, { color: theme.textHeading }]}>My Team</Text>
                 <View style={{ width: 60 }} />
             </View>
 
@@ -265,7 +265,7 @@ export default function MyTeamScreen() {
                     {/* ── Roster Tab ── */}
                     {tab === 'roster' && (
                         <ScrollView contentContainerStyle={styles.list}>
-                            <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>LINEUP — WEEK {CURRENT_WEEK}</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textHeading }]}>LINEUP — WEEK {CURRENT_WEEK}</Text>
                             {slots.map(slot => {
                                 const playerId = lineup[slot]
                                 const player = roster.find(p => p.player_id === playerId)
@@ -285,15 +285,15 @@ export default function MyTeamScreen() {
                             })}
 
                             <TouchableOpacity
-                                style={[styles.saveBtn, { backgroundColor: lineupSaved ? theme.accentDark : theme.accent }]}
+                                style={[styles.saveBtn, { backgroundColor: lineupSaved ? theme.accentDark : theme.accentSec }]}
                                 onPress={handleSaveLineup}
                             >
-                                <Text style={{ color: lineupSaved ? theme.accent : '#000', fontWeight: 'bold' }}>
+                                <Text style={{ color: lineupSaved ? theme.accent : theme.btnText, fontWeight: 'bold' }}>
                                     {lineupSaved ? 'Saved ✓' : 'Save Lineup'}
                                 </Text>
                             </TouchableOpacity>
 
-                            <Text style={[styles.sectionLabel, { color: theme.textMuted, marginTop: 24 }]}>STARTERS</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textHeading, marginTop: 24 }]}>STARTERS</Text>
                             {roster
                                 .filter(p => Object.entries(lineup).some(([slot, id]) => id === p.player_id && slot !== 'BN'))
                                 .map(p => (
@@ -305,7 +305,7 @@ export default function MyTeamScreen() {
                                     </View>
                                 ))}
 
-                            <Text style={[styles.sectionLabel, { color: theme.textMuted, marginTop: 16 }]}>BENCH</Text>
+                            <Text style={[styles.sectionLabel, { color: theme.textHeading, marginTop: 16 }]}>BENCH</Text>
                             {roster
                                 .filter(p => !Object.entries(lineup).some(([slot, id]) => id === p.player_id && slot !== 'BN'))
                                 .map(p => (
@@ -356,12 +356,12 @@ export default function MyTeamScreen() {
                                     <TouchableOpacity
                                         key={pos}
                                         style={[styles.filterBtn, {
-                                            backgroundColor: position === pos ? theme.accent : theme.bgCard,
-                                            borderColor: position === pos ? theme.accent : theme.border,
+                                            backgroundColor: position === pos ? theme.accentSec : theme.bgCard,
+                                            borderColor: position === pos ? theme.accentSec : theme.border,
                                         }]}
                                         onPress={() => setPosition(pos)}
                                     >
-                                        <Text style={{ color: position === pos ? '#000' : theme.textMuted, fontSize: 12 }}>
+                                        <Text style={{ color: position === pos ? theme.btnText : theme.textMuted, fontSize: 12 }}>
                                             {pos || 'ALL'}
                                         </Text>
                                     </TouchableOpacity>
@@ -379,9 +379,9 @@ export default function MyTeamScreen() {
                                         </View>
                                         <TouchableOpacity
                                             onPress={() => handleAdd(item.id)}
-                                            style={[styles.smallBtn, { backgroundColor: theme.accent }]}
+                                            style={[styles.smallBtn, { backgroundColor: theme.accentSec }]}
                                         >
-                                            <Text style={{ color: '#000', fontSize: 12, fontWeight: 'bold' }}>Add</Text>
+                                            <Text style={{ color: theme.btnText, fontSize: 12, fontWeight: 'bold' }}>Add</Text>
                                         </TouchableOpacity>
                                     </View>
                                 )}
@@ -394,7 +394,7 @@ export default function MyTeamScreen() {
                         <ScrollView contentContainerStyle={styles.list}>
                             {incoming.length > 0 && (
                                 <>
-                                    <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>INCOMING</Text>
+                                    <Text style={[styles.sectionLabel, { color: theme.textHeading }]}>INCOMING</Text>
                                     {incoming.map(t => (
                                         <View key={t.id} style={[styles.tradeCard, { backgroundColor: theme.bgCard, borderColor: theme.accent }]}>
                                             <Text style={{ color: theme.textDim, fontSize: 12, marginBottom: 8 }}>Week {t.week}</Text>
@@ -407,9 +407,9 @@ export default function MyTeamScreen() {
                                             <View style={{ flexDirection: 'row', gap: 8 }}>
                                                 <TouchableOpacity
                                                     onPress={() => handleRespondTrade(t.id, 'accept')}
-                                                    style={[styles.smallBtn, { backgroundColor: theme.accent, flex: 1 }]}
+                                                    style={[styles.smallBtn, { backgroundColor: theme.accentSec, flex: 1 }]}
                                                 >
-                                                    <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>Accept</Text>
+                                                    <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 13 }}>Accept</Text>
                                                 </TouchableOpacity>
                                                 <TouchableOpacity
                                                     onPress={() => handleRespondTrade(t.id, 'reject')}
@@ -425,7 +425,7 @@ export default function MyTeamScreen() {
 
                             {outgoing.length > 0 && (
                                 <>
-                                    <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>OUTGOING</Text>
+                                    <Text style={[styles.sectionLabel, { color: theme.textHeading }]}>OUTGOING</Text>
                                     {outgoing.map(t => (
                                         <View key={t.id} style={[styles.tradeCard, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                                             <Text style={{ color: theme.textDim, fontSize: 12, marginBottom: 8 }}>Week {t.week} · Pending</Text>
@@ -448,7 +448,7 @@ export default function MyTeamScreen() {
 
                             {history.length > 0 && (
                                 <>
-                                    <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>HISTORY</Text>
+                                    <Text style={[styles.sectionLabel, { color: theme.textHeading }]}>HISTORY</Text>
                                     {history.map(t => (
                                         <View key={t.id} style={[styles.tradeCard, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                                             <Text style={{ color: theme.textDim, fontSize: 12 }}>
@@ -469,7 +469,7 @@ export default function MyTeamScreen() {
                     {/* ── Keepers Tab ── */}
                     {tab === 'keepers' && (
                         <ScrollView contentContainerStyle={styles.list}>
-                            <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>
+                            <Text style={[styles.sectionLabel, { color: theme.textHeading }]}>
                                 KEEPERS — {keepers.length}/{keeperMax} DECLARED
                             </Text>
                             {roster.map(p => {
@@ -499,11 +499,11 @@ export default function MyTeamScreen() {
                                                 onPress={() => handleDeclareKeeper(p.player_id)}
                                                 disabled={keeperLoading || keepers.length >= keeperMax}
                                                 style={[styles.smallBtn, {
-                                                    backgroundColor: keepers.length >= keeperMax ? theme.border : theme.accent,
+                                                    backgroundColor: keepers.length >= keeperMax ? theme.border : theme.accentSec,
                                                 }]}
                                             >
                                                 <Text style={{
-                                                    color: keepers.length >= keeperMax ? theme.textMuted : '#000',
+                                                    color: keepers.length >= keeperMax ? theme.textMuted : theme.btnText,
                                                     fontSize: 12,
                                                     fontWeight: 'bold',
                                                 }}>
@@ -581,6 +581,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
     },
     title: {
+        fontFamily: 'Georgia',
         fontSize: 17,
         fontWeight: 'bold',
     },

@@ -90,7 +90,7 @@ export default function DashboardScreen() {
 
             {/* ── Welcome ── */}
             <Text style={[styles.welcome, { color: theme.textMuted }]}>Hey there</Text>
-            <Text style={[styles.email, { color: theme.text }]}>{username || user?.email}</Text>
+            <Text style={[styles.email, { color: theme.textHeading }]}>{username || user?.email}</Text>
 
             {/* ── Card Grid ── */}
             <View style={styles.cardRow}>
@@ -99,8 +99,8 @@ export default function DashboardScreen() {
                     onPress={() => navigation.navigate('MyTeam')}
                 >
                     <View style={styles.dotRow}>
-                        <Text style={[styles.cardLabel, { color: theme.text }]}>My Team</Text>
-                        {pendingTrades > 0 && <View style={[styles.dot, { backgroundColor: '#ffcc44' }]} />}
+                        <Text style={[styles.cardLabel, { color: theme.accent }]}>My Team</Text>
+                        {pendingTrades > 0 && <View style={[styles.dot, { backgroundColor: theme.textHeading }]} />}
                     </View>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>View roster & lineup</Text>
                 </TouchableOpacity>
@@ -108,7 +108,7 @@ export default function DashboardScreen() {
                     style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                     onPress={() => navigation.navigate('Matchups')}
                 >
-                    <Text style={[styles.cardLabel, { color: theme.text }]}>Matchups</Text>
+                    <Text style={[styles.cardLabel, { color: theme.accent }]}>Matchups</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>This week's games</Text>
                 </TouchableOpacity>
             </View>
@@ -118,7 +118,7 @@ export default function DashboardScreen() {
                     style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                     onPress={() => navigation.navigate('Standings')}
                 >
-                    <Text style={[styles.cardLabel, { color: theme.text }]}>Standings</Text>
+                    <Text style={[styles.cardLabel, { color: theme.accent }]}>Standings</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>League rankings</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -126,8 +126,8 @@ export default function DashboardScreen() {
                     onPress={() => navigation.navigate('Bets')}
                 >
                     <View style={styles.dotRow}>
-                        <Text style={[styles.cardLabel, { color: theme.text }]}>Bets</Text>
-                        {openBets > 0 && <View style={[styles.dot, { backgroundColor: '#ffcc44' }]} />}
+                        <Text style={[styles.cardLabel, { color: theme.accent }]}>Bets</Text>
+                        {openBets > 0 && <View style={[styles.dot, { backgroundColor: theme.textHeading }]} />}
                     </View>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>H2H side bets</Text>
                 </TouchableOpacity>
@@ -138,14 +138,14 @@ export default function DashboardScreen() {
                     style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                     onPress={() => navigation.navigate('Chat')}
                 >
-                    <Text style={[styles.cardLabel, { color: theme.text }]}>Chat</Text>
+                    <Text style={[styles.cardLabel, { color: theme.accent }]}>Chat</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>League chat & AI bot</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                     onPress={() => navigation.navigate('Profile')}
                 >
-                    <Text style={[styles.cardLabel, { color: theme.text }]}>Profile</Text>
+                    <Text style={[styles.cardLabel, { color: theme.accent }]}>Profile</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>Settings & appearance</Text>
                 </TouchableOpacity>
             </View>
@@ -155,14 +155,14 @@ export default function DashboardScreen() {
                     style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                     onPress={() => navigation.navigate('LeagueHome')}
                 >
-                    <Text style={[styles.cardLabel, { color: theme.text }]}>League</Text>
+                    <Text style={[styles.cardLabel, { color: theme.accent }]}>League</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>Settings, rosters & history</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                     onPress={() => navigation.navigate('Headlines')}
                 >
-                    <Text style={[styles.cardLabel, { color: theme.text }]}>Headlines</Text>
+                    <Text style={[styles.cardLabel, { color: theme.accent }]}>Headlines</Text>
                     <Text style={[styles.cardSub, { color: theme.textDim }]}>NFL news</Text>
                 </TouchableOpacity>
             </View>
@@ -171,7 +171,7 @@ export default function DashboardScreen() {
             {ledger !== null && (
                 <View style={[styles.ledger, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                     <View style={styles.ledgerHeader}>
-                        <Text style={[styles.ledgerTitle, { color: theme.textMuted }]}>LEDGER</Text>
+                        <Text style={[styles.ledgerTitle, { color: theme.textHeading }]}>LEDGER</Text>
                         {activeLeague && (
                             <Text style={[styles.ledgerLeague, { color: theme.textDim }]}>{activeLeague.name}</Text>
                         )}
@@ -216,6 +216,7 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     wordmark: {
+        fontFamily: 'Georgia',
         fontSize: 20,
         fontWeight: 'bold',
         letterSpacing: 3,
@@ -230,6 +231,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     email: {
+        fontFamily: 'Georgia',
         fontSize: 19,
         fontWeight: 'bold',
         marginBottom: 32,
@@ -270,6 +272,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     ledgerTitle: {
+        fontFamily: 'Georgia',
         fontSize: 10,
         fontWeight: 'bold',
         letterSpacing: 1.5,

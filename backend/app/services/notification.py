@@ -30,8 +30,9 @@ def create_notification(user_id: str, league_id: str, type: str, message: str):
     if profile.data and profile.data[0].get("expo_push_token"):
         try:
             _send_push(profile.data[0]["expo_push_token"], type.replace("_", " ").title(), message)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[notification] push send failed for {user_id}: {e}")
+
 
 
 def get_notifications(user_id: str, league_id: str):

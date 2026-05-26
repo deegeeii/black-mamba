@@ -1,6 +1,6 @@
 // ── IMPORTS ────────────────────────────────────────────────────────────────────
 import 'react-native-url-polyfill/auto'
-import { NavigationContainer } from '@react-navigation/native'
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { ActivityIndicator, View, Platform } from 'react-native'
 import { AuthProvider, useAuth } from './src/contexts/AuthContext'
@@ -25,10 +25,22 @@ import CreateLeagueScreen from './src/screens/CreateLeagueScreen'
 import JoinLeagueScreen from './src/screens/JoinLeagueScreen'
 import * as Notifications from 'expo-notifications'
 import { supabase } from './src/lib/supabase'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 // ── NAVIGATOR ──────────────────────────────────────────────────────────────────
 const Stack = createNativeStackNavigator()
+
+// ── NOTIFICATION HANDLER ───────────────────────────────────────────────────────
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+    }),
+})
+
+const navigationRef = createNavigationContainerRef()
+
 
 async function registerForPushNotifications(userId: string) {
     if (Platform.OS === 'android') {
@@ -96,6 +108,16 @@ function RootNavigator() {
         if (!user) return
         registerForPushNotifications(user.id)
     }, [user?.id])
+
+    useEffect(() => {
+        const sub = Notifications.addNotificationResponseReceivedListener(() => {
+            if (navigationRef.isReady()) {
+                navigationRef.navigate('Chat' as never)
+            }
+        })
+        return () => sub.remove()
+    }, [])
+
     
 
     if (loading) {
@@ -130,7 +152,7 @@ export default function App() {
             merchantIdentifier="merchant.com.blackmambe"
         >
             <AuthProvider>
-                <NavigationContainer>
+                <NavigationContainer ref={navigationRef}>
                     <RootNavigator />
                 </NavigationContainer>
             </AuthProvider>

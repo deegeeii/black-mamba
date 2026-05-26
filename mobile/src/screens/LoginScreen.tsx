@@ -128,7 +128,7 @@ export default function LoginScreen() {
                     Check your email to confirm your account, then sign in to create or join your league.
                 </Text>
                 <TouchableOpacity
-                    style={[styles.btn, { backgroundColor: t.accent }]}
+                    style={[styles.btn, { backgroundColor: t.accentSec }]}
                     onPress={() => { setSignUpSent(false); switchMode('signin') }}
                 >
                     <Text style={styles.btnText}>Sign In</Text>
@@ -213,7 +213,7 @@ export default function LoginScreen() {
 
                 {/* ── Primary Button ── */}
                 <TouchableOpacity
-                    style={[styles.btn, { backgroundColor: t.accent }]}
+                    style={[styles.btn, { backgroundColor: t.accentSec }]}
                     onPress={
                         resetMode ? handleReset
                         : mode === 'signup' ? handleSignUp
@@ -222,7 +222,7 @@ export default function LoginScreen() {
                     disabled={loading}
                 >
                     {loading ? (
-                        <ActivityIndicator color="#000" />
+                        <ActivityIndicator color={t.btnText} />
                     ) : (
                         <Text style={styles.btnText}>
                             {resetMode ? 'Send Reset Link'
@@ -277,6 +277,7 @@ const styles = StyleSheet.create({
         padding: 32,
     },
     wordmark: {
+        fontFamily: 'Georgia',
         fontSize: 32,
         fontWeight: 'bold',
         letterSpacing: 4,
@@ -314,7 +315,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     btnText: {
-        color: '#000',
+        color: t.btnText,
         fontWeight: 'bold',
         fontSize: 15,
     },

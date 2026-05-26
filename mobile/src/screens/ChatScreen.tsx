@@ -264,7 +264,7 @@ export default function ChatScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.text }]}>Chat</Text>
+                <Text style={[styles.title, { color: theme.textHeading }]}>Chat</Text>
                 <View style={{ width: 60 }} />
             </View>
 
@@ -383,12 +383,12 @@ export default function ChatScreen() {
                     <View style={[styles.inputRow, { backgroundColor: theme.bgDeep, borderTopColor: theme.borderSubtle }]}>
                         <TouchableOpacity
                             style={[styles.plusBtn, {
-                                backgroundColor: trayOpen ? theme.accent : theme.bgCard,
+                                backgroundColor: trayOpen ? theme.accentSec : theme.bgCard,
                                 borderColor: theme.border,
                             }]}
                             onPress={() => setTrayOpen(o => !o)}
                         >
-                            <Text style={{ color: trayOpen ? '#000' : theme.textDim, fontSize: 20, lineHeight: 24 }}>
+                            <Text style={{ color: trayOpen ? theme.btnText : theme.textDim, fontSize: 20, lineHeight: 24 }}>
                                 {trayOpen ? '×' : '+'}
                             </Text>
                         </TouchableOpacity>
@@ -402,11 +402,11 @@ export default function ChatScreen() {
                             maxLength={500}
                         />
                         <TouchableOpacity
-                            style={[styles.sendBtn, { backgroundColor: text.trim() ? theme.accent : theme.bgCard }]}
+                            style={[styles.sendBtn, { backgroundColor: text.trim() ? theme.accentSec : theme.bgCard }]}
                             onPress={handleSend}
                             disabled={sending || !text.trim()}
                         >
-                            <Text style={{ color: text.trim() ? '#000' : theme.textDim, fontWeight: 'bold' }}>↑</Text>
+                            <Text style={{ color: text.trim() ? theme.btnText : theme.textDim, fontWeight: 'bold' }}>↑</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -429,10 +429,10 @@ export default function ChatScreen() {
                                         autoFocus
                                     />
                                     <TouchableOpacity
-                                        style={[styles.gifSearchBtn, { backgroundColor: theme.accent }]}
+                                        style={[styles.gifSearchBtn, { backgroundColor: theme.accentSec }]}
                                         onPress={() => searchGifs(gifQuery)}
                                     >
-                                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>Go</Text>
+                                        <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 13 }}>Go</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity onPress={() => { setGifOpen(false); setGifQuery(''); setGifs([]) }}>
                                         <Text style={{ color: theme.textDim, fontSize: 22, lineHeight: 36 }}>×</Text>
@@ -515,6 +515,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
     },
     title: {
+        fontFamily: 'Georgia',
         fontSize: 17,
         fontWeight: 'bold',
     },

@@ -1,6 +1,8 @@
 import anthropic
 from app.core.config import settings
 from app.core.supabase import supabase
+from app.services.notification import create_notification
+
 
 client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
@@ -64,7 +66,28 @@ def post_message(league_id: str, user_id: str, message: str):
         "message": message,
         "is_bot": False
     }).execute()
+
+    members_res = supabase.table("league_members") \
+        .select("user_id") \
+        .eq("league_id", league_id) \
+        .neq("user_id", user_id) \
+        .execute()
+
+    preview = message[:80] + ("..." if len(message) > 80 else "")
+    for member in (members_res.data or []):
+        try:
+            create_notification(
+                member["user_id"],
+                league_id,
+                "chat_message",
+                preview,
+            )
+        except Exception as e:
+            print(f"[chat] notification error for {member['user_id']}: {e}")
+
+
     return res.data[0] if res.data else None, None
+
 
 
 def _get_recent_chat(league_id: str, limit: int = 10) -> str:

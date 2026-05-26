@@ -195,10 +195,10 @@ export default function CreateLeagueScreen() {
 
                 {/* ── Next ── */}
                 <TouchableOpacity
-                    style={[styles.btn, { backgroundColor: theme.accent }]}
+                    style={[styles.btn, { backgroundColor: theme.accentSec }]}
                     onPress={() => setStep(2)}
                 >
-                    <Text style={styles.btnText}>Next →</Text>
+                    <Text style={[styles.btnText, { color: theme.btnText }]}>Next →</Text>
                 </TouchableOpacity>
 
             </ScrollView>
@@ -255,13 +255,13 @@ export default function CreateLeagueScreen() {
 
                 {/* ── Create Button ── */}
                 <TouchableOpacity
-                    style={[styles.btn, { backgroundColor: theme.accent, opacity: loading ? 0.6 : 1 }]}
+                    style={[styles.btn, { backgroundColor: theme.accentSec, opacity: loading ? 0.6 : 1 }]}
                     onPress={handleCreate}
                     disabled={loading}
                 >
                     {loading
-                        ? <ActivityIndicator color="#000" />
-                        : <Text style={styles.btnText}>Create League</Text>
+                        ? <ActivityIndicator color={theme.btnText} />
+                        : <Text style={[styles.btnText, { color: theme.btnText }]}>Create League</Text>
                     }
                 </TouchableOpacity>
 
@@ -285,10 +285,10 @@ export default function CreateLeagueScreen() {
             </Text>
 
             <TouchableOpacity
-                style={[styles.btn, { backgroundColor: theme.accent }]}
+                style={[styles.btn, { backgroundColor: theme.accentSec }]}
                 onPress={handleShare}
             >
-                <Text style={styles.btnText}>Share Invite Code</Text>
+                <Text style={[styles.btnText, { color: theme.btnText }]}>Share Invite Code</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

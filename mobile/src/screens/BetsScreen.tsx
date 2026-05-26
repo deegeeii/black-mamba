@@ -345,10 +345,10 @@ export default function BetsScreen() {
                     {canAcceptH2H && (
                         hasPayout
                             ? <TouchableOpacity
-                                style={[styles.actionBtn, { backgroundColor: theme.accent }]}
+                                style={[styles.actionBtn, { backgroundColor: theme.accentSec }]}
                                 onPress={() => handleAccept(bet)}
                             >
-                                <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>Accept & Pay</Text>
+                                <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 13 }}>Accept & Pay</Text>
                             </TouchableOpacity>
                             : <Text style={{ color: theme.textDim, fontSize: 12 }}>Set up payouts in Profile first</Text>
                     )}
@@ -357,10 +357,10 @@ export default function BetsScreen() {
                     {canEnterPool && enteringBetId !== bet.id && (
                         hasPayout
                             ? <TouchableOpacity
-                                style={[styles.actionBtn, { backgroundColor: theme.accent }]}
+                                style={[styles.actionBtn, { backgroundColor: theme.accentSec }]}
                                 onPress={() => { setEnteringBetId(bet.id); setEnterSide(bet.outcome_options?.[0] || '') }}
                             >
-                                <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 13 }}>Enter Pool</Text>
+                                <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 13 }}>Enter Pool</Text>
                             </TouchableOpacity>
                             : <Text style={{ color: theme.textDim, fontSize: 12 }}>Set up payouts in Profile first</Text>
                     )}
@@ -420,11 +420,11 @@ export default function BetsScreen() {
                         />
                         <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                             <TouchableOpacity
-                                style={[styles.actionBtn, { flex: 1, backgroundColor: !enterSide || !enterAmount ? theme.border : theme.accent }]}
+                                style={[styles.actionBtn, { flex: 1, backgroundColor: !enterSide || !enterAmount ? theme.border : theme.accentSec }]}
                                 onPress={() => handleEnterPool(bet.id)}
                                 disabled={!enterSide || !enterAmount}
                             >
-                                <Text style={{ color: !enterSide || !enterAmount ? theme.textDim : '#000', fontWeight: 'bold', fontSize: 13 }}>Pay & Enter</Text>
+                                <Text style={{ color: !enterSide || !enterAmount ? theme.textDim : theme.btnText, fontWeight: 'bold', fontSize: 13 }}>Pay & Enter</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.actionBtn, { borderWidth: 1, borderColor: theme.border, backgroundColor: 'transparent' }]}
@@ -483,7 +483,7 @@ export default function BetsScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.text }]}>Side Bets</Text>
+                <Text style={[styles.title, { color: theme.textHeading }]}>Side Bets</Text>
                 <TouchableOpacity onPress={() => { setShowCreate(true); setCreateError('') }}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>+ New</Text>
                 </TouchableOpacity>
@@ -641,13 +641,13 @@ export default function BetsScreen() {
 
                     {/* ── Submit ── */}
                     <TouchableOpacity
-                        style={[styles.submitBtn, { backgroundColor: creating ? theme.border : theme.accent }]}
+                        style={[styles.submitBtn, { backgroundColor: creating ? theme.border : theme.accentSec }]}
                         onPress={handleCreate}
                         disabled={creating}
                     >
                         {creating
-                            ? <ActivityIndicator color="#000" />
-                            : <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 15 }}>
+                            ? <ActivityIndicator color={theme.btnText} />
+                            : <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 15 }}>
                                 {betCategory === 'h2h' ? 'Create & Pay' : 'Create Pool'}
                             </Text>
                         }
@@ -669,25 +669,120 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         borderBottomWidth: 1,
     },
-    title: { fontSize: 17, fontWeight: 'bold' },
-    list: { padding: 16, gap: 12, paddingBottom: 40 },
-    empty: { textAlign: 'center', marginTop: 60, fontSize: 14 },
-    card: { borderRadius: 10, padding: 16, borderWidth: 1 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    categoryBadge: { fontSize: 11, fontWeight: 'bold', letterSpacing: 1 },
-    proposition: { fontSize: 15, fontWeight: 'bold', marginBottom: 8 },
-    meta: { fontSize: 13, marginBottom: 4 },
-    sideBlock: { borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 6 },
-    sideHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-    actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-    actionBtn: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-    inlineForm: { marginTop: 12, padding: 12, borderRadius: 8 },
-    chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-    input: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 15 },
-    banner: { margin: 16, padding: 12, borderRadius: 8, borderWidth: 1 },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-    label: { fontSize: 11, letterSpacing: 1, marginBottom: 6, marginTop: 16 },
-    toggleRow: { flexDirection: 'row', gap: 8, marginBottom: 4 },
-    toggleBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, borderWidth: 1, alignItems: 'center' },
-    submitBtn: { padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 32 },
+    title: {
+        fontFamily: 'Georgia',
+        fontSize: 17,
+        fontWeight: 'bold',
+     },
+    list: {
+        padding: 16,
+        gap: 12,
+        paddingBottom: 40,
+    },
+    empty: { 
+        textAlign: 'center', 
+        marginTop: 60, 
+        fontSize: 14 
+    },
+    card: { 
+        borderRadius: 10, 
+        padding: 16, 
+        borderWidth: 1 
+    },
+    cardHeader: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        marginBottom: 8 
+    },
+    categoryBadge: { 
+        fontSize: 11, 
+        fontWeight: 'bold', 
+        letterSpacing: 1 
+    },
+    proposition: { 
+        fontSize: 15, 
+        fontWeight: 'bold',
+        marginBottom: 8 
+    },
+    meta: { 
+        fontSize: 13, 
+        marginBottom: 4 
+    },
+    sideBlock: {
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 6,
+    },
+    sideHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    actions: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 12,
+    },
+    actionBtn: {
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    inlineForm: {
+        marginTop: 12,
+        padding: 12,
+        borderRadius: 8,
+    },
+    chip: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    input: {
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 15,
+    },
+    banner: {
+        margin: 16,
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    label: {
+        fontSize: 11,
+        letterSpacing: 1,
+        marginBottom: 6,
+        marginTop: 16,
+    },
+    toggleRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 4,
+    },
+    toggleBtn: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+        alignItems: 'center',
+    },
+    submitBtn: {
+        padding: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 32,
+    },
 })

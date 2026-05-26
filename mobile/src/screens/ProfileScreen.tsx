@@ -195,7 +195,7 @@ export default function ProfileScreen() {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ color: theme.accent, fontSize: 15 }}>← Back</Text>
                 </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.text }]}>Profile</Text>
+                <Text style={[styles.title, { color: theme.textHeading }]}>Profile</Text>
                 <View style={{ width: 60 }} />
             </View>
 
@@ -228,14 +228,14 @@ export default function ProfileScreen() {
 
                     {/* ── Save Button ── */}
                     <TouchableOpacity
-                        style={[styles.saveBtn, { backgroundColor: saved ? theme.accentDark : theme.accent }]}
+                        style={[styles.saveBtn, { backgroundColor: saved ? theme.accentDark : theme.accentSec }]}
                         onPress={handleSave}
                         disabled={saving}
                     >
                         {saving ? (
-                            <ActivityIndicator color="#000" />
+                            <ActivityIndicator color={theme.btnText} />
                         ) : (
-                            <Text style={{ color: saved ? theme.accent : '#000', fontWeight: 'bold' }}>
+                            <Text style={{ color: saved ? theme.accent : theme.btnText, fontWeight: 'bold' }}>
                                 {saved ? 'Saved ✓' : 'Save Changes'}
                             </Text>
                         )}
@@ -278,11 +278,11 @@ export default function ProfileScreen() {
                             <Text style={{ color: theme.danger, fontSize: 13, marginTop: 8 }}>{joinError}</Text>
                         ) : null}
                         <TouchableOpacity
-                            style={[styles.saveBtn, { backgroundColor: theme.accent, margin: 0, marginTop: 14, opacity: joinLoading ? 0.6 : 1 }]}
+                            style={[styles.saveBtn, { backgroundColor: theme.accentSec, margin: 0, marginTop: 14, opacity: joinLoading ? 0.6 : 1 }]}
                             onPress={handleJoinLeague}
                             disabled={joinLoading}
                         >
-                            <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 14 }}>
+                            <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 14 }}>
                                 {joinLoading ? 'Joining...' : 'Join League'}
                             </Text>
                         </TouchableOpacity>
@@ -332,11 +332,11 @@ export default function ProfileScreen() {
                                     autoCapitalize="none"
                                 />
                                 <TouchableOpacity
-                                    style={[styles.payoutBtn, { backgroundColor: theme.accent, marginTop: 14, opacity: payoutBusy ? 0.6 : 1 }]}
+                                    style={[styles.payoutBtn, { backgroundColor: theme.accentSec, marginTop: 14, opacity: payoutBusy ? 0.6 : 1 }]}
                                     onPress={handleCreatePayout}
                                     disabled={payoutBusy}
                                 >
-                                    <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 14 }}>
+                                    <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 14 }}>
                                         {payoutBusy ? 'Creating...' : 'Create Payout Account'}
                                     </Text>
                                 </TouchableOpacity>
@@ -357,11 +357,11 @@ export default function ProfileScreen() {
                                 </View>
                                 {!payoutStatus.onboarding_complete && (
                                     <TouchableOpacity
-                                        style={[styles.payoutBtn, { backgroundColor: theme.accent, marginTop: 8, opacity: payoutBusy ? 0.6 : 1 }]}
+                                        style={[styles.payoutBtn, { backgroundColor: theme.accentSec, marginTop: 8, opacity: payoutBusy ? 0.6 : 1 }]}
                                         onPress={handleOnboard}
                                         disabled={payoutBusy}
                                     >
-                                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 14 }}>
+                                        <Text style={{ color: theme.btnText, fontWeight: 'bold', fontSize: 14 }}>
                                             {payoutBusy ? 'Opening...' : 'Complete Verification'}
                                         </Text>
                                     </TouchableOpacity>
@@ -399,6 +399,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
     },
     title: {
+        fontFamily: 'Georgia',
         fontSize: 17,
         fontWeight: 'bold',
     },
