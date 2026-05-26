@@ -45,7 +45,8 @@ const card: CSSProperties = {
 }
 
 const sectionTitle: CSSProperties = {
-  color: 'var(--accent)',
+  fontFamily: "'Oswald', sans-serif",
+  color: 'var(--text-heading)',
   fontSize: '11px',
   letterSpacing: '1px',
   textTransform: 'uppercase',
@@ -330,7 +331,7 @@ export default function MyTeam() {
           </div>
 
           {/* ── Save Lineup Button ── */}
-          <button onClick={handleSaveLineup} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '24px' }}>
+          <button onClick={handleSaveLineup} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '24px' }}>
             Save Lineup
           </button>
 
@@ -382,7 +383,7 @@ export default function MyTeam() {
                   <span style={{ color: 'var(--text)', fontWeight: 500 }}>{player.name}</span>
                   <span style={{ color: 'var(--text-dim)', fontSize: '12px', marginLeft: '10px' }}>{player.position} · {player.nfl_team || '—'}</span>
                 </div>
-                <button onClick={() => handleAdd(player)} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '6px 14px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>Add</button>
+                <button onClick={() => handleAdd(player)} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '6px 14px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>Add</button>
               </div>
             ))}
           </div>
@@ -414,7 +415,7 @@ export default function MyTeam() {
         <>
           {/* ── Propose Trade Button ── */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-            <button onClick={() => setShowPropose(true)} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontWeight: 'bold', cursor: 'pointer' }}>Propose Trade</button>
+            <button onClick={() => setShowPropose(true)} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontWeight: 'bold', cursor: 'pointer' }}>Propose Trade</button>
           </div>
 
           {/* ── Incoming Offers ── */}
@@ -428,7 +429,7 @@ export default function MyTeam() {
                   <p style={{ color: 'var(--text-muted)' }}>They want: <span style={{ color: 'var(--warning)' }}>{t.request_player_ids.map(playerName).join(', ')}</span></p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => handleRespond(t.id, 'accept')} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '6px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>Accept</button>
+                  <button onClick={() => handleRespond(t.id, 'accept')} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '6px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>Accept</button>
                   <button onClick={() => handleRespond(t.id, 'reject')} style={{ backgroundColor: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', padding: '6px 14px', fontSize: '12px', cursor: 'pointer' }}>Reject</button>
                 </div>
               </div>
@@ -501,7 +502,7 @@ export default function MyTeam() {
                 {/* ── Modal Actions ── */}
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
                   <button onClick={() => { setShowPropose(false); setError('') }} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '8px 16px', cursor: 'pointer' }}>Cancel</button>
-                  <button onClick={handlePropose} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer' }}>Send Offer</button>
+                  <button onClick={handlePropose} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer' }}>Send Offer</button>
                 </div>
               </div>
             </div>

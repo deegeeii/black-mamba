@@ -156,8 +156,8 @@ export default function JoinLeague() {
                     disabled={loading}
                     style={{
                         width: '100%',
-                        backgroundColor: 'var(--accent)',
-                        color: '#000',
+                        backgroundColor: 'var(--accent-sec)',
+                        color: 'var(--btn-text)',
                         border: 'none',
                         borderRadius: 'var(--radius)',
                         padding: '14px',

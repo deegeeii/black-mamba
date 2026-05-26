@@ -44,7 +44,7 @@ const styles: Record<string, CSSProperties> = {
     sidebar: {
         width: '220px',
         height: '100vh',
-        backgroundColor: 'var(--bg-deep)',
+        backgroundColor: 'var(--bg-card)',
         display: 'flex',
         flexDirection: 'column',
         padding: '24px 0',
@@ -56,14 +56,16 @@ const styles: Record<string, CSSProperties> = {
     wordmark: {
         color: 'var(--accent)',
         fontSize: '22px',
-        fontWeight: 'bold',
+        fontWeight: '700',
         letterSpacing: '2px',
+        fontFamily: "'Cormorant Garamond', Georgia, serif",
         padding: '0 24px 24px',
         borderBottom: '1px solid var(--border-subtle)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
     },
+    
     bellBtn: {
         background: 'none',
         border: 'none',
@@ -95,7 +97,7 @@ const styles: Record<string, CSSProperties> = {
         top: '60px',
         left: '220px',
         width: '300px',
-        backgroundColor: 'var(--bg-card)',
+        backgroundColor: 'var(--text-heading)',
         border: '1px solid var(--border)',
         borderRadius: '8px',
         boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
@@ -158,13 +160,14 @@ const styles: Record<string, CSSProperties> = {
     },
     select: {
         width: '100%',
-        backgroundColor: 'var(--bg-card)',
+        backgroundColor: 'var(--bg-input)',
         color: 'var(--text)',
-        border: '1px solid var(--border)',
+        border: '1px solid #444444',
         borderRadius: '6px',
         padding: '8px',
         fontSize: '13px',
     },
+    
     nav: {
         flex: 1,
         padding: '16px 0',
@@ -173,13 +176,16 @@ const styles: Record<string, CSSProperties> = {
     navItem: {
         display: 'block',
         padding: '12px 24px',
-        color: 'var(--text-dim)',
+        color: 'var(--text-muted)',
+        fontFamily: "'Oswald', sans-serif",
+        letterSpacing: '0.04em',
         textDecoration: 'none',
         fontSize: '14px',
         cursor: 'pointer',
         borderLeft: '3px solid transparent',
         transition: 'all 0.15s',
     },
+    
     navItemActive: {
         color: 'var(--accent)',
         borderLeft: '3px solid var(--accent)',
@@ -463,7 +469,7 @@ export default function Sidebar() {
                                     width: '7px',
                                     height: '7px',
                                     borderRadius: '50%',
-                                    backgroundColor: 'var(--accent)',
+                                    backgroundColor: 'var(--text-heading)',
                                     display: 'inline-block',
                                     flexShrink: 0,
                                 }} />
@@ -474,7 +480,7 @@ export default function Sidebar() {
                                     width: '7px',
                                     height: '7px',
                                     borderRadius: '50%',
-                                    backgroundColor: 'var(--accent)',
+                                    backgroundColor: 'var(--text-heading)',
                                     display: 'inline-block',
                                     flexShrink: 0,
                                 }} />

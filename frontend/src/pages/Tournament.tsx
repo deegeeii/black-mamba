@@ -219,7 +219,7 @@ export default function Tournament() {
             {/* ── New Tournament Button ── */}
             {isCommissioner && (
                 <button onClick={() => setShowCreate(!showCreate)} style={{
-                    backgroundColor: 'var(--accent)', color: '#000', border: 'none',
+                    backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none',
                     borderRadius: 'var(--radius)', padding: '10px 20px',
                     cursor: 'pointer', fontWeight: 'bold', marginBottom: '16px'
                 }}>+ New Tournament</button>
@@ -228,7 +228,7 @@ export default function Tournament() {
             {/* ── Create Tournament Form ── */}
             {showCreate && (
                 <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px', marginBottom: '16px' }}>
-                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Create Tournament</h3>
+                    <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>Create Tournament</h3>
                     {[
                         { lbl: 'Name', val: name, set: setName, ph: 'e.g. Summer Invitational' },
                         { lbl: 'Theme / Event', val: theme, set: setTheme, ph: 'e.g. 2026 Champions League' },
@@ -296,7 +296,7 @@ export default function Tournament() {
                             : <button onClick={() => handleJoin(t.id)} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '6px 14px', cursor: 'pointer', fontSize: '13px' }}>Join</button>
                         }
                         {isCommissioner && t.status === 'setup' && t.member_count >= 6 && schedulingTourneyId !== t.id && (
-                            <button onClick={() => setSchedulingTourneyId(t.id)} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '6px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Schedule Draft</button>
+                            <button onClick={() => setSchedulingTourneyId(t.id)} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '6px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Schedule Draft</button>
                         )}
                         <button onClick={() => { setSelectedTourney(t); fetchMatchups(t.id); fetchEntities(t.id); setTab('h2h') }} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--accent)', border: '1px solid var(--accent)', borderRadius: 'var(--radius)', padding: '6px 14px', cursor: 'pointer', fontSize: '13px' }}>View</button>
                         <button onClick={() => { setSelectedTourney(t); fetchMatchups(t.id); fetchEntities(t.id); setTab('draft') }} style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '6px 14px', cursor: 'pointer', fontSize: '13px' }}>Draft Room</button>
@@ -428,7 +428,7 @@ export default function Tournament() {
                                         <div style={{ color: 'var(--text)', fontWeight: 'bold' }}>{e.name}</div>
                                         <div style={{ color: 'var(--text-dim)', fontSize: '12px', marginTop: '2px', textTransform: 'capitalize' }}>{e.entity_type}</div>
                                     </div>
-                                    <div style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '15px' }}>${e.price.toLocaleString()}</div>
+                                    <div style={{ color: 'var(--text-muted)', fontWeight: 'bold', fontSize: '15px' }}>${e.price.toLocaleString()}</div>
                                 </div>
                             ))
                     })()}
@@ -493,11 +493,11 @@ export default function Tournament() {
                                                         <div style={{ color: 'var(--text-dim)', fontSize: '12px', marginTop: '2px', textTransform: 'capitalize' }}>{e.entity_type}</div>
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                                        <div style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '15px' }}>${e.price.toLocaleString()}</div>
+                                                        <div style={{ color: 'var(--text-muted)', fontWeight: 'bold', fontSize: '15px' }}>${e.price.toLocaleString()}</div>
                                                         {e.picked_by ? (
                                                             <span style={{ color: e.picked_by === user?.id ? 'var(--accent)' : 'var(--text-dim)', fontSize: '12px' }}>{e.picked_by === user?.id ? 'Your pick' : 'Taken'}</span>
                                                         ) : isDrafting ? (
-                                                            <button onClick={() => handlePick(selectedTourney.id, e.id)} disabled={picking === e.id} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '6px 14px', cursor: picking === e.id ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
+                                                            <button onClick={() => handlePick(selectedTourney.id, e.id)} disabled={picking === e.id} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '6px 14px', cursor: picking === e.id ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
                                                                 {picking === e.id ? '...' : 'Pick'}
                                                             </button>
                                                         ) : (

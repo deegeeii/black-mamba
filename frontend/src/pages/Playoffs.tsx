@@ -36,7 +36,8 @@ const card: React.CSSProperties = {
 }
 
 const sectionTitle: React.CSSProperties = {
-  color: 'var(--accent)',
+  fontFamily: "'Oswald', sans-serif",
+  color: 'var(--text-heading)',
   fontSize: '11px',
   letterSpacing: '1px',
   textTransform: 'uppercase',
@@ -177,7 +178,7 @@ export default function Playoffs() {
               </select>
               {/* ── Save Settings Button ── */}
               <button onClick={() => act(() => axios.patch(`${API_URL}/leagues/${activeLeague.id}/playoffs/settings`, { playoff_teams: playoffTeams, tiebreaker }, { headers }))}
-                style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
+                style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
                 Save Settings
               </button>
             </div>
@@ -187,7 +188,7 @@ export default function Playoffs() {
               <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '10px' }}>Bracket Actions</p>
               {/* ── Generate Bracket Button ── */}
               <button onClick={() => act(() => axios.post(`${API_URL}/leagues/${activeLeague.id}/playoffs/bracket`, {}, { headers }))}
-                style={{ display: 'block', width: '100%', backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginBottom: '10px' }}>
+                style={{ display: 'block', width: '100%', backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginBottom: '10px' }}>
                 Generate Bracket
               </button>
 

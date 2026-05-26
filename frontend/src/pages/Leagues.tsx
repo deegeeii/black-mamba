@@ -71,8 +71,8 @@ export default function Leagues() {
                     <button
                         onClick={() => navigate('/create-league')}
                         style={{
-                            backgroundColor: 'var(--accent)',
-                            color: '#000',
+                            backgroundColor: 'var(--accent-sec)',
+                            color: 'var(--btn-text)',
                             border: 'none',
                             borderRadius: 'var(--radius)',
                             padding: '10px 18px',
@@ -103,8 +103,8 @@ export default function Leagues() {
                     <button
                         onClick={() => navigate('/create-league')}
                         style={{
-                            backgroundColor: 'var(--accent)',
-                            color: '#000',
+                            backgroundColor: 'var(--accent-sec)',
+                            color: 'var(--btn-text)',
                             border: 'none',
                             borderRadius: 'var(--radius)',
                             padding: '12px 24px',

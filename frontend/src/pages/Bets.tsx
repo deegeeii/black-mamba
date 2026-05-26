@@ -274,14 +274,14 @@ function BetsInner() {
             <p style={{ color: 'var(--text-dim)', marginBottom: '20px' }}>H2H challenges and pool bets with real money on the line.</p>
 
             {/* ── New Bet Button ── */}
-            <button onClick={() => setShowCreate(!showCreate)} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '16px' }}>
+            <button onClick={() => setShowCreate(!showCreate)} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '16px' }}>
                 + New Bet
             </button>
 
             {/* ── Create Form ── */}
             {showCreate && (
                 <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '20px', marginBottom: '20px' }}>
-                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Create a Bet</h3>
+                    <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>Create a Bet</h3>
 
                     {/* ── Category Toggle: H2H vs Pool ── */}
                     <div style={{ marginBottom: '12px' }}>
@@ -386,7 +386,7 @@ function BetsInner() {
 
                         {/* ── Bet Header: Category + Status ── */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase' as const, fontSize: '11px', letterSpacing: '1px' }}>
+                            <span style={{ fontFamily: "'Oswald', sans-serif", color: 'var(--text-heading)', fontWeight: 'bold', textTransform: 'uppercase' as const, fontSize: '11px', letterSpacing: '1px' }}>
                                 {bet.bet_category === 'pool' ? 'Pool' : 'H2H'} · {bet.bet_type.replace('_', ' ')}
                             </span>
                             <span style={{ color: bet.status === 'settled' ? 'var(--accent)' : bet.status === 'active' || bet.status === 'open' ? 'var(--warning)' : 'var(--text-dim)', fontSize: '12px' }}>{bet.status}</span>
@@ -424,7 +424,7 @@ function BetsInner() {
                                                 <span style={{ color: isWinningSide ? 'var(--accent)' : 'var(--text)', fontWeight: 'bold', fontSize: '13px' }}>
                                                     {side} {isWinningSide ? '✓' : ''}
                                                 </span>
-                                                <span style={{ color: 'var(--accent)', fontSize: '13px' }}>${(sidePot / 100).toFixed(2)}</span>
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>${(sidePot / 100).toFixed(2)}</span>
                                             </div>
                                             {sideEntries.map(e => (
                                                 <div key={e.id} style={{ color: 'var(--text-dim)', fontSize: '12px', paddingTop: '2px' }}>
@@ -458,7 +458,7 @@ function BetsInner() {
                             {/* ── Accept Button (H2H, not proposer) ── */}
                             {bet.bet_category === 'h2h' && bet.status === 'pending' && bet.proposer_id !== user?.id && (
                                 hasPayout
-                                    ? <button onClick={() => handleAccept(bet.id)} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '7px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Accept Bet</button>
+                                    ? <button onClick={() => handleAccept(bet.id)} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '7px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Accept Bet</button>
                                     : <span style={{ color: 'var(--text-dim)', fontSize: '12px', alignSelf: 'center' }}>Set up payouts in Profile to accept bets</span>
                             )}
 
@@ -466,7 +466,7 @@ function BetsInner() {
                             {bet.bet_category === 'pool' && bet.status === 'open' && enteringBetId !== bet.id &&
                                 !(bet.entries || []).find(e => e.user_id === user?.id) && (
                                 hasPayout
-                                    ? <button onClick={() => { setEnteringBetId(bet.id); setEnterSide(bet.outcome_options?.[0] || '') }} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '7px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Enter Pool</button>
+                                    ? <button onClick={() => { setEnteringBetId(bet.id); setEnterSide(bet.outcome_options?.[0] || '') }} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '7px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>Enter Pool</button>
                                     : <span style={{ color: 'var(--text-dim)', fontSize: '12px', alignSelf: 'center' }}>Set up payouts in Profile to enter pools</span>
                             )}
 

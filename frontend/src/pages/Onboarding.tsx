@@ -51,8 +51,8 @@ export default function Onboarding() {
                     onClick={() => navigate('/create-league')}
                     style={{
                         width: '100%',
-                        backgroundColor: 'var(--accent)',
-                        color: '#000',
+                        backgroundColor: 'var(--accent-sec)',
+                        color: 'var(--btn-text)',
                         border: 'none',
                         borderRadius: 'var(--radius)',
                         padding: '20px',
@@ -61,7 +61,7 @@ export default function Onboarding() {
                     }}
                 >
                     <p style={{ fontWeight: 'bold', fontSize: '16px', margin: '0 0 4px 0' }}>Create a League</p>
-                    <p style={{ fontSize: '12px', margin: 0, color: '#00000088' }}>You'll be the commissioner</p>
+                    <p style={{ fontSize: '12px', margin: 0, color: 'var(--text-dim)' }}>You'll be the commissioner</p>
                 </button>
 
                 {/* ── Join a League ── */}

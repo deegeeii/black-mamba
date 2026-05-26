@@ -64,12 +64,14 @@ const card: React.CSSProperties = {
 }
 
 const cardTitle: React.CSSProperties = {
-  color: 'var(--accent)',
+  fontFamily: "'Oswald', sans-serif",
+  color: 'var(--text-heading)',
   fontSize: '11px',
   letterSpacing: '1px',
   textTransform: 'uppercase',
   marginBottom: '12px',
 }
+
 
 export default function Dashboard() {
 
@@ -155,7 +157,7 @@ export default function Dashboard() {
         <div style={card}>
           <div style={cardTitle}>Week {CURRENT_WEEK} Score</div>
           {myScore ? (
-            <div style={{ fontSize: '36px', fontWeight: 'bold', color: 'var(--text)' }}>
+            <div style={{ fontSize: '36px', fontWeight: 'bold', color: 'var(--text-muted)' }}>
               {myScore.total_points.toFixed(1)} <span style={{ fontSize: '16px', color: 'var(--text-dim)' }}>pts</span>
             </div>
           ) : (
@@ -183,8 +185,8 @@ export default function Dashboard() {
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
-                <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>{myMatchup.home_points.toFixed(1)}</span>
-                <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text)' }}>{myMatchup.away_points.toFixed(1)}</span>
+                <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-muted)' }}>{myMatchup.home_points.toFixed(1)}</span>
+                <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-muted)' }}>{myMatchup.away_points.toFixed(1)}</span>
               </div>
             </div>
           ) : (
@@ -247,8 +249,8 @@ export default function Dashboard() {
                 href={h.link}
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: 'var(--text)', fontWeight: 'bold', fontSize: '14px', textDecoration: 'none' }}
-              >
+                style={{ color: 'var(--text-muted)', fontWeight: 'bold', fontSize: '14px', textDecoration: 'none' }}
+                >
                 {h.headline}
               </a>
               {h.description && (

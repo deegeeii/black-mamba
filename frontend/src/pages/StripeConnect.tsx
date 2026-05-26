@@ -103,7 +103,7 @@ export default function StripeConnect() {
 
       {/* ── Error Banner ── */}
       {error && (
-        <div style={{ background: '#3a0a0a', color: '#ff6b6b', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>
+        <div style={{ background: 'var(--accent-dark)', color: 'var(--danger)', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>
           {error}
         </div>
       )}
@@ -133,17 +133,17 @@ export default function StripeConnect() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
               <Row label="Account" value={<span style={{ fontFamily: 'monospace', fontSize: '13px' }}>{status.account_id}</span>} />
               <Row label="Onboarding" value={
-                <span style={{ color: status.onboarding_complete ? '#4caf50' : '#ff9800', fontWeight: 600 }}>
+                <span style={{ color: status.onboarding_complete ? 'var(--accent)' : 'var(--warning)', fontWeight: 600 }}>
                   {status.onboarding_complete ? '✓ Complete' : '⚠ Incomplete'}
                 </span>
               } />
               <Row label="Transfers" value={
-                <span style={{ color: status.ready_to_receive_payments ? '#4caf50' : '#ff9800', fontWeight: 600 }}>
+                <span style={{ color: status.ready_to_receive_payments ? 'var(--accent)' : 'var(--warning)', fontWeight: 600 }}>
                   {status.ready_to_receive_payments ? '✓ Active' : '⏳ Pending'}
                 </span>
               } />
               {status.requirements_status && (
-                <Row label="Requirements" value={<span style={{ color: '#ff9800' }}>{status.requirements_status}</span>} />
+                <Row label="Requirements" value={<span style={{ color: 'var(--warning)' }}>{status.requirements_status}</span>} />
               )}
             </div>
 
@@ -157,7 +157,7 @@ export default function StripeConnect() {
               </p>
             )}
             {status.onboarding_complete && status.ready_to_receive_payments && (
-              <p style={{ color: '#4caf50', fontSize: '13px', margin: 0 }}>
+              <p style={{ color: 'var(--accent)', fontSize: '13px', margin: 0 }}>
                 ✓ You'll automatically receive winnings when bets settle.
               </p>
             )}

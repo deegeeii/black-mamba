@@ -220,7 +220,7 @@ export default function Profile() {
 
             {/* ── Appearance Section (outside form so toggle is instant) ── */}
             <div style={sectionStyle}>
-                <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Appearance</h3>
+                <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>Appearance</h3>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <div style={{ color: 'var(--text)', fontSize: '14px' }}>Theme</div>
@@ -249,7 +249,7 @@ export default function Profile() {
 
             {/* ── Join League ── */}
             <div style={sectionStyle}>
-                <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Join a League</h3>
+                <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>Join a League</h3>
                 <div style={{ marginBottom: '12px' }}>
                     <label style={labelStyle}>INVITE CODE</label>
                     <input
@@ -274,8 +274,8 @@ export default function Profile() {
                     onClick={handleJoinLeague}
                     disabled={joinLoading}
                     style={{
-                        backgroundColor: 'var(--accent)',
-                        color: '#000',
+                        backgroundColor: 'var(--accent-sec)',
+                        color: 'var(--btn-text)',
                         border: 'none',
                         borderRadius: 'var(--radius)',
                         padding: '10px 20px',
@@ -293,7 +293,7 @@ export default function Profile() {
 
                 {/* ── Identity Section ── */}
                 <div style={sectionStyle}>
-                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Identity</h3>
+                    <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>Identity</h3>
                     <div style={{ marginBottom: '12px' }}>
                         <label style={labelStyle}>Username</label>
                         <input style={inputStyle} value={username} onChange={e => setUsername(e.target.value)} required />
@@ -310,7 +310,7 @@ export default function Profile() {
 
                 {/* ── NFL Allegiance Section ── */}
                 <div style={sectionStyle}>
-                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>NFL Allegiance</h3>
+                    <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>NFL Allegiance</h3>
                     <div>
                         <label style={labelStyle}>Favorite NFL Team</label>
                         <select style={inputStyle} value={favoriteTeam} onChange={e => setFavoriteTeam(e.target.value)}>
@@ -322,7 +322,7 @@ export default function Profile() {
 
                 {/* ── Top 3 Podcasts Section ── */}
                 <div style={sectionStyle}>
-                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Top 3 Podcasts</h3>
+                    <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>Top 3 Podcasts</h3>
                     {[
                         { label: 'Podcast #1', value: podcast1, set: setPodcast1 },
                         { label: 'Podcast #2', value: podcast2, set: setPodcast2 },
@@ -337,7 +337,7 @@ export default function Profile() {
 
                 {/* ── AI Preference Section ── */}
                 <div style={sectionStyle}>
-                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>AI Preference</h3>
+                    <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>AI Preference</h3>
                     <div>
                         <label style={labelStyle}>Personal AI Assistant</label>
                         <select style={inputStyle} value={aiBrain} onChange={e => setAiBrain(e.target.value)}>
@@ -350,7 +350,7 @@ export default function Profile() {
 
                 {/* ── Payouts Section ── */}
                 <div style={sectionStyle}>
-                    <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Payouts</h3>
+                    <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>Payouts</h3>
                     {payoutError && (
                         <p style={{ color: 'var(--danger)', fontSize: '13px', marginBottom: '12px' }}>{payoutError}</p>
                     )}
@@ -387,13 +387,13 @@ export default function Profile() {
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span style={labelStyle}>Onboarding</span>
-                                    <span style={{ color: payoutStatus.onboarding_complete ? '#4caf50' : '#ff9800', fontWeight: 600 }}>
+                                    <span style={{ color: payoutStatus.onboarding_complete ? 'var(--accent)' : 'var(--warning)', fontWeight: 600 }}>
                                         {payoutStatus.onboarding_complete ? '✓ Complete' : '⚠ Incomplete'}
                                     </span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span style={labelStyle}>Transfers</span>
-                                    <span style={{ color: payoutStatus.ready_to_receive_payments ? '#4caf50' : '#ff9800', fontWeight: 600 }}>
+                                    <span style={{ color: payoutStatus.ready_to_receive_payments ? 'var(--accent)' : 'var(--warning)', fontWeight: 600 }}>
                                         {payoutStatus.ready_to_receive_payments ? '✓ Active' : '⏳ Pending'}
                                     </span>
                                 </div>
@@ -401,7 +401,7 @@ export default function Profile() {
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 {!payoutStatus.onboarding_complete && (
                                     <button type="button" onClick={handleOnboard}
-                                        style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}>
+                                        style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}>
                                         Complete Onboarding →
                                     </button>
                                 )}
@@ -411,7 +411,7 @@ export default function Profile() {
                                 </button>
                             </div>
                             {payoutStatus.onboarding_complete && payoutStatus.ready_to_receive_payments && (
-                                <p style={{ color: '#4caf50', fontSize: '12px', marginTop: '10px', marginBottom: 0 }}>
+                                <p style={{ color: 'var(--accent)', fontSize: '12px', marginTop: '10px', marginBottom: 0 }}>
                                     ✓ You'll automatically receive winnings when bets settle.
                                 </p>
                             )}
@@ -428,7 +428,7 @@ export default function Profile() {
                 <button
                     type="submit"
                     disabled={saving}
-                    style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}
+                    style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}
                 >
                     {saving ? 'Saving...' : 'Save Profile'}
                 </button>

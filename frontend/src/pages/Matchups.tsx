@@ -346,7 +346,7 @@ export default function Matchups() {
                                     </select>
                                     <button
                                         onClick={() => act(() => axios.patch(`${API_URL}/leagues/${leagueId}/playoffs/settings`, { playoff_teams: playoffTeams, tiebreaker }, { headers }))}
-                                        style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
+                                        style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
                                     >
                                         Save Settings
                                     </button>
@@ -356,7 +356,7 @@ export default function Matchups() {
                                     <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '10px' }}>Bracket Actions</p>
                                     <button
                                         onClick={() => act(() => axios.post(`${API_URL}/leagues/${leagueId}/playoffs/bracket`, {}, { headers }))}
-                                        style={{ display: 'block', width: '100%', backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginBottom: '10px' }}
+                                        style={{ display: 'block', width: '100%', backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '8px 16px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginBottom: '10px' }}
                                     >
                                         Generate Bracket
                                     </button>

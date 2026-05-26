@@ -252,7 +252,7 @@ export default function LeagueHome() {
                     <form onSubmit={handleSaveSettings} style={{ maxWidth: '500px' }}>
                         {/* ── Team Identity Card ── */}
                         <div style={card}>
-                            <h3 style={{ color: 'var(--accent)', marginBottom: '16px' }}>Team Identity</h3>
+                            <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '16px' }}>Team Identity</h3>
                             <div style={{ marginBottom: '16px' }}>
                                 <label style={labelStyle}>Team Name</label>
                                 <input style={inputStyle} value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="e.g. The Mambas" />
@@ -267,7 +267,7 @@ export default function LeagueHome() {
                         </div>
                         {message && <p style={{ color: message === 'Saved!' ? 'var(--accent)' : 'var(--danger)', marginBottom: '12px' }}>{message}</p>}
                         {/* ── Save Button ── */}
-                        <button type="submit" disabled={saving} style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
+                        <button type="submit" disabled={saving} style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '12px 24px', fontWeight: 'bold', cursor: 'pointer', width: '100%' }}>
                             {saving ? 'Saving...' : 'Save Team Settings'}
                         </button>
                     </form>
@@ -336,7 +336,7 @@ export default function LeagueHome() {
                         {/* ── Season Cards ── */}
                         {history.map(season => (
                             <div key={season.season} style={card}>
-                                <div style={{ color: 'var(--accent)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>{season.season} Season</div>
+                                <div style={{ fontFamily: "'Oswald', sans-serif", color: 'var(--text-heading)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>{season.season} Season</div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                                     <div>
                                         <div style={{ color: 'var(--text-dim)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px' }}>Champion</div>
@@ -366,7 +366,7 @@ export default function LeagueHome() {
                         {/* ── Add Award Form ── */}
                         {isCommissioner && (
                             <div style={card}>
-                                <div style={{ color: 'var(--accent)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>Add Award</div>
+                                <div style={{ fontFamily: "'Oswald', sans-serif", color: 'var(--text-heading)', fontSize: '11px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>Add Award</div>
                                 <form onSubmit={handleAddAward}>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                                         <div>
@@ -402,7 +402,7 @@ export default function LeagueHome() {
                                     <button
                                         type="submit"
                                         disabled={awardSaving}
-                                        style={{ backgroundColor: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontWeight: 'bold', cursor: 'pointer' }}
+                                        style={{ backgroundColor: 'var(--accent-sec)', color: 'var(--btn-text)', border: 'none', borderRadius: 'var(--radius)', padding: '10px 20px', fontWeight: 'bold', cursor: 'pointer' }}
                                     >
                                         {awardSaving ? 'Adding...' : 'Add Award'}
                                     </button>
@@ -419,7 +419,7 @@ export default function LeagueHome() {
             {tab === 'commissioner' && (
                 <div>
                     {/* ── Bot Persona Selector ── */}
-                    <h3 style={{ color: 'var(--accent)', marginBottom: '8px' }}>AI Bot Persona</h3>
+                    <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '8px' }}>AI Bot Persona</h3>
                     <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '16px' }}>
                         {isCommissioner ? "Choose the bot's personality for league chat." : 'Only the commissioner can change the bot persona.'}
                     </p>
@@ -461,7 +461,7 @@ export default function LeagueHome() {
 
                             {/* ── ESPN Import Form ── */}
                             <div style={{ marginTop: '24px' }}>
-                                <h3 style={{ color: 'var(--accent)', marginBottom: '8px' }}>Import ESPN History</h3>
+                                <h3 style={{ color: 'var(--text-heading)', fontFamily: "'Oswald', sans-serif", marginBottom: '8px' }}>Import ESPN History</h3>
                                 <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '16px' }}>
                                     Pull past season champion and high scorer from ESPN Fantasy. For private leagues,
                                     get your cookies from browser devtools while logged into ESPN.
