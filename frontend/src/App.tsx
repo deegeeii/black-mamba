@@ -23,6 +23,12 @@ import StripeConnect from './pages/StripeConnect'
 import Onboarding from './pages/Onboarding'
 import CreateLeague from './pages/CreateLeague'
 import JoinLeague from './pages/JoinLeague'
+import Support from './pages/Support'
+import Privacy from './pages/Privacy'
+import Landing from './pages/Landing'
+import Terms from './pages/Terms'
+import AgeSuitability from './pages/Age'
+
 
 
 // ── HELPERS ────────────────────────────────────────────────────────────────────
@@ -56,9 +62,15 @@ export default function App() {
           <LeagueProvider>
             <Routes>
               {/* ── Public Routes ── */}
+              <Route path="/" element={<Landing />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/privacy" element={<Privacy />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/age" element={<AgeSuitability />} />
+
 
               {/* ── Onboarding Routes (protected, no sidebar) ── */}
               <Route
@@ -185,7 +197,7 @@ export default function App() {
               />
 
               {/* ── Fallback ── */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </LeagueProvider>
         </ThemeProvider>
