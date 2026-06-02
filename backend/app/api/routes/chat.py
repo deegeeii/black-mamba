@@ -49,8 +49,8 @@ def remove_message(league_id: str, message_id: str, user_id: str = Depends(get_c
 
 
 @router.post("/{league_id}/chat/bot")
-def trigger_bot(league_id: str, body: BotRequest, user_id: str = Depends(get_current_user)):
-    msg, err = bot_post(league_id, body.trigger, body.context)
+async def trigger_bot(league_id: str, body: BotRequest, user_id: str = Depends(get_current_user)):
+    msg, err = await bot_post(league_id, body.trigger, body.context)
     if err:
         return {"error": err}
     return msg

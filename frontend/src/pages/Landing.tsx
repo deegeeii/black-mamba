@@ -42,7 +42,7 @@ export default function Landing() {
                     right: '-120px',
                     bottom: '80px',
                     width: '800px',
-                    opacity: 0.06,
+                    opacity: 0.08,
                     pointerEvents: 'none',
                 }}
             />

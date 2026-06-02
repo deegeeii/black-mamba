@@ -144,7 +144,20 @@ export default function Dashboard() {
 
   // ── JSX ───────────────────────────────────────────────────────────────────
   return (
-    <div style={{ maxWidth: '900px', color: 'var(--text)' }}>
+    <div style={{ position: 'relative', overflow: 'hidden' }}>
+        <img
+            src="/snake.png"
+            style={{
+                position: 'absolute',
+                right: '-120px',
+                bottom: '-80px',
+                width: '700px',
+                opacity: 0.07,
+                pointerEvents: 'none',
+            }}
+        />
+        <div style={{ maxWidth: '900px', color: 'var(--text)', position: 'relative', zIndex: 1 }}>
+
 
       {/* ── Page Header ── */}
       <p style={{ color: 'var(--text-dim)', marginBottom: '4px', fontSize: '14px' }}>Hey there</p>
@@ -261,9 +274,9 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-
       </div>
-    </div>
+    </div>  
+  </div>
   )
 }
 

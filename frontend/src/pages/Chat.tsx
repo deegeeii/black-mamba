@@ -265,7 +265,20 @@ export default function Chat() {
 
     // ── JSX ────────────────────────────────────────────────────────────────────
     return (
-        <div style={{ maxWidth: '700px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 48px)' }}>
+        <div style={{ maxWidth: '700px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 48px)', position: 'relative', overflow: 'hidden' }}>
+            <img
+                src="/snake.png"
+                style={{
+                    position: 'absolute',
+                    right: '-120px',
+                    bottom: '-80px',
+                    width: '600px',
+                    opacity: 0.07,
+                    pointerEvents: 'none',
+                    zIndex: 0,
+                }}
+            />
+
             <h1 style={{ marginBottom: '4px' }}>League Chat</h1>
             <p style={{ color: 'var(--text-dim)', marginBottom: '8px' }}>{activeLeague.name}</p>
 

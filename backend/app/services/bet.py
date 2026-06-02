@@ -1,3 +1,4 @@
+import asyncio
 import stripe
 import anthropic
 from app.core.config import settings
@@ -7,12 +8,12 @@ from app.services.notification import create_notification
 stripe.api_key = settings.stripe_secret_key
 RAKE_PERCENT = 10
 
-_anthropic = anthropic.Anthropic(api_key=settings.anthropic_api_key, timeout=60.0)
+_anthropic = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=60.0)
 
 
-def _ai_with_search(prompt: str) -> str:
+async def _ai_with_search(prompt: str) -> str:
     try:
-        msg = _anthropic.messages.create(
+        msg = await _anthropic.messages.create(
             model="claude-opus-4-7",
             max_tokens=256,
             tools=[{"type": "web_search_20250305", "name": "web_search"}],
@@ -20,7 +21,7 @@ def _ai_with_search(prompt: str) -> str:
         )
         return "".join(block.text for block in msg.content if hasattr(block, "text")).strip()
     except Exception:
-        msg = _anthropic.messages.create(
+        msg = await _anthropic.messages.create(
             model="claude-opus-4-7",
             max_tokens=256,
             messages=[{"role": "user", "content": prompt}],
@@ -149,7 +150,6 @@ def get_bets(league_id: str):
     return bets
 
 
-
 def _settle_h2h(bet: dict, winning_side: str):
     winner_id = winning_side
     loser_id = bet["opponent_id"] if winner_id == bet["proposer_id"] else bet["proposer_id"]
@@ -170,7 +170,6 @@ def _settle_h2h(bet: dict, winning_side: str):
     rake = int(bet["amount"] * RAKE_PERCENT / 100)
     payout_owed = bet["amount"] - rake
 
-    # Attempt live transfer if the winner has a connected account
     transfer_id = None
     winner_profile = supabase.table("profiles").select("stripe_account_id").eq("id", winner_id).execute()
     if winner_profile.data and winner_profile.data[0].get("stripe_account_id"):
@@ -210,7 +209,7 @@ def settle_bet(bet_id: str, winning_side: str):
     return _settle_pool(bet, winning_side)
 
 
-def auto_settle_bet(bet_id: str):
+async def auto_settle_bet(bet_id: str):
     bet_res = supabase.table("bets").select("*").eq("id", bet_id).execute()
     if not bet_res.data:
         return None, "Bet not found"
@@ -226,7 +225,7 @@ def auto_settle_bet(bet_id: str):
         f'or "undetermined" if the result is not yet known. No other text.'
     )
 
-    result = _ai_with_search(prompt).strip().strip('"').strip("'")
+    result = (await _ai_with_search(prompt)).strip().strip('"').strip("'")
 
     if result.lower() == "undetermined":
         return None, "Outcome not yet determined"
@@ -235,7 +234,8 @@ def auto_settle_bet(bet_id: str):
     if not match:
         return None, f"Could not match result to known options"
 
-    return settle_bet(bet_id, match)
+    return await asyncio.to_thread(settle_bet, bet_id, match)
+
 
 def delete_bet(bet_id: str, user_id: str):
     bet_res = supabase.table("bets").select("*").eq("id", bet_id).execute()

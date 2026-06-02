@@ -62,7 +62,7 @@ export default function Login() {
                         right: '-80px',
                         bottom: '-80px',
                         width: '600px',
-                        opacity: 0.07,
+                        opacity: 0.09,
                         pointerEvents: 'none',
                     }}
                 />

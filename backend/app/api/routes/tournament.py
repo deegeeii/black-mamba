@@ -8,8 +8,8 @@ router = APIRouter(prefix="/leagues", tags=["tournaments"])
 
 
 @router.post("/{league_id}/tournaments")
-def create(league_id: str, data: CreateTournamentRequest, user_id: str = Depends(get_current_user)):
-    result, err = svc.create_tournament(league_id, user_id, data)
+async def create(league_id: str, data: CreateTournamentRequest, user_id: str = Depends(get_current_user)):
+    result, err = await svc.create_tournament(league_id, user_id, data)
     if err:
         raise HTTPException(400, err)
     return result
@@ -21,8 +21,8 @@ def list_all(league_id: str, user_id: str = Depends(get_current_user)):
 
 
 @router.post("/tournaments/{tournament_id}/join")
-def join(tournament_id: str, user_id: str = Depends(get_current_user)):
-    result, err = svc.join_tournament(tournament_id, user_id)
+async def join(tournament_id: str, user_id: str = Depends(get_current_user)):
+    result, err = await svc.join_tournament(tournament_id, user_id)
     if err:
         raise HTTPException(400, err)
     return result
@@ -36,8 +36,8 @@ def get_members(tournament_id: str, user_id: str = Depends(get_current_user)):
 
 
 @router.post("/tournaments/{tournament_id}/generate")
-def generate(tournament_id: str, user_id: str = Depends(get_current_user)):
-    result, err = svc.generate_bracket(tournament_id)
+async def generate(tournament_id: str, user_id: str = Depends(get_current_user)):
+    result, err = await svc.generate_bracket(tournament_id)
     if err:
         raise HTTPException(400, err)
     return result
@@ -51,26 +51,26 @@ def get_matchups(tournament_id: str, user_id: str = Depends(get_current_user)):
 
 
 @router.post("/tournaments/{tournament_id}/matchups/{matchup_id}/commentary")
-def commentary(tournament_id: str, matchup_id: str, data: Optional[CustomPromptRequest] = None, user_id: str = Depends(get_current_user)):
+async def commentary(tournament_id: str, matchup_id: str, data: Optional[CustomPromptRequest] = None, user_id: str = Depends(get_current_user)):
     custom = data.prompt if data else ""
-    result, err = svc.get_commentary(tournament_id, matchup_id, custom)
+    result, err = await svc.get_commentary(tournament_id, matchup_id, custom)
     if err:
         raise HTTPException(400, err)
     return result
 
 
 @router.get("/tournaments/{tournament_id}/matchups/{matchup_id}/predict")
-def predict(tournament_id: str, matchup_id: str, user_id: str = Depends(get_current_user)):
-    result, err = svc.predict_winner(tournament_id, matchup_id)
+async def predict(tournament_id: str, matchup_id: str, user_id: str = Depends(get_current_user)):
+    result, err = await svc.predict_winner(tournament_id, matchup_id)
     if err:
         raise HTTPException(400, err)
     return result
 
 
 @router.post("/tournaments/{tournament_id}/draft/generate")
-def generate_draft_entities(tournament_id: str, data: ScheduleDraftRequest, user_id: str = Depends(get_current_user)):
+async def generate_draft_entities(tournament_id: str, data: ScheduleDraftRequest, user_id: str = Depends(get_current_user)):
     from app.services.tournament_draft import generate_entities
-    result, err = generate_entities(tournament_id, data.draft_start_time)
+    result, err = await generate_entities(tournament_id, data.draft_start_time)
     if err:
         raise HTTPException(400, err)
     return result
@@ -92,8 +92,8 @@ def pick_entity(tournament_id: str, entity_id: str, user_id: str = Depends(get_c
 
 
 @router.post("/tournaments/{tournament_id}/draft/close")
-def close_draft(tournament_id: str, user_id: str = Depends(get_current_user)):
-    result, err = svc.close_draft_and_generate_bracket(tournament_id)
+async def close_draft(tournament_id: str, user_id: str = Depends(get_current_user)):
+    result, err = await svc.close_draft_and_generate_bracket(tournament_id)
     if err:
         raise HTTPException(400, err)
     return result

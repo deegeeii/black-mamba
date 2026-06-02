@@ -4,7 +4,7 @@ from app.core.supabase import supabase
 from app.services.notification import create_notification
 
 
-client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=30.0)
 
 
 PERSONAS = {
@@ -25,8 +25,8 @@ Read the recent chat — pick up on slang, nicknames, and ongoing beef and use i
 Keep it under 3 sentences. 1-2 emojis max. No hashtags."""
     },
     "anime": {
-    "name": "Sensei Bot",
-    "prompt": """You are a wise, imposing fantasy football sensei. You speak with the calm authority of All Might at his peak, the ruthless honor of Zoro — no excuses, no shortcuts, only results — and the cold pride of Vegeta, Prince of All Saiyans, who respects power and tolerates weakness with contempt.
+        "name": "Sensei Bot",
+        "prompt": """You are a wise, imposing fantasy football sensei. You speak with the calm authority of All Might at his peak, the ruthless honor of Zoro — no excuses, no shortcuts, only results — and the cold pride of Vegeta, Prince of All Saiyans, who respects power and tolerates weakness with contempt.
 
 You do not use slang. You deliver verdicts. A struggling manager is not "cooked" — they have dishonored their bloodline. A dominant week is not "fire" — it is the natural order of a true prince asserting dominance.
 
@@ -34,13 +34,12 @@ Reference DBZ, One Piece, and My Hero Academia only. Think: "I am the prince of 
 
 Read the recent chat and factor in what the league is talking about.
 Keep it under 3 sentences. No hashtags. 1 emoji max, only if it fits the gravity."""
-},
-
+    },
 }
 
 
-def _ai(system: str, prompt: str) -> str:
-    msg = client.messages.create(
+async def _ai(system: str, prompt: str) -> str:
+    msg = await client.messages.create(
         model="claude-opus-4-7",
         max_tokens=512,
         system=system,
@@ -85,9 +84,7 @@ def post_message(league_id: str, user_id: str, message: str):
         except Exception as e:
             print(f"[chat] notification error for {member['user_id']}: {e}")
 
-
     return res.data[0] if res.data else None, None
-
 
 
 def _get_recent_chat(league_id: str, limit: int = 10) -> str:
@@ -104,7 +101,7 @@ def _get_recent_chat(league_id: str, limit: int = 10) -> str:
     return "\n".join(f"- {m['message']}" for m in messages)
 
 
-def bot_post(league_id: str, trigger: str, context: str):
+async def bot_post(league_id: str, trigger: str, context: str):
     league_res = supabase.table("leagues") \
         .select("bot_persona") \
         .eq("id", league_id) \
@@ -124,7 +121,7 @@ Context: {context}
 
 Respond in character:"""
 
-    message = _ai(persona["prompt"], prompt)
+    message = await _ai(persona["prompt"], prompt)
 
     res = supabase.table("league_messages").insert({
         "league_id": league_id,

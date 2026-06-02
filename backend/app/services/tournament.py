@@ -4,11 +4,11 @@ import random
 from app.core.supabase import supabase
 from app.core.config import settings
 
-_anthropic = anthropic.Anthropic(api_key=settings.anthropic_api_key, timeout=120.0)
+_anthropic = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=120.0)
 
 
-def _ai(prompt: str, max_tokens: int = 1024) -> str:
-    msg = _anthropic.messages.create(
+async def _ai(prompt: str, max_tokens: int = 1024) -> str:
+    msg = await _anthropic.messages.create(
         model="claude-opus-4-7",
         max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
@@ -16,9 +16,9 @@ def _ai(prompt: str, max_tokens: int = 1024) -> str:
     return msg.content[0].text
 
 
-def _ai_with_search(prompt: str, max_tokens: int = 4096) -> str:
+async def _ai_with_search(prompt: str, max_tokens: int = 4096) -> str:
     try:
-        msg = _anthropic.messages.create(
+        msg = await _anthropic.messages.create(
             model="claude-opus-4-7",
             max_tokens=max_tokens,
             tools=[{"type": "web_search_20250305", "name": "web_search"}],
@@ -26,7 +26,7 @@ def _ai_with_search(prompt: str, max_tokens: int = 4096) -> str:
         )
         return "".join(block.text for block in msg.content if hasattr(block, "text"))
     except Exception:
-        msg = _anthropic.messages.create(
+        msg = await _anthropic.messages.create(
             model="claude-opus-4-7",
             max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
@@ -34,10 +34,9 @@ def _ai_with_search(prompt: str, max_tokens: int = 4096) -> str:
         return msg.content[0].text
 
 
-
-def _generate_draft_name() -> str:
+async def _generate_draft_name() -> str:
     try:
-        msg = _anthropic.messages.create(
+        msg = await _anthropic.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=16,
             messages=[{"role": "user", "content": "Generate one creative fantasy sports team name. Return ONLY the name, nothing else. Be varied and inventive."}],
@@ -55,7 +54,7 @@ def _parse_json(raw: str):
     return json.loads(raw.strip())
 
 
-def create_tournament(league_id: str, user_id: str, data):
+async def create_tournament(league_id: str, user_id: str, data):
     active_res = supabase.table("tournaments").select("id").eq("league_id", league_id).neq("status", "completed").execute()
     if len(active_res.data) >= 3:
         return None, "Maximum 3 active tournaments allowed. Wait for one to complete first."
@@ -92,7 +91,7 @@ Create specific, measurable scoring rules tied to real observable outcomes. Incl
 Return ONLY valid JSON (no markdown):
 {{"description": "one sentence describing the scoring system", "bonuses": [{{"name": "outcome name", "points": 3}}]}}"""
 
-    raw = _ai_with_search(scoring_prompt, max_tokens=2048)
+    raw = await _ai_with_search(scoring_prompt, max_tokens=2048)
     try:
         scoring_rules = _parse_json(raw)
     except Exception:
@@ -120,45 +119,12 @@ def list_tournaments(league_id: str, user_id: str = ""):
         t["is_member"] = t["id"] in user_memberships
     return res.data
 
-def close_draft_and_generate_bracket(tournament_id: str):
-    supabase.table("tournaments").update({"status": "active"}).eq("id", tournament_id).execute()
-    return generate_bracket(tournament_id)
 
-
-def generate_bracket(tournament_id: str):
-    tourney_res = supabase.table("tournaments").select("*").eq("id", tournament_id).execute()
-    if not tourney_res.data:
-        return None, "Tournament not found"
-
-    members_res = supabase.table("tournament_members").select("user_id").eq("tournament_id", tournament_id).execute()
-    user_ids = [r["user_id"] for r in members_res.data]
-    if len(user_ids) < 2:
-        return None, "Need at least 2 members"
-
-    random.shuffle(user_ids)
-    if len(user_ids) % 2 != 0:
-        user_ids.append(user_ids[0])
-
-    matchups = []
-    for i in range(0, len(user_ids), 2):
-        matchups.append({
-            "tournament_id": tournament_id,
-            "round": 1,
-            "home_user_id": user_ids[i],
-            "away_user_id": user_ids[i + 1]
-        })
-    supabase.table("tournament_matchups").insert(matchups).execute()
-    supabase.table("tournaments").update({"status": "active"}).eq("id", tournament_id).execute()
-
-    return {"matchups": matchups}, None
-
-
-
-def join_tournament(tournament_id: str, user_id: str):
+async def join_tournament(tournament_id: str, user_id: str):
     existing = supabase.table("tournament_members").select("id").eq("tournament_id", tournament_id).eq("user_id", user_id).execute()
     if existing.data:
         return None, "Already joined"
-    draft_team_name = _generate_draft_name()
+    draft_team_name = await _generate_draft_name()
     res = supabase.table("tournament_members").insert({
         "tournament_id": tournament_id,
         "user_id": user_id,
@@ -177,7 +143,7 @@ def vote_ai_brain(tournament_id: str, user_id: str, vote: str):
     return {"ai_brain": winner}
 
 
-def generate_bracket(tournament_id: str):
+async def generate_bracket(tournament_id: str):
     tourney_res = supabase.table("tournaments").select("*").eq("id", tournament_id).execute()
     if not tourney_res.data:
         return None, "Tournament not found"
@@ -239,7 +205,7 @@ Then create specific, measurable scoring rules that reflect how this event actua
 Return ONLY valid JSON (no markdown):
 {{"description": "one sentence describing the scoring system", "bonuses": [{{"name": "outcome name", "points": 3}}]}}"""
 
-    raw = _ai_with_search(scoring_prompt, max_tokens=2048)
+    raw = await _ai_with_search(scoring_prompt, max_tokens=2048)
 
     try:
         scoring_rules = _parse_json(raw)
@@ -254,7 +220,12 @@ Return ONLY valid JSON (no markdown):
     return {"matchups": matchups, "scoring_rules": scoring_rules}, None
 
 
-def get_commentary(tournament_id: str, matchup_id: str, custom_prompt: str = ""):
+async def close_draft_and_generate_bracket(tournament_id: str):
+    supabase.table("tournaments").update({"status": "active"}).eq("id", tournament_id).execute()
+    return await generate_bracket(tournament_id)
+
+
+async def get_commentary(tournament_id: str, matchup_id: str, custom_prompt: str = ""):
     matchup_res = supabase.table("tournament_matchups").select("*").eq("id", matchup_id).execute()
     if not matchup_res.data:
         return None, "Matchup not found"
@@ -271,12 +242,12 @@ def get_commentary(tournament_id: str, matchup_id: str, custom_prompt: str = "")
         f"{'Additional context: ' + custom_prompt if custom_prompt else ''}"
         f"Keep it under 100 words. Be bold and funny."
     )
-    text = _ai(prompt)
+    text = await _ai(prompt)
     supabase.table("tournament_matchups").update({"commentary": text}).eq("id", matchup_id).execute()
     return {"commentary": text}, None
 
 
-def predict_winner(tournament_id: str, matchup_id: str):
+async def predict_winner(tournament_id: str, matchup_id: str):
     matchup_res = supabase.table("tournament_matchups").select("*").eq("id", matchup_id).execute()
     if not matchup_res.data:
         return None, "Matchup not found"
@@ -292,5 +263,5 @@ def predict_winner(tournament_id: str, matchup_id: str):
         f"Tournament scoring rules: {json.dumps(rules)}. "
         f"Give a confident, fun 2-sentence prediction with a winner pick."
     )
-    text = _ai(prompt)
+    text = await _ai(prompt)
     return {"prediction": text}, None

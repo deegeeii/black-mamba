@@ -8,9 +8,9 @@ router = APIRouter(prefix="/leagues", tags=["bets"])
 
 
 @router.post("/{league_id}/bets")
-def create_new_bet(league_id: str, data: CreateBetRequest, user_id: str = Depends(get_current_user_id)):
+async def create_new_bet(league_id: str, data: CreateBetRequest, user_id: str = Depends(get_current_user_id)):
     bet, client_secret = create_bet(league_id, user_id, data)
-    bot_post(league_id, "bet_placed", f"New bet posted: \"{data.proposition}\" — ${data.amount / 100:.2f}")
+    await bot_post(league_id, "bet_placed", f"New bet posted: \"{data.proposition}\" — ${data.amount / 100:.2f}")
     return {"bet_id": bet["id"], "client_secret": client_secret}
 
 
@@ -20,11 +20,11 @@ def list_bets(league_id: str, user_id: str = Depends(get_current_user_id)):
 
 
 @router.post("/{league_id}/bets/{bet_id}/accept")
-def accept_existing_bet(league_id: str, bet_id: str, user_id: str = Depends(get_current_user_id)):
+async def accept_existing_bet(league_id: str, bet_id: str, user_id: str = Depends(get_current_user_id)):
     bet, client_secret, error = accept_bet(bet_id, user_id)
     if error:
         raise HTTPException(400, error)
-    bot_post(league_id, "bet_accepted", f"A bet was just accepted. Stakes are set.")
+    await bot_post(league_id, "bet_accepted", f"A bet was just accepted. Stakes are set.")
     return {"bet_id": bet["id"], "client_secret": client_secret}
 
 
@@ -45,11 +45,12 @@ def settle_existing_bet(league_id: str, bet_id: str, data: SettleBetRequest, use
 
 
 @router.post("/{league_id}/bets/{bet_id}/auto-settle")
-def auto_settle_existing_bet(league_id: str, bet_id: str, user_id: str = Depends(get_current_user_id)):
-    result, error = auto_settle_bet(bet_id)
+async def auto_settle_existing_bet(league_id: str, bet_id: str, user_id: str = Depends(get_current_user_id)):
+    result, error = await auto_settle_bet(bet_id)
     if error:
         raise HTTPException(400, error)
     return result
+
 
 @router.delete("/{league_id}/bets/{bet_id}")
 def remove_bet(league_id: str, bet_id: str, user_id: str = Depends(get_current_user_id)):

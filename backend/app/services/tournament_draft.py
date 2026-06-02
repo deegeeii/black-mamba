@@ -1,3 +1,4 @@
+import asyncio
 import anthropic
 import json
 from app.core.supabase import supabase
@@ -5,15 +6,14 @@ from app.core.config import settings
 from datetime import datetime
 
 
-
-_anthropic = anthropic.Anthropic(api_key=settings.anthropic_api_key, timeout=120.0)
+_anthropic = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=120.0)
 
 DRAFT_BUDGET = 50000
 
 
-def _ai_with_search(prompt: str, max_tokens: int = 4096) -> str:
+async def _ai_with_search(prompt: str, max_tokens: int = 4096) -> str:
     try:
-        msg = _anthropic.messages.create(
+        msg = await _anthropic.messages.create(
             model="claude-opus-4-7",
             max_tokens=max_tokens,
             tools=[{"type": "web_search_20250305", "name": "web_search"}],
@@ -21,7 +21,7 @@ def _ai_with_search(prompt: str, max_tokens: int = 4096) -> str:
         )
         return "".join(block.text for block in msg.content if hasattr(block, "text"))
     except Exception:
-        msg = _anthropic.messages.create(
+        msg = await _anthropic.messages.create(
             model="claude-opus-4-7",
             max_tokens=max_tokens,
             messages=[{"role": "user", "content": prompt}],
@@ -29,8 +29,7 @@ def _ai_with_search(prompt: str, max_tokens: int = 4096) -> str:
         return msg.content[0].text
 
 
-
-def generate_entities(tournament_id: str, draft_start_time: datetime):
+async def generate_entities(tournament_id: str, draft_start_time: datetime):
     tourney_res = supabase.table("tournaments").select("*").eq("id", tournament_id).execute()
     if not tourney_res.data:
         return None, "Tournament not found"
@@ -61,7 +60,7 @@ Return ONLY a valid JSON array (no markdown):
   ...
 ]"""
 
-    raw = _ai_with_search(prompt, max_tokens=4096)
+    raw = await _ai_with_search(prompt, max_tokens=4096)
 
     if "```" in raw:
         raw = raw.split("```")[1]
@@ -85,16 +84,18 @@ Return ONLY a valid JSON array (no markdown):
 
     from app.services.notification import create_notification
     tournament_members = supabase.table("tournament_members").select("user_id").eq("tournament_id", tournament_id).execute()
-    for m in tournament_members.data:
-        create_notification(
+    await asyncio.gather(*[
+        asyncio.to_thread(
+            create_notification,
             m["user_id"],
             tourney["league_id"],
             "tournament_draft",
             f"Draft for '{tourney['name']}' starts {draft_start_str}. Get ready to pick!"
         )
+        for m in tournament_members.data
+    ])
 
     return res.data, None
-
 
 
 def get_entities(tournament_id: str):
