@@ -32,7 +32,21 @@ export default function Landing() {
             minHeight: '100vh',
             backgroundColor: 'var(--bg-deep)',
             color: 'var(--text)',
+            position: 'relative',
+            overflow: 'hidden',
         }}>
+            <img
+                src="/snake.png"
+                style={{
+                    position: 'absolute',
+                    right: '-120px',
+                    bottom: '80px',
+                    width: '800px',
+                    opacity: 0.06,
+                    pointerEvents: 'none',
+                }}
+            />
+        
 
             {/* ── Nav ── */}
             <nav style={{

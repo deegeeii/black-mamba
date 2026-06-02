@@ -46,8 +46,28 @@ export default function Login() {
 
     // ── JSX ───────────────────────────────────────────────────────────────────
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px' }}>
+            <div style={{
+                minHeight: '100vh',
+                backgroundColor: 'var(--bg-deep)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                overflow: 'hidden',
+            }}>
+                <img
+                    src="/snake.png"
+                    style={{
+                        position: 'absolute',
+                        right: '-80px',
+                        bottom: '-80px',
+                        width: '600px',
+                        opacity: 0.07,
+                        pointerEvents: 'none',
+                    }}
+                />
+                <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px', position: 'relative', zIndex: 1 }}>
+
 
                 {/* ── Brand Header ── */}
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
