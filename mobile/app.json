@@ -13,9 +13,14 @@
       "backgroundColor": "#0a0a0a"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.blackmamba.fantasy"
-    },
+        "supportsTablet": true,
+        "bundleIdentifier": "com.blackmamba.fantasy",
+        "buildNumber": "2",
+        "infoPlist": {
+            "ITSAppUsesNonExemptEncryption": false
+        }
+    }
+    ,
     "android": {
       "package": "com.blackmamba.fantasy",
       "adaptiveIcon": {
