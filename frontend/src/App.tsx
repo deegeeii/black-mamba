@@ -35,18 +35,6 @@ import AgeSuitability from './pages/Age'
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex' }}>
-      <img
-        src="/snake.png"
-        style={{
-          position: 'fixed',
-          right: '-80px',
-          bottom: '-80px',
-          width: '750px',
-          opacity: 0.07,
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
       <Sidebar />
       <div style={{
         marginLeft: '220px',
@@ -56,14 +44,26 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         minHeight: '100vh',
         color: 'var(--text)',
         position: 'relative',
-        zIndex: 1,
       }}>
-        {children}
+        <img
+          src="/snake.png"
+          style={{
+            position: 'fixed',
+            right: '-80px',
+            bottom: '-80px',
+            width: '750px',
+            opacity: 0.07,
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {children}
+        </div>
       </div>
     </div>
   )
 }
-
 
 // ── JSX / RENDER ───────────────────────────────────────────────────────────────
 export default function App() {
