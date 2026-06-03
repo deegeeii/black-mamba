@@ -234,22 +234,11 @@ export default function LeagueHome() {
 
     // ── JSX ────────────────────────────────────────────────────────────────────
     return (
-        <div style={{ position: 'relative', overflow: 'hidden' }}>
-            <img
-                src="/snake.png"
-                style={{
-                    position: 'absolute',
-                    right: '-120px',
-                    bottom: '-80px',
-                    width: '700px',
-                    opacity: 0.07,
-                    pointerEvents: 'none',
-                }}
-            />
-            <div style={{ maxWidth: '700px', color: 'var(--text)', position: 'relative', zIndex: 1 }}>
-
-            <h1 style={{ marginBottom: '4px' }}>League</h1>
-            <p style={{ color: 'var(--text-dim)', marginBottom: '16px' }}>{activeLeague?.name}</p>
+        <div style={{ maxWidth: '700px', color: 'var(--text)' }}>
+    
+        <h1 style={{ marginBottom: '4px' }}>League</h1>
+        <p style={{ color: 'var(--text-dim)', marginBottom: '16px' }}>{activeLeague?.name}</p>
+    
 
             {/* ── Tabs ── */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '24px' }}>
@@ -557,7 +546,6 @@ export default function LeagueHome() {
                 </div>
             )}
             </div>
-        </div>
     )
 }
 

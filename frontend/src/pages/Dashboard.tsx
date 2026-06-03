@@ -144,19 +144,13 @@ export default function Dashboard() {
 
   // ── JSX ───────────────────────────────────────────────────────────────────
   return (
-    <div style={{ position: 'relative', overflow: 'hidden' }}>
-        <img
-            src="/snake.png"
-            style={{
-                position: 'absolute',
-                right: '-120px',
-                bottom: '-80px',
-                width: '700px',
-                opacity: 0.07,
-                pointerEvents: 'none',
-            }}
-        />
-        <div style={{ maxWidth: '900px', color: 'var(--text)', position: 'relative', zIndex: 1 }}>
+    <div style={{ maxWidth: '900px', color: 'var(--text)' }}>
+  
+      {/* ── Page Header ── */}
+      <p style={{ color: 'var(--text-dim)', marginBottom: '4px', fontSize: '14px' }}>Hey there</p>
+      <h1 style={{ marginBottom: '4px' }}>{username || user?.email}</h1>
+      <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>{activeLeague.name}</p>
+  
 
 
       {/* ── Page Header ── */}
@@ -276,7 +270,6 @@ export default function Dashboard() {
         </div>
       </div>
     </div>  
-  </div>
   )
 }
 
