@@ -28,6 +28,8 @@ import Privacy from './pages/Privacy'
 import Landing from './pages/Landing'
 import Terms from './pages/Terms'
 import AgeSuitability from './pages/Age'
+import SnakeWatermark from './components/SnakeWatermark'
+
 
 
 
@@ -45,18 +47,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         color: 'var(--text)',
         position: 'relative',
       }}>
-        <img
-          src="/snake.png"
-          style={{
-            position: 'fixed',
-            right: '-80px',
-            bottom: '-80px',
-            width: '750px',
-            opacity: 0.07,
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
+        <SnakeWatermark fixed />
+        
         <div style={{ position: 'relative', zIndex: 1 }}>
           {children}
         </div>

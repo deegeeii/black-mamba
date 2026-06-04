@@ -1,5 +1,7 @@
 // ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useNavigate } from 'react-router-dom'
+import SnakeWatermark from '../components/SnakeWatermark'
+
 
 // ── COMPONENT ──────────────────────────────────────────────────────────────────
 export default function Onboarding() {
@@ -15,8 +17,12 @@ export default function Onboarding() {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '40px 24px',
+            position: 'relative',
+            overflow: 'hidden',
         }}>
-            <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
+            <SnakeWatermark />
+            <div style={{ width: '100%', maxWidth: '400px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+    
 
                 {/* ── Brand ── */}
                 <h1 style={{

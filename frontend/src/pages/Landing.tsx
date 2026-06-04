@@ -1,5 +1,7 @@
 // ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { Link } from 'react-router-dom'
+import SnakeWatermark from '../components/SnakeWatermark'
+
 
 // ── DATA ───────────────────────────────────────────────────────────────────────
 const features = [
@@ -35,17 +37,7 @@ export default function Landing() {
             position: 'relative',
             overflow: 'hidden',
         }}>
-            <img
-                src="/snake.png"
-                style={{
-                    position: 'absolute',
-                    right: '-120px',
-                    bottom: '80px',
-                    width: '800px',
-                    opacity: 0.08,
-                    pointerEvents: 'none',
-                }}
-            />
+            <SnakeWatermark />
         
 
             {/* ── Nav ── */}

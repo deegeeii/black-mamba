@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import SnakeWatermark from '../components/SnakeWatermark'
+
 
 export default function Login() {
 
@@ -55,17 +57,7 @@ export default function Login() {
                 position: 'relative',
                 overflow: 'hidden',
             }}>
-                <img
-                    src="/snake.png"
-                    style={{
-                        position: 'absolute',
-                        right: '-80px',
-                        bottom: '-80px',
-                        width: '600px',
-                        opacity: 0.09,
-                        pointerEvents: 'none',
-                    }}
-                />
+               <SnakeWatermark />
                 <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px', position: 'relative', zIndex: 1 }}>
 
 

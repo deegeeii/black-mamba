@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useLeague } from '../contexts/LeagueContext'
+import SnakeWatermark from '../components/SnakeWatermark'
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const API_URL = import.meta.env.VITE_API_URL
@@ -64,8 +65,12 @@ export default function JoinLeague() {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '60px 24px',
+            position: 'relative',
+            overflow: 'hidden',
         }}>
-            <div style={{ width: '100%', maxWidth: '420px' }}>
+            <SnakeWatermark />
+            <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }}>
+    
 
                 {/* ── Back ── */}
                 <button

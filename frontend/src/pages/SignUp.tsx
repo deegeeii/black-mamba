@@ -1,9 +1,10 @@
 
 // ── IMPORTS ────────────────────────────────────────────────────────────────────
-// ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import SnakeWatermark from '../components/SnakeWatermark'
+
 
 // ── CONSTANTS ──────────────────────────────────────────────────────────────────
 const FEATURES = [
@@ -55,13 +56,16 @@ export default function SignUp() {
   if (sent) {
     return (
       <div style={{
-        minHeight: '100vh',
-        backgroundColor: 'var(--bg-deep)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+          minHeight: '100vh',
+          backgroundColor: 'var(--bg-deep)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          overflow: 'hidden',
       }}>
-        <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px', textAlign: 'center' }}>
+          <SnakeWatermark />
+          <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px', textAlign: 'center', position: 'relative', zIndex: 1 }}>  
           <h1 style={{ color: 'var(--accent)', fontSize: '28px', letterSpacing: '3px', marginBottom: '8px' }}>BLACK MAMBA</h1>
           <p style={{ color: 'var(--text-dim)', fontSize: '13px', marginBottom: '40px' }}>Fantasy sports, elevated.</p>
           <div style={{
@@ -97,14 +101,18 @@ export default function SignUp() {
   // ── JSX ──────────────────────────────────────────────────────────────────────
   return (
     <div style={{
-      minHeight: '100vh',
-      backgroundColor: 'var(--bg-deep)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '40px 24px',
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg-deep)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 24px',
+        position: 'relative',
+        overflow: 'hidden',
     }}>
-      <div style={{ width: '100%', maxWidth: '400px' }}>
+        <SnakeWatermark />
+        <div style={{ width: '100%', maxWidth: '400px', position: 'relative', zIndex: 1 }}>
+
 
         {/* ── Brand Header ── */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>

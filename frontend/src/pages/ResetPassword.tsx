@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import SnakeWatermark from '../components/SnakeWatermark'
+
 
 export default function ResetPassword() {
 
@@ -26,8 +28,18 @@ export default function ResetPassword() {
 
     // ── JSX ───────────────────────────────────────────────────────────────────
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px' }}>
+        <div style={{
+            minHeight: '100vh',
+            backgroundColor: 'var(--bg-deep)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+        }}>
+            <SnakeWatermark />
+            <div style={{ width: '100%', maxWidth: '400px', padding: '0 24px', position: 'relative', zIndex: 1 }}>
+    
 
                 {/* ── Brand Header ── */}
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
