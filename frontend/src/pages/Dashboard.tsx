@@ -78,7 +78,7 @@ export default function Dashboard() {
   // ── STATE ───────────────────────────────────────────────────────────────────
   const navigate = useNavigate()
   const { user, session } = useAuth()
-  const { activeLeague, leagues, getTeamName } = useLeague()
+  const { activeLeague, leagues, getTeamName, leaguesLoaded } = useLeague()
 
   const [headlines, setHeadlines] = useState<Headline[]>([])
   const [standings, setStandings] = useState<Standing[]>([])
@@ -121,12 +121,9 @@ export default function Dashboard() {
 
     // Redirect new users with no leagues to onboarding
     useEffect(() => {
-      if (!session) return
-      const timer = setTimeout(() => {
-        if (leagues.length === 0) navigate('/onboarding')
-      }, 800)
-      return () => clearTimeout(timer)
-    }, [session, leagues.length])
+      if (!session || !leaguesLoaded) return
+      if (leagues.length === 0) navigate('/onboarding')
+  }, [session, leaguesLoaded, leagues.length])  
   
 
   // ── HELPERS ───────────────────────────────────────────────────────────────
@@ -145,12 +142,6 @@ export default function Dashboard() {
   // ── JSX ───────────────────────────────────────────────────────────────────
   return (
     <div style={{ maxWidth: '900px', color: 'var(--text)' }}>
-  
-      {/* ── Page Header ── */}
-      <p style={{ color: 'var(--text-dim)', marginBottom: '4px', fontSize: '14px' }}>Hey there</p>
-      <h1 style={{ marginBottom: '4px' }}>{username || user?.email}</h1>
-      <p style={{ color: 'var(--text-dim)', marginBottom: '24px' }}>{activeLeague.name}</p>
-  
 
 
       {/* ── Page Header ── */}

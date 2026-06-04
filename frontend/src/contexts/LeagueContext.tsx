@@ -27,6 +27,7 @@ interface LeagueContextType {
     members: Member[]
     getTeamName: (userId: string | null) => string
     refreshLeagues: () => void
+    leaguesLoaded: boolean
 }
 
 // ── CONTEXT / PROVIDER SETUP ───────────────────────────────────────────────────
@@ -37,6 +38,7 @@ const LeagueContext = createContext<LeagueContextType>({
     members: [],
     getTeamName: () => 'Unknown',
     refreshLeagues: () => {},
+    leaguesLoaded: false,
 })
 
 export function LeagueProvider({ children }: { children: ReactNode }) {
@@ -46,6 +48,8 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
     const [leagues, setLeagues] = useState<League[]>([])
     const [activeLeague, setActiveLeague] = useState<League | null>(null)
     const [members, setMembers] = useState<Member[]>([])
+    const [leaguesLoaded, setLeaguesLoaded] = useState(false)
+
 
     // ── EFFECTS / FETCH ─────────────────────────────────────────────────────────
     const refreshLeagues = useCallback(() => {
@@ -56,9 +60,10 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
             if (res.data.length > 0 && !activeLeague) {
                 setActiveLeague(res.data[0])
             }
+            setLeaguesLoaded(true)
         })
     }, [session?.access_token])
-
+    
     useEffect(() => { refreshLeagues() }, [session?.access_token])
 
     useEffect(() => {
@@ -85,7 +90,7 @@ export function LeagueProvider({ children }: { children: ReactNode }) {
 
     // ── JSX / RENDER ────────────────────────────────────────────────────────────
     return (
-        <LeagueContext.Provider value={{ leagues, activeLeague, setActiveLeague, members, getTeamName, refreshLeagues }}>
+        <LeagueContext.Provider value={{ leagues, activeLeague, setActiveLeague, members, getTeamName, refreshLeagues,leaguesLoaded }}>
             {children}
         </LeagueContext.Provider>
     )
