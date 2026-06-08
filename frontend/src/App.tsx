@@ -1,6 +1,7 @@
 // ── IMPORTS ────────────────────────────────────────────────────────────────────
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import React, { useState, useEffect } from 'react'
 import { LeagueProvider } from './contexts/LeagueContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Sidebar from './components/Sidebar'
@@ -35,25 +36,32 @@ import SnakeWatermark from './components/SnakeWatermark'
 
 // ── HELPERS ────────────────────────────────────────────────────────────────────
 function AppLayout({ children }: { children: React.ReactNode }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+      const handleResize = () => setIsMobile(window.innerWidth < 768)
+      window.addEventListener('resize', handleResize)
+      return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   return (
-    <div style={{ display: 'flex' }}>
-      <Sidebar />
-      <div style={{
-        marginLeft: '220px',
-        flex: 1,
-        padding: '32px 40px',
-        backgroundColor: 'var(--bg)',
-        minHeight: '100vh',
-        color: 'var(--text)',
-        position: 'relative',
-      }}>
-        <SnakeWatermark fixed />
-        
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          {children}
-        </div>
+      <div style={{ display: 'flex' }}>
+          <Sidebar />
+          <div style={{
+              marginLeft: isMobile ? 0 : '220px',
+              flex: 1,
+              padding: isMobile ? '60px 16px 24px' : '32px 40px',
+              backgroundColor: 'var(--bg)',
+              minHeight: '100vh',
+              color: 'var(--text)',
+              position: 'relative',
+          }}>
+              <SnakeWatermark fixed />
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                  {children}
+              </div>
+          </div>
       </div>
-    </div>
   )
 }
 

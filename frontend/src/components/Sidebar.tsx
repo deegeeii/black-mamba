@@ -223,6 +223,8 @@ export default function Sidebar() {
         !n.read && ['bet_offer', 'bet_accepted', 'bet_won', 'bet_lost'].includes(n.type)
     )
     const [betDot, setBetDot] = useState(false)
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+    const [isOpen, setIsOpen] = useState(false)
 
 
     // ── EFFECTS / FETCH ON MOUNT ──────────────────────────────────────────────
@@ -293,6 +295,12 @@ export default function Sidebar() {
 
     useEffect(() => { if (betUnread) setBetDot(true) }, [betUnread])
 
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768)
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
+
 
     // ── HANDLERS ─────────────────────────────────────────────────────────────
     const markAllRead = async () => {
@@ -333,12 +341,14 @@ export default function Sidebar() {
     }
 
     const handleNav = (path: string) => {
+        if (isMobile) setIsOpen(false)
         if (path === '/chat') setChatUnread(false)
         if (path === '/bets') setBetDot(false)
         if (GLOBAL_ROUTES.includes(path)) { navigate(path); return }
         if (!activeLeague) return
         navigate(`/leagues/${activeLeague.id}${path}`)
     }
+    
 
 
     const isActive = (path: string) => {
@@ -346,180 +356,239 @@ export default function Sidebar() {
         return location.pathname.includes(path)
     }
 
+    const sidebarStyle: CSSProperties = {
+        ...styles.sidebar,
+        ...(isMobile ? {
+            left: isOpen ? '0' : '-220px',
+            transition: 'left 0.25s ease',
+            zIndex: 100,
+        } : {}),
+    }
+    
+
     // ── JSX ───────────────────────────────────────────────────────────────────
     return (
-        <div style={styles.sidebar}>
-            <style>{`
-                .scroll-icon { transition: transform 0.2s ease, color 0.2s ease; }
-                .bell-btn:hover .scroll-icon { transform: scale(1.2) rotate(-8deg); color: var(--accent); }
-                .scroll-unread .scroll-icon { color: var(--accent); animation: scrollGlow 2.5s ease-in-out infinite; }
-                @keyframes scrollGlow {
-                    0%, 100% { filter: drop-shadow(0 0 2px var(--accent)); }
-                    50% { filter: drop-shadow(0 0 7px var(--accent)); opacity: 0.8; }
-                }
-                @keyframes scrollPop {
-                    0%   { transform: scaleY(1) rotate(0deg); }
-                    25%  { transform: scaleY(0.8) rotate(-6deg); }
-                    60%  { transform: scaleY(1.15) rotate(3deg); }
-                    100% { transform: scaleY(1) rotate(0deg); }
-                }
-                .scroll-pop .scroll-icon { animation: scrollPop 0.5s ease forwards !important; }
-            `}</style>
-
-            {/* ── Wordmark & Bell ── */}
-            <div style={styles.wordmark}>
-                BLACK MAMBA
-                {/* ── Notification Bell Button ── */}
+        <>
+            {/* ── Mobile Hamburger ── */}
+            {isMobile && !isOpen && (
                 <button
-                    className={`bell-btn ${unreadCount > 0 ? 'scroll-unread' : ''}`}
-                    style={styles.bellBtn}
-                    onClick={() => setBellOpen(o => !o)}
+                    onClick={() => setIsOpen(true)}
+                    style={{
+                        position: 'fixed',
+                        top: '16px',
+                        left: '16px',
+                        zIndex: 1001,
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        color: 'var(--accent)',
+                        fontSize: '20px',
+                        padding: '6px 10px',
+                        cursor: 'pointer',
+                    }}
                 >
-                    <svg
-                        className="scroll-icon"
-                        width="18"
-                        height="20"
-                        viewBox="0 0 18 20"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                    >
-                        <ellipse cx="9" cy="3.5" rx="7" ry="2.5"/>
-                        <line x1="2" y1="3.5" x2="2" y2="16.5"/>
-                        <line x1="16" y1="3.5" x2="16" y2="16.5"/>
-                        <ellipse cx="9" cy="16.5" rx="7" ry="2.5"/>
-                        <line x1="5.5" y1="8" x2="12.5" y2="8" strokeWidth="1"/>
-                        <line x1="5.5" y1="11" x2="12.5" y2="11" strokeWidth="1"/>
-                        <line x1="5.5" y1="14" x2="10" y2="14" strokeWidth="1"/>
-                    </svg>
-                    {unreadCount > 0 && (
-                        <span style={styles.badge}>
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
-                    )}
+                    ☰
                 </button>
-            </div>
-
-            {/* ── Notifications Dropdown ── */}
-            {bellOpen && (
-                <div style={styles.dropdown} ref={dropdownRef}>
-                    <div style={styles.dropdownHeader}>
-                        Notifications
-                        {unreadCount > 0 && (
-                            <button style={styles.markAllBtn} onClick={markAllRead}>
-                                Mark all read
+            )}
+    
+            {/* ── Mobile Backdrop ── */}
+            {isMobile && isOpen && (
+                <div
+                    onClick={() => setIsOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        zIndex: 99,
+                    }}
+                />
+            )}
+    
+            <div style={sidebarStyle}>
+                <style>{`
+                    .scroll-icon { transition: transform 0.2s ease, color 0.2s ease; }
+                    .bell-btn:hover .scroll-icon { transform: scale(1.2) rotate(-8deg); color: var(--accent); }
+                    .scroll-unread .scroll-icon { color: var(--accent); animation: scrollGlow 2.5s ease-in-out infinite; }
+                    @keyframes scrollGlow {
+                        0%, 100% { filter: drop-shadow(0 0 2px var(--accent)); }
+                        50% { filter: drop-shadow(0 0 7px var(--accent)); opacity: 0.8; }
+                    }
+                    @keyframes scrollPop {
+                        0%   { transform: scaleY(1) rotate(0deg); }
+                        25%  { transform: scaleY(0.8) rotate(-6deg); }
+                        60%  { transform: scaleY(1.15) rotate(3deg); }
+                        100% { transform: scaleY(1) rotate(0deg); }
+                    }
+                    .scroll-pop .scroll-icon { animation: scrollPop 0.5s ease forwards !important; }
+                `}</style>
+    
+                {/* ── Wordmark & Bell ── */}
+                <div style={styles.wordmark}>
+                    BLACK MAMBA
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {isMobile && (
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--text-dim)',
+                                    fontSize: '20px',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                }}
+                            >
+                                ✕
                             </button>
                         )}
-                    </div>
-                    {/* ── Notification List ── */}
-                    <div style={styles.notifList}>
-                        {notifications.length === 0 ? (
-                            <div style={styles.empty}>No notifications</div>
-                        ) : notifications.map(n => (
-                            <div
-                                key={n.id}
-                                style={{
-                                    ...styles.notifItem,
-                                    backgroundColor: n.read ? 'transparent' : 'var(--accent-dark)',
-                                }}
-                                onClick={() => markRead(n.id)}
+                        <button
+                            className={`bell-btn ${unreadCount > 0 ? 'scroll-unread' : ''}`}
+                            style={styles.bellBtn}
+                            onClick={() => setBellOpen(o => !o)}
+                        >
+                            <svg
+                                className="scroll-icon"
+                                width="18"
+                                height="20"
+                                viewBox="0 0 18 20"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
                             >
-                                <div style={styles.notifMessage}>{n.message}</div>
-                                <div style={styles.notifTime}>{formatTime(n.created_at)}</div>
-                            </div>
+                                <ellipse cx="9" cy="3.5" rx="7" ry="2.5"/>
+                                <line x1="2" y1="3.5" x2="2" y2="16.5"/>
+                                <line x1="16" y1="3.5" x2="16" y2="16.5"/>
+                                <ellipse cx="9" cy="16.5" rx="7" ry="2.5"/>
+                                <line x1="5.5" y1="8" x2="12.5" y2="8" strokeWidth="1"/>
+                                <line x1="5.5" y1="11" x2="12.5" y2="11" strokeWidth="1"/>
+                                <line x1="5.5" y1="14" x2="10" y2="14" strokeWidth="1"/>
+                            </svg>
+                            {unreadCount > 0 && (
+                                <span style={styles.badge}>
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
+                </div>
+    
+                {/* ── Notifications Dropdown ── */}
+                {bellOpen && (
+                    <div style={styles.dropdown} ref={dropdownRef}>
+                        <div style={styles.dropdownHeader}>
+                            Notifications
+                            {unreadCount > 0 && (
+                                <button style={styles.markAllBtn} onClick={markAllRead}>
+                                    Mark all read
+                                </button>
+                            )}
+                        </div>
+                        <div style={styles.notifList}>
+                            {notifications.length === 0 ? (
+                                <div style={styles.empty}>No notifications</div>
+                            ) : notifications.map(n => (
+                                <div
+                                    key={n.id}
+                                    style={{
+                                        ...styles.notifItem,
+                                        backgroundColor: n.read ? 'transparent' : 'var(--accent-dark)',
+                                    }}
+                                    onClick={() => markRead(n.id)}
+                                >
+                                    <div style={styles.notifMessage}>{n.message}</div>
+                                    <div style={styles.notifTime}>{formatTime(n.created_at)}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+    
+                {/* ── League Selector ── */}
+                <div style={styles.leagueSection}>
+                    <div style={styles.leagueLabel}>League</div>
+                    <select
+                        style={styles.select}
+                        value={activeLeague?.id || ''}
+                        onChange={e => {
+                            const league = leagues.find(l => l.id === e.target.value)
+                            if (league) setActiveLeague(league)
+                        }}
+                    >
+                        {leagues.map(l => (
+                            <option key={l.id} value={l.id}>{l.name}</option>
                         ))}
-                    </div>
+                    </select>
                 </div>
-            )}
-
-            {/* ── League Selector ── */}
-            <div style={styles.leagueSection}>
-                <div style={styles.leagueLabel}>League</div>
-                <select
-                    style={styles.select}
-                    value={activeLeague?.id || ''}
-                    onChange={e => {
-                        const league = leagues.find(l => l.id === e.target.value)
-                        if (league) setActiveLeague(league)
-                    }}
-                >
-                    {leagues.map(l => (
-                        <option key={l.id} value={l.id}>{l.name}</option>
+    
+                {/* ── Nav Items ── */}
+                <nav style={styles.nav}>
+                    {NAV_ITEMS.map(item => (
+                        <div
+                            key={item.path}
+                            style={{
+                                ...styles.navItem,
+                                ...(isActive(item.path) ? styles.navItemActive : {}),
+                            }}
+                            onClick={() => handleNav(item.path)}
+                        >
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {item.label}
+                                {item.path === '/chat' && chatUnread && (
+                                    <span style={{
+                                        width: '7px',
+                                        height: '7px',
+                                        borderRadius: '50%',
+                                        backgroundColor: 'var(--text-heading)',
+                                        display: 'inline-block',
+                                        flexShrink: 0,
+                                    }} />
+                                )}
+                                {item.path === '/bets' && betDot && (
+                                    <span style={{
+                                        width: '7px',
+                                        height: '7px',
+                                        borderRadius: '50%',
+                                        backgroundColor: 'var(--text-heading)',
+                                        display: 'inline-block',
+                                        flexShrink: 0,
+                                    }} />
+                                )}
+                            </span>
+                        </div>
                     ))}
-                </select>
-            </div>
-
-            {/* ── Nav Items ── */}
-            <nav style={styles.nav}>
-                {NAV_ITEMS.map(item => (
+    
                     <div
-                        key={item.path}
+                        key="/league-home"
                         style={{
                             ...styles.navItem,
-                            ...(isActive(item.path) ? styles.navItemActive : {}),
+                            ...(isActive('/league-home') ? styles.navItemActive : {}),
                         }}
-                        onClick={() => handleNav(item.path)}
+                        onClick={() => handleNav('/league-home')}
                     >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        League
+                    </div>
+    
+                    {BOTTOM_ITEMS.map(item => (
+                        <div
+                            key={item.path}
+                            style={{
+                                ...styles.navItem,
+                                ...(isActive(item.path) ? styles.navItemActive : {}),
+                            }}
+                            onClick={() => handleNav(item.path)}
+                        >
                             {item.label}
-                            {/* ── Chat Unread Dot ── */}
-                            {item.path === '/chat' && chatUnread && (
-                                <span style={{
-                                    width: '7px',
-                                    height: '7px',
-                                    borderRadius: '50%',
-                                    backgroundColor: 'var(--text-heading)',
-                                    display: 'inline-block',
-                                    flexShrink: 0,
-                                }} />
-                            )}
-                            {/* ── Bets Unread Dot ── */}
-                            {item.path === '/bets' && betDot && (
-                                <span style={{
-                                    width: '7px',
-                                    height: '7px',
-                                    borderRadius: '50%',
-                                    backgroundColor: 'var(--text-heading)',
-                                    display: 'inline-block',
-                                    flexShrink: 0,
-                                }} />
-                            )}
-                        </span>
-                    </div>
-                ))}
-
-                {/* ── League Home Nav Item ── */}
-                <div
-                    key="/league-home"
-                    style={{
-                        ...styles.navItem,
-                        ...(isActive('/league-home') ? styles.navItemActive : {}),
-                    }}
-                    onClick={() => handleNav('/league-home')}
-                >
-                    League
-                </div>
-
-                {/* ── Bottom Nav Items ── */}
-                {BOTTOM_ITEMS.map(item => (
-                    <div
-                        key={item.path}
-                        style={{
-                            ...styles.navItem,
-                            ...(isActive(item.path) ? styles.navItemActive : {}),
-                        }}
-                        onClick={() => handleNav(item.path)}
-                    >
-                        {item.label}
-                    </div>
-                ))}
-            </nav>
-
-            {/* ── Sign Out ── */}
-            <div style={styles.signOut} onClick={signOut}>Sign Out</div>
-        </div>
+                        </div>
+                    ))}
+                </nav>
+    
+                {/* ── Sign Out ── */}
+                <div style={styles.signOut} onClick={signOut}>Sign Out</div>
+            </div>
+        </>
     )
+    
 }
 
 // ── EXPORT ─────────────────────────────────────────────────────────────────────
