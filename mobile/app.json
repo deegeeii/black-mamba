@@ -6,20 +6,23 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0a0a0a"
     },
     "ios": {
-        "supportsTablet": true,
-        "bundleIdentifier": "com.blackmamba.fantasy",
-        "buildNumber": "2",
-        "infoPlist": {
-            "ITSAppUsesNonExemptEncryption": false
-        }
+    "supportsTablet": true,
+    "bundleIdentifier": "com.blackmamba.fantasy",
+    "buildNumber": "3",
+    "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Used to upload images in league chat.",
+        "NSCameraUsageDescription": "Used to take photos to share in league chat."
     }
+}
+
     ,
     "android": {
       "package": "com.blackmamba.fantasy",
